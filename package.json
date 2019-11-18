@@ -1,0 +1,74 @@
+{
+    "name": "splunk",
+    "displayName": "Splunk Extensions for Visual Stuido Code",
+    "description": "Splunk Extensions for Visual Studio Code including syntax highlighting, linting, snippets, commands, and debugging.",
+    "version": "0.0.1",
+    "repository": {
+		"url": "https://github.com/splunk/vscode-extension",
+		"type": "git"
+	},
+	"license": "See README.md",
+    "publisher": "Splunk, Inc.",
+    "icon": "images/icon.png",
+    "engines": {
+        "vscode": "^1.40.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Snippets",
+        "Other"
+    ],
+    "capabilities": {
+		"hoverProvider": "true"
+	},
+    "activationEvents": [
+        "onLanguage:splunk",
+        "onCommand:extension.helloWorld"
+	],
+	"main": "./out/extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "splunk",
+                "extensions": [".conf"],
+                "aliases": ["Splunk .conf files", "splunk", "Splunk", "Splunk config files"],
+                "configuration": "./splunk-language-configuration.json"
+            },
+            {
+                "id": "splunk.debug",
+                "extensions": ["debug.conf"],
+                "aliases": ["Splunk debug settings"],
+                "configuration": "./splunk-debug-1language-configuration.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "python",
+                "path": "./snippets/lsdc.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/custom_command.json"
+            },
+            {
+				"language": "splunk.debug",
+				"path": "./snippets/debug.json"
+			}
+        ],
+        "grammars": [
+            {
+            "language": "splunk",
+            "scopeName": "source.splunk",
+            "path": "./syntaxes/splunk.tmLanguage.json"
+            }
+        ]
+    },
+
+    "devDependencies": {
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.6",
+        "eslint": "^4.11.0",
+        "@types/node": "^7.0.43",
+        "@types/mocha": "^2.2.42"
+    }
+}

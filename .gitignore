@@ -1,0 +1,14 @@
+.vscode/**
+.vscode-test/**
+vsc-extension-quickstart.md
+.vscodeignore
+node_modules
+.DS_Store*
+._*
+.Spotlight*
+.Trash*
+Icon?
+*.db
+*~
+*.bak
+*.pyc
