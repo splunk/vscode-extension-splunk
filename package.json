@@ -1,69 +1,80 @@
 {
     "name": "splunk",
-    "displayName": "Splunk Extensions for Visual Stuido Code",
-    "description": "Splunk Extensions for Visual Studio Code including syntax highlighting, linting, snippets, commands, and debugging.",
     "version": "0.0.1",
-    "repository": {
-		"url": "https://github.com/splunk/vscode-extension",
-		"type": "git"
-	},
-	"license": "See README.md",
-    "publisher": "Splunk, Inc.",
-    "icon": "images/icon.png",
+    "publisher": "Splunk",
     "engines": {
         "vscode": "^1.40.0"
     },
+    "license": "MIT",
+    "displayName": "Splunk Extension",
+    "description": "Splunk Python Debugging (local, remote), Linting, Intellisense, code formatting, and more.",
     "categories": [
         "Programming Languages",
-        "Snippets",
+        "Linters",
         "Other"
     ],
-    "capabilities": {
-		"hoverProvider": "true"
-	},
-    "activationEvents": [
-        "onLanguage:splunk",
-        "onCommand:extension.helloWorld"
-	],
-	"main": "./out/extension.js",
+    "keywords": [
+        "splunk",
+		"python"
+    ],
+    "galleryBanner": {
+		"color": "#e20084",
+		"theme": "dark"
+    },
+    "main": "./out/extension.js",
     "contributes": {
         "languages": [
             {
                 "id": "splunk",
-                "extensions": [".conf"],
-                "aliases": ["Splunk .conf files", "splunk", "Splunk", "Splunk config files"],
+                "extensions": [
+                    ".conf"
+                ],
+                "aliases": [
+                    "Splunk .conf files",
+                    "splunk",
+                    "Splunk",
+                    "Splunk config files"
+                ],
                 "configuration": "./splunk-language-configuration.json"
-            },
-            {
-                "id": "splunk.debug",
-                "extensions": ["debug.conf"],
-                "aliases": ["Splunk debug settings"],
-                "configuration": "./splunk-debug-1language-configuration.json"
             }
-        ],
-        "snippets": [
-            {
-                "language": "python",
-                "path": "./snippets/lsdc.json"
-            },
-            {
-                "language": "python",
-                "path": "./snippets/custom_command.json"
-            },
-            {
-				"language": "splunk.debug",
-				"path": "./snippets/debug.json"
-			}
         ],
         "grammars": [
             {
-            "language": "splunk",
-            "scopeName": "source.splunk",
-            "path": "./syntaxes/splunk.tmLanguage.json"
+                "language": "splunk",
+                "scopeName": "source.splunk",
+                "path": "./syntaxes/splunk.tmLanguage.json"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "Splunk Settings",
+            "properties": {
+                "splunk.specFilePath": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "",
+                    "description": "Specify an absolute path to the Splunk spec files.  For example, if Splunk is installed locally, $SPLUNK_HOME/etc/system/README/ can be used where $SPLUNK_HOME is set to the path where Splunk is installed.\nNote: leave this setting blank to use built-in or custom spec files."
+                },
+                "splunk.specFileVersion": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "8.0",
+                    "description": "Specifies the version of spec files to use in the spec_files directory.  To add custom spec files, create a new directory in the spec_files directory.\nNote: this setting is ignored if you specify a spec file path."
+                }
+            }
+        }
     },
-
+    "activationEvents": [
+        "onLanguage:splunk"
+    ],
+    "repository": {
+        "url": "https://github.com/splunk/vscode-extension",
+        "type": "git"
+    },
+    "icon": "images/icon.png",
+    "extensionDependencies": [
+        "ms-python.python",
+        "ms-vscode-remote.remote-ssh"
+    ],
     "devDependencies": {
         "typescript": "^2.6.1",
         "vscode": "^1.1.6",

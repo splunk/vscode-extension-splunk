@@ -1,0 +1,16 @@
+{
+    "index": {
+        "prefix": "!spl-index",
+        "body": [
+            "[${1:index_name}]",
+            "homePath = ${2:volume:hot/$$_index_name/db}",
+            "coldPath = ${3:volume:cold/$$_index_name/colddb}",
+            "thawedPath = ${4:/volr/splunk/cold/$$_index_name/thaweddb}",
+            "frozenTimePeriodInSecs = ${5:2592000# 30 days}",
+            "maxTotalDataSizeMB = ${6:4294967295# default max}",
+            "tstatsHomePath = ${7:volume:data_summaries/$$_index_name/datamodel_summary}",
+            "repFactor = auto"
+        ],
+        "description": "Generate indexes.conf index stanza"
+    }
+}
