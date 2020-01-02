@@ -94,10 +94,10 @@ function getDocumentItems(document, PATTERN) {
 
 function activate(context) {
 
-    // Get the spec config on start up
+    // Get the spec config on vscode start up
     specConfig = getSpecConfig(context);
 
-    // Set up diagnostics
+    // Set up diagnostics (linting)
     let diagnosticCollection = vscode.languages.createDiagnosticCollection('splunk');
     if (vscode.window.activeTextEditor) {
         updateDiagnostics(specConfig, vscode.window.activeTextEditor.document, diagnosticCollection);
@@ -111,7 +111,7 @@ function activate(context) {
     // Set up listener for text document changes
     context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(editor => {
         if(vscode.window.activeTextEditor && editor.document === vscode.window.activeTextEditor.document) {
-            // Use a timer on onDidChangeTextDocument so we are not checking as often.
+            // Use a timer on onDidChangeTextDocument so we are not linting as often.
             triggerDiagnostics(specConfig, editor.document, diagnosticCollection);
         }
     }))
@@ -123,6 +123,9 @@ function activate(context) {
             triggerDiagnostics(specConfig, editor.document, diagnosticCollection);
         }
     }));
+
+    let outputChannel = vscode.window.createOutputChannel("Splunk")
+    
 }
 
 function provideStanzaCompletionItems(specConfig) {
