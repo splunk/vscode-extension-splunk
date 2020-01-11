@@ -1,0 +1,5 @@
+[]
+access = read: [ * ], write : [ admin ]
+
+[searchbnf]
+export = system
