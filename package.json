@@ -25,13 +25,13 @@
     "contributes": {
         "languages": [
             {
-                "id": "splunk",
+                "id": "splunk_conf",
                 "extensions": [
                     ".conf"
                 ],
                 "aliases": [
                     "Splunk .conf files",
-                    "splunk",
+                    "splunk_conf",
                     "Splunk",
                     "Splunk config files"
                 ],
@@ -40,63 +40,63 @@
         ],
         "grammars": [
             {
-                "language": "splunk",
-                "scopeName": "source.splunk",
+                "language": "splunk_conf",
+                "scopeName": "source.splunk_conf",
                 "path": "./syntaxes/splunk.tmLanguage.json"
             }
         ],
         "configuration": {
             "title": "Splunk",
             "properties": {
-                "splunk.enableSplunkExplorer": {
+                "splunk_conf.enableSplunkExplorer": {
 					"type": "boolean",
 					"description": "Enables the Splunk Explorer in the activity bar.",
 					"default": true
                 },
-                "splunk.reports.viewRefreshInterval": {
+                "splunk_conf.reports.viewRefreshInterval": {
                     "type": "integer",
                     "scope": "resource",
                     "default": 300,
                     "description": "Specify an interval, in seconds, to refresh embedded reports."
                 },
-                "splunk.reports.SplunkSearchHead": {
+                "splunk_conf.reports.SplunkSearchHead": {
                     "type": "string",
                     "scope": "resource",
                     "default": "http://localhost:8000",
                     "description": "Specify the Search Head URL used to display reports."
                 },
-                "splunk.spec.FilePath": {
+                "splunk_conf.spec.FilePath": {
                     "type": "string",
                     "scope": "resource",
                     "default": "",
                     "description": "Specify an absolute path to the Splunk spec files.  For example, if Splunk is installed locally, $SPLUNK_HOME/etc/system/README/ can be used where $SPLUNK_HOME is set to the path where Splunk is installed.\nNote: leave this setting blank to use built-in or custom spec files."
                 },
-                "splunk.spec.FileVersion": {
+                "splunk_conf.spec.FileVersion": {
                     "type": "string",
                     "enum": ["7.3", "8.0"],
                     "scope": "resource",
                     "default": "8.0",
                     "description": "Specifies the version of spec files to use.\nNote: this setting is ignored if you specify a Spec File Path."
                 },
-                "splunk.spec.trimEqualSignWhitespace": {
+                "splunk_conf.spec.trimEqualSignWhitespace": {
                     "type": "boolean",
                     "scope": "resource",
                     "default": false,
                     "description": "When auto-completing settings, trim whitespace around the '=' sign. For example, key = value will become key=value.\nNote: changing this setting requires a restart of Visual Studio Code."
                 },
-                "splunk.commands.splunk REST Url": {
+                "splunk_conf.commands.splunk REST Url": {
                     "type": "string",
                     "scope": "resource",
                     "default": "https://localhost:8089",
                     "description": "Specify the URL for the Splunk REST API"
                 },
-                "splunk.commands.token": {
+                "splunk_conf.commands.token": {
                     "type": "string",
                     "scope": "resource",
                     "default": "",
                     "description": "Splunk Enterprise token used for authentication. Refer to the Splunk documentation for more information about tokens at https://docs.splunk.com/Documentation/Splunk/latest/Security/UseAuthTokens"
                 },
-                "splunk.search.searchOutputMode": {
+                "splunk_conf.search.searchOutputMode": {
                     "type": "string",
                     "enum": ["csv","json","xml"],
                     "scope": "resource",
@@ -119,42 +119,42 @@
 				{
 					"id": "savedSearches",
                     "name": "Saved Searches",
-                    "when": "config.splunk.enableSplunkExplorer == true"
+                    "when": "config.splunk_conf.enableSplunkExplorer == true"
                 },
                 {
 					"id": "embeddedReports",
                     "name": "Report Views",
-                    "when": "config.splunk.enableSplunkExplorer == true"
+                    "when": "config.splunk_conf.enableSplunkExplorer == true"
                 }
 			]
         },
         "menus": {
             "commandPalette": [
                 {
-                    "command": "splunk.embeddedReport.show",
+                    "command": "splunk_conf.embeddedReport.show",
                     "when": "false"
                 }
             ],
             "view/title": [
                 {
-                    "command": "splunk.savedSearches.refresh",
+                    "command": "splunk_conf.savedSearches.refresh",
                     "group": "navigation",
                     "when": "view == savedSearches"
                 },
                 {
-                    "command": "splunk.embeddedReport.refresh",
+                    "command": "splunk_conf.embeddedReport.refresh",
                     "group": "navigation",
                     "when": "view == embeddedReports"
                 }
             ],
             "view/item/context": [
                 {
-                    "command": "splunk.savedSearch.run",
+                    "command": "splunk_conf.savedSearch.run",
                     "when": "view == savedSearches && viewItem == savedSearch",
                     "group": "inline"
                 },
                 {
-                    "command": "splunk.embeddedReport.show",
+                    "command": "splunk_conf.embeddedReport.show",
                     "when": "view == embeddedReports",
                     "group": "inline"
                 }
@@ -162,7 +162,7 @@
         },
         "commands": [
             {
-                "command": "splunk.savedSearches.refresh",
+                "command": "splunk_conf.savedSearches.refresh",
                 "title": "Refresh Saved Searches",
                 "icon": {
                     "light": "resources/light/refresh.svg",
@@ -170,30 +170,30 @@
                 }
             },
             {
-                "command": "splunk.savedSearch.run",
+                "command": "splunk_conf.savedSearch.run",
                 "title": "Run Saved Search",
-                "category": "Splunk",
+                "category": "Splunk Conf",
                 "icon": {
                     "light": "resources/light/search.svg",
                     "dark": "resources/dark/search.svg"
                 }
             },
             {
-                "command": "splunk.search.adhoc",
+                "command": "splunk_conf.search.adhoc",
                 "title": "Ad-hoc Search",
-                "category": "Splunk"
+                "category": "Splunk Conf"
             },
             {
-                "command": "splunk.embeddedReport.show",
+                "command": "splunk_conf.embeddedReport.show",
                 "title": "Show Embedded Report",
-                "category": "Splunk",
+                "category": "Splunk Conf",
                 "icon": {
                     "light": "resources/light/view.svg",
                     "dark": "resources/dark/view.svg"
                 }
             },
             {
-                "command": "splunk.embeddedReport.refresh",
+                "command": "splunk_conf.embeddedReport.refresh",
                 "title": "Refresh Reports",
                 "icon": {
                     "light": "resources/light/refresh.svg",
@@ -201,26 +201,26 @@
                 }
             },
             {
-                "command": "splunk.new.modviz",
+                "command": "splunk_conf.new.modviz",
                 "title": "New Custom Visualization",
-                "category": "Splunk"
+                "category": "Splunk Conf"
             },
             {
-                "command": "splunk.new.command",
+                "command": "splunk_conf.new.command",
                 "title": "New Custom Command",
-                "category": "Splunk"
+                "category": "Splunk Conf"
             }
         ]
     },
     "activationEvents": [
-        "onLanguage:splunk",
-        "onCommand:splunk.search.adhoc",
-        "onCommand:splunk.savedSearches.refresh",
-        "onCommand:splunk.savedSearch.run",
-        "onCommand:splunk.search.saved",
-        "onCommand:splunk.new.modviz",
-        "onCommand:splunk.new.command",
-        "onCommand:splunk.embeddedReport.show",
+        "onLanguage:splunk_conf",
+        "onCommand:splunk_conf.search.adhoc",
+        "onCommand:splunk_conf.savedSearches.refresh",
+        "onCommand:splunk_conf.savedSearch.run",
+        "onCommand:splunk_conf.search.saved",
+        "onCommand:splunk_conf.new.modviz",
+        "onCommand:splunk_conf.new.command",
+        "onCommand:splunk_conf.embeddedReport.show",
         "onView:savedSearches",
         "onView:embeddedReports"
     ],

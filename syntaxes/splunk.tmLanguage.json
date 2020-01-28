@@ -9,7 +9,7 @@
 	  "conf.spec.in",
 	  "cfg.spec.in"
 	],
-	"name": "Splunk",
+	"name": "splunk_conf",
 	"patterns": [
 		{
 			"include": "#keywords"
@@ -26,7 +26,7 @@
 		"begin": "(^[ \\t]+)?(?=#)",
 		"beginCaptures": {
 		  "1": {
-			"name": "comment.line.number-sign.splunk"
+			"name": "comment.line.number-sign.splunk_conf"
 		  }
 		},
 		"end": "(?!\\G)",
@@ -35,11 +35,11 @@
 			"begin": "#",
 			"beginCaptures": {
 			  "0": {
-				"name": "comment.line.number-sign.splunk"
+				"name": "comment.line.number-sign.splunk_conf"
 			  }
 			},
 			"end": "\\n",
-			"name": "comment.line.number-sign.splunk"
+			"name": "comment.line.number-sign.splunk_conf"
 		  }
 		]
 	  },
@@ -47,7 +47,7 @@
 		"begin": "(^[ \\t]+)?(?=;)",
 		"beginCaptures": {
 		  "1": {
-			"name": "comment.line.splunk"
+			"name": "comment.line.splunk_conf"
 		  }
 		},
 		"end": "(?!\\G)",
@@ -56,24 +56,24 @@
 			"begin": ";",
 			"beginCaptures": {
 			  "0": {
-				"name": "comment.line.semicolon.splunk"
+				"name": "comment.line.semicolon.splunk_conf"
 			  }
 			},
 			"end": "\\n",
-			"name": "comment.line.semicolon.splunk"
+			"name": "comment.line.semicolon.splunk_conf"
 		  }
 		]
 	  },
 	  {
 		"captures": {
 		  "1": {
-			"name": "keyword.other.definition.splunk"
+			"name": "keyword.other.definition.splunk_conf"
 		  },
 		  "2": {
-			"name": "punctuation.separator.key-value.splunk"
+			"name": "punctuation.separator.key-value.splunk_conf"
 		  },
 		  "3": {
-			"name": "variable.language.splunk"
+			"name": "variable.language.splunk_conf"
 		  }
 		},
 		"match": "\\b([a-zA-Z0-9_.-]+)\\b\\s*(=)\\s*(.*)$"
@@ -81,33 +81,33 @@
 	  {
 		"captures": {
 		  "1": {
-			"name": "punctuation.definition.entity.splunk"
+			"name": "punctuation.definition.entity.splunk_conf"
 		  },
 		  "3": {
-			"name": "punctuation.definition.entity.splunk"
+			"name": "punctuation.definition.entity.splunk_conf"
 		  }
 		},
 		"match": "^(\\[)(.*?)(\\])",
-		"name": "entity.name.section.group-title.splunk"
+		"name": "entity.name.section.group-title.splunk_conf"
 	  },
 	  {
 		"begin": "'",
 		"beginCaptures": {
 		  "0": {
-			"name": "punctuation.definition.string.begin.splunk"
+			"name": "punctuation.definition.string.begin.splunk_conf"
 		  }
 		},
 		"end": "'",
 		"endCaptures": {
 		  "0": {
-			"name": "punctuation.definition.string.end.splunk"
+			"name": "punctuation.definition.string.end.splunk_conf"
 		  }
 		},
-		"name": "string.quoted.single.splunk",
+		"name": "string.quoted.single.splunk_conf",
 		"patterns": [
 		  {
 			"match": "\\\\.",
-			"name": "constant.character.escape.splunk"
+			"name": "constant.character.escape.splunk_conf"
 		  }
 		]
 	  },
@@ -115,17 +115,17 @@
 		"begin": "\"",
 		"beginCaptures": {
 		  "0": {
-			"name": "punctuation.definition.string.begin.splunk"
+			"name": "punctuation.definition.string.begin.splunk_conf"
 		  }
 		},
 		"end": "\"",
 		"endCaptures": {
 		  "0": {
-			"name": "punctuation.definition.string.end.splunk"
+			"name": "punctuation.definition.string.end.splunk_conf"
 		  }
 		},
-		"name": "string.quoted.double.splunk"
+		"name": "string.quoted.double.splunk_conf"
 	  }
 	],
-	"scopeName": "source.splunk"
+	"scopeName": "source.splunk_conf"
   }

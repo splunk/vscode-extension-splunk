@@ -24,8 +24,8 @@ function getSpecConfig(context) {
     // Given a spec file path, return a configuration of stanzas, settings, and document strings
 
     // Get the custom configuration options
-    let specFilePath = vscode.workspace.getConfiguration().get('splunk.spec.FilePath', vscode.window.activeTextEditor.document.uri)
-    let specFileVersion  = vscode.workspace.getConfiguration().get('splunk.spec.FileVersion', vscode.window.activeTextEditor.document.uri)
+    let specFilePath = vscode.workspace.getConfiguration().get('splunk_conf.spec.FilePath', vscode.window.activeTextEditor.document.uri)
+    let specFileVersion  = vscode.workspace.getConfiguration().get('splunk_conf.spec.FileVersion', vscode.window.activeTextEditor.document.uri)
 
     // Get the currently open document
     let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath)
@@ -64,7 +64,7 @@ function getSpecConfig(context) {
     context.subscriptions.push(provideStanzaCompletionItems(specConfig));
 
     // Register Setting completion items for this spec
-    let trimWhitespace = vscode.workspace.getConfiguration().get('splunk.spec.trimEqualSignWhitespace')
+    let trimWhitespace = vscode.workspace.getConfiguration().get('splunk_conf.spec.trimEqualSignWhitespace')
     context.subscriptions.push(provideSettingCompletionItems(specConfig, trimWhitespace));
 
     // Cache specConfig before returning
@@ -111,9 +111,9 @@ function activate(context) {
     
     const embeddedReportProvider = new splunkEmbeddedReportProvider.SplunkReportProvider();
     vscode.window.registerTreeDataProvider('embeddedReports', embeddedReportProvider);
-    vscode.commands.registerCommand('splunk.embeddedReport.refresh', () => embeddedReportProvider.refresh());
-    const viewRefreshInterval = vscode.workspace.getConfiguration().get('splunk.reports.viewRefreshInterval') * 1000;
-    vscode.commands.registerCommand('splunk.embeddedReport.show', report => {
+    vscode.commands.registerCommand('splunk_conf.embeddedReport.refresh', () => embeddedReportProvider.refresh());
+    const viewRefreshInterval = vscode.workspace.getConfiguration().get('splunk_conf.reports.viewRefreshInterval') * 1000;
+    vscode.commands.registerCommand('splunk_conf.embeddedReport.show', report => {
         const panel = vscode.window.createWebviewPanel(
             'splunkWebview', 
             'Splunk Report', 
@@ -137,8 +137,8 @@ function activate(context) {
 
     const savedSearchProvider = new splunkSavedSearchProvider.SavedSearchProvider();
     vscode.window.registerTreeDataProvider('savedSearches', savedSearchProvider);
-    vscode.commands.registerCommand('splunk.savedSearches.refresh', () => savedSearchProvider.refresh());
-    vscode.commands.registerCommand('splunk.savedSearch.run', async search => {
+    vscode.commands.registerCommand('splunk_conf.savedSearches.refresh', () => savedSearchProvider.refresh());
+    vscode.commands.registerCommand('splunk_conf.savedSearch.run', async search => {
         if(!search) {
             search = await vscode.window.showQuickPick(savedSearchProvider.getSavedSearches(), {canPickMany: false, placeHolder:'Saved Search'})
         }
@@ -147,10 +147,10 @@ function activate(context) {
         splunkOutputChannel.show()
     });
 
-    context.subscriptions.push(vscode.commands.registerCommand('splunk.search.adhoc', async () => {
-        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunk REST Url')
-        let splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token')
-        let outputMode = vscode.workspace.getConfiguration().get('splunk.search.searchOutputMode')
+    context.subscriptions.push(vscode.commands.registerCommand('splunk_conf.search.adhoc', async () => {
+        let splunkUrl = vscode.workspace.getConfiguration().get('splunk_conf.commands.splunk REST Url')
+        let splunkToken = vscode.workspace.getConfiguration().get('splunk_conf.commands.token')
+        let outputMode = vscode.workspace.getConfiguration().get('splunk_conf.search.searchOutputMode')
         
         if (!splunkUrl) {
             vscode.window.showErrorMessage("The URL specified for the Splunk REST API is incorrect. Please check your settings.");
@@ -188,7 +188,7 @@ function activate(context) {
         }
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('splunk.new.modviz', async () => {
+    context.subscriptions.push(vscode.commands.registerCommand('splunk_conf.new.modviz', async () => {
         let destFolder = await vscode.window.showOpenDialog({
             canSelectFiles: false,
             canSelectFolders: true,
@@ -212,7 +212,7 @@ function activate(context) {
 
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('splunk.new.command', async () => {
+    context.subscriptions.push(vscode.commands.registerCommand('splunk_conf.new.command', async () => {
         let destFolder = await vscode.window.showOpenDialog({
             canSelectFiles: false,
             canSelectFolders: true,
@@ -241,14 +241,14 @@ function activate(context) {
         specConfig = getSpecConfig(context);
 
         // Set up diagnostics (linting)
-        let diagnosticCollection = vscode.languages.createDiagnosticCollection('splunk');
+        let diagnosticCollection = vscode.languages.createDiagnosticCollection('splunk_conf');
         if (vscode.window.activeTextEditor) {
             updateDiagnostics(specConfig, vscode.window.activeTextEditor.document, diagnosticCollection);
         }
 
          // Set up stanza folding
         context.subscriptions.push(vscode.languages.registerFoldingRangeProvider([
-            { language: 'splunk', pattern: '**/*.{conf,conf.spec}' }
+            { language: 'splunk_conf', pattern: '**/*.{conf,conf.spec}' }
         ], new splunkFoldingRangeProvider.confFoldingRangeProvider()));
 
         // Set up listener for text document changes
@@ -279,7 +279,7 @@ function provideStanzaCompletionItems(specConfig) {
     // Get the currently open document
     let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath)
 
-    let stanzaCompletions = vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
+    let stanzaCompletions = vscode.languages.registerCompletionItemProvider({ language: 'splunk_conf', pattern: `**/${currentDocument}`}, {
 
         provideCompletionItems(document, position, token, context) {
 
@@ -328,7 +328,7 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
 
     // Get the currently open document
     let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath)
-    vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
+    vscode.languages.registerCompletionItemProvider({ language: 'splunk_conf', pattern: `**/${currentDocument}`}, {
 
         provideCompletionItems(document, position, token, context) {
             if(!specConfig) {
