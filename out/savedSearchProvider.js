@@ -20,8 +20,8 @@ class SavedSearchProvider {
 
     async getSavedSearches(filter="") {
 
-        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunk REST Url');
-        let splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
+        let splunkUrl = vscode.workspace.getConfiguration().get('splunk_conf.commands.splunk REST Url');
+        let splunkToken = vscode.workspace.getConfiguration().get('splunk_conf.commands.token');
         if ((!splunkUrl) || (!splunkToken)) {
             return [new vscode.TreeItem("Splunk URL and Token required. Check extension settings.")];
         }
@@ -59,9 +59,9 @@ class SavedSearchProvider {
 
     async runSavedSearch(savedSearchItem) {
 
-        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunk REST Url');
-        let splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
-        let outputMode = vscode.workspace.getConfiguration().get('splunk.search.searchOutputMode');
+        let splunkUrl = vscode.workspace.getConfiguration().get('splunk_conf.commands.splunk REST Url');
+        let splunkToken = vscode.workspace.getConfiguration().get('splunk_conf.commands.token');
+        let outputMode = vscode.workspace.getConfiguration().get('splunk_conf.search.searchOutputMode');
 
         if (!splunkUrl) {
             let m = "The URL specified for the Splunk REST API is incorrect. Please check your settings."

@@ -28,8 +28,8 @@ exports.SplunkReportProvider = SplunkReportProvider;
 
 async function getSavedSearchEmbedToken(searchLink) {
 
-    let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunk REST Url');
-    let splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
+    let splunkUrl = vscode.workspace.getConfiguration().get('splunk_conf.commands.splunk REST Url');
+    let splunkToken = vscode.workspace.getConfiguration().get('splunk_conf.commands.token');
     if ((!splunkUrl) || (!splunkToken)) {
         return [new vscode.TreeItem("Splunk URL and Token required. Check extension settings.")];
     }
@@ -62,7 +62,7 @@ async function getSavedSearchEmbedToken(searchLink) {
 }
 
 async function getWebviewContent(search) {
-    let splunkSHUrl = vscode.workspace.getConfiguration().get('splunk.reports.SplunkSearchHead');
+    let splunkSHUrl = vscode.workspace.getConfiguration().get('splunk_conf.reports.SplunkSearchHead');
     let embedToken = await getSavedSearchEmbedToken(search["links"]["list"]).then()
     let iframeSrc = `${splunkSHUrl}/en-US/embed?s=${encodeURIComponent(search["links"]["list"])}&oid=${embedToken}`;
     return `<!DOCTYPE html>

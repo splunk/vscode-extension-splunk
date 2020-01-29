@@ -16,7 +16,7 @@
 	<key>keyEquivalent</key>
 	<string>^~I</string>
 	<key>name</key>
-	<string>Splunk</string>
+	<string>splunk_conf</string>
 	<key>patterns</key>
 	<array>
         <dict>
@@ -35,7 +35,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>punctuation.whitespace.comment.leading.splunk</string>
+					<string>punctuation.whitespace.comment.leading.splunk_conf</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -50,13 +50,13 @@
 						<key>0</key>
 						<dict>
 							<key>name</key>
-							<string>punctuation.definition.comment.splunk</string>
+							<string>punctuation.definition.comment.splunk_conf</string>
 						</dict>
 					</dict>
 					<key>end</key>
 					<string>\n</string>
 					<key>name</key>
-					<string>comment.line.number-sign.splunk</string>
+					<string>comment.line.number-sign.splunk_conf</string>
 				</dict>
 			</array>
 		</dict>
@@ -68,7 +68,7 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>punctuation.whitespace.comment.leading.splunk</string>
+					<string>punctuation.whitespace.comment.leading.splunk_conf</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -83,13 +83,13 @@
 						<key>0</key>
 						<dict>
 							<key>name</key>
-							<string>punctuation.definition.comment.splunk</string>
+							<string>punctuation.definition.comment.splunk_conf</string>
 						</dict>
 					</dict>
 					<key>end</key>
 					<string>\n</string>
 					<key>name</key>
-					<string>comment.line.semicolon.splunk</string>
+					<string>comment.line.semicolon.splunk_conf</string>
 				</dict>
 			</array>
 		</dict>
@@ -99,12 +99,12 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>keyword.other.definition.splunk</string>
+					<string>keyword.other.definition.splunk_conf</string>
 				</dict>
 				<key>2</key>
 				<dict>
 					<key>name</key>
-					<string>punctuation.separator.key-value.splunk</string>
+					<string>punctuation.separator.key-value.splunk_conf</string>
 				</dict>
 			</dict>
 			<key>match</key>
@@ -116,18 +116,18 @@
 				<key>1</key>
 				<dict>
 					<key>name</key>
-					<string>punctuation.definition.entity.splunk</string>
+					<string>punctuation.definition.entity.splunk_conf</string>
 				</dict>
 				<key>3</key>
 				<dict>
 					<key>name</key>
-					<string>punctuation.definition.entity.splunk</string>
+					<string>punctuation.definition.entity.splunk_conf</string>
 				</dict>
 			</dict>
 			<key>match</key>
 			<string>^(\[)(.*?)(\])</string>
 			<key>name</key>
-			<string>entity.name.section.group-title.splunk</string>
+			<string>entity.name.section.group-title.splunk_conf</string>
 		</dict>
 		<dict>
 			<key>begin</key>
@@ -137,7 +137,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>punctuation.definition.string.begin.splunk</string>
+					<string>punctuation.definition.string.begin.splunk_conf</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -147,18 +147,18 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>punctuation.definition.string.end.splunk</string>
+					<string>punctuation.definition.string.end.splunk_conf</string>
 				</dict>
 			</dict>
 			<key>name</key>
-			<string>string.quoted.single.splunk</string>
+			<string>string.quoted.single.splunk_conf</string>
 			<key>patterns</key>
 			<array>
 				<dict>
 					<key>match</key>
 					<string>\\.</string>
 					<key>name</key>
-					<string>constant.character.escape.splunk</string>
+					<string>constant.character.escape.splunk_conf</string>
 				</dict>
 			</array>
 		</dict>
@@ -170,7 +170,7 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>punctuation.definition.string.begin.splunk</string>
+					<string>punctuation.definition.string.begin.splunk_conf</string>
 				</dict>
 			</dict>
 			<key>end</key>
@@ -180,11 +180,11 @@
 				<key>0</key>
 				<dict>
 					<key>name</key>
-					<string>punctuation.definition.string.end.splunk</string>
+					<string>punctuation.definition.string.end.splunk_conf</string>
 				</dict>
 			</dict>
 			<key>name</key>
-			<string>string.quoted.double.splunk</string>
+			<string>string.quoted.double.splunk_conf</string>
 		</dict>
 	</array>
 	<key>scopeName</key>
