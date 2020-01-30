@@ -43,6 +43,9 @@ If you have any issues with the software, please file an issue on the repository
 
 ## Release Notes
 
+### 0.2.1
+- Added configuration checking for .conf file values.
+
 
 ### 0.2.0
 
