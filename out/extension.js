@@ -283,7 +283,7 @@ function provideStanzaCompletionItems(specConfig) {
 
         provideCompletionItems(document, position, token, context) {
 
-            if(!document.lineAt(position.line).text.startsWith('[')) {
+            if((position.character != 1) || (!document.lineAt(position.line).text.startsWith('['))) {
                 // We are not typing a stanza, so return.
                 return
             }
@@ -331,7 +331,7 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
     vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
 
         provideCompletionItems(document, position, token, context) {
-            if(!specConfig) {
+            if((position.character > 1) || (!specConfig)) {
                 // No completion for you!
                 return
             }
