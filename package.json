@@ -1,13 +1,13 @@
 {
     "name": "splunk",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.40.0"
     },
     "license": "MIT",
     "displayName": "Splunk Extension",
-    "description": "Splunk Python Debugging (local, remote), Linting, Intellisense, code formatting, and more.",
+    "description": "Splunk Python Debugging (local, remote), Linting, IntelliSense, code formatting, and more.",
     "categories": [
         "Programming Languages",
         "Linters",
@@ -243,8 +243,7 @@
     },
     "icon": "images/icon.png",
     "extensionDependencies": [
-        "ms-python.python",
-        "ms-vscode-remote.remote-ssh"
+        "ms-python.python"
     ],
     "dependencies": {
         "request": "^2.88.0"

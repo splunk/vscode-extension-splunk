@@ -18,7 +18,7 @@ const STANZA_REGEX = /^\[(?<stanza>[^\]].*?)\]/
 const SETTING_REGEX = /^(?<setting>[\w\-_\<\>\.]+)\s*=\s*(?<value>[^\r\n]+)/
 let specConfigs = {}
 let specConfig = undefined
-let modularSpecFiles = ["inputs.conf.spec", "alert_actions.conf.spec"];
+let modularSpecFiles = ["inputs.conf.spec", "alert_actions.conf.spec", "indexes.conf.spec"];
 var timeout = undefined
 
 function getSpecConfig(context) {
@@ -56,7 +56,7 @@ function getSpecConfig(context) {
     let specConfig = splunkSpec.parse(specFileContent, specFileName);
 
     // Modular .spec files allow freeform stanzas, but this is not denoted in the static .spec file.
-    // So, overrice the freeform setting on these.
+    // So, override the freeform setting on these.
     if(modularSpecFiles.includes(specFileName)) {
         specConfig["allowsFreeformStanzas"] = true;
     }
@@ -83,9 +83,8 @@ function getParentStanza(document, line) {
             return document.lineAt(i).text
         }
     }
-
-    // No parent stanza found.  This line is an orphan :(
-    return null
+    // No parent stanza, so any settings here apply to [default]
+    return "[default]"
 }
 
 function getDocumentItems(document, PATTERN) {
@@ -288,6 +287,7 @@ function activate(context) {
             if (vscode.window.activeTextEditor && editor.document === vscode.window.activeTextEditor.document) {
                 if(editor.document.fileName.endsWith(".conf")) {
                     specConfig = getSpecConfig(context);
+                    diagnosticCollection.clear();
                     triggerDiagnostics(specConfig, editor.document, diagnosticCollection);
                 }
             }
@@ -307,7 +307,7 @@ function provideStanzaCompletionItems(specConfig) {
 
         provideCompletionItems(document, position, token, context) {
 
-            if(!document.lineAt(position.line).text.startsWith('[')) {
+            if((position.character != 1) || (!document.lineAt(position.line).text.startsWith('['))) {
                 // We are not typing a stanza, so return.
                 return
             }
@@ -355,7 +355,7 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
     vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
 
         provideCompletionItems(document, position, token, context) {
-            if(!specConfig) {
+            if((position.character > 1) || (!specConfig)) {
                 // No completion for you!
                 return
             }
@@ -370,6 +370,7 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
                 // Create completion items for settings
                 stanzaSettings.forEach(setting => {
                     
+                    // a.k.a. the Sanford setting
                     let settingSnippet = trimWhitespace ? `${setting.name}=${setting.value}` : `${setting.name} = ${setting.value}`
                     let settingCompletionItem = new vscode.CompletionItem(settingSnippet);
 
@@ -409,7 +410,6 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
                     settingCompletionItem.insertText = new vscode.SnippetString(settingSnippet);
                     settingCompletionItem.documentation = new vscode.MarkdownString(setting.docString);
                     settingCompletionItem.kind = vscode.CompletionItemKind.Value;
-                    settingCompletionItem.a
                     completions.push(settingCompletionItem)
                 });
             }
@@ -426,7 +426,7 @@ function triggerDiagnostics(specConfig, document, diagnosticCollection) {
         clearTimeout(timeout)
         timeout = undefined
     }
-    timeout = setTimeout(updateDiagnostics, 1000, specConfig, document, diagnosticCollection)
+    timeout = setTimeout(updateDiagnostics, 2000, specConfig, document, diagnosticCollection)
 }
 
 function updateDiagnostics(specConfig, document, diagnosticCollection) {
