@@ -15,11 +15,11 @@
     ],
     "keywords": [
         "splunk",
-		"python"
+        "python"
     ],
     "galleryBanner": {
-		"color": "#000000",
-		"theme": "dark"
+        "color": "#000000",
+        "theme": "dark"
     },
     "main": "./out/extension.js",
     "contributes": {
@@ -49,9 +49,9 @@
             "title": "Splunk",
             "properties": {
                 "splunk.enableSplunkExplorer": {
-					"type": "boolean",
-					"description": "Enables the Splunk Explorer in the activity bar.",
-					"default": true
+                    "type": "boolean",
+                    "description": "Enables the Splunk Explorer in the activity bar.",
+                    "default": true
                 },
                 "splunk.reports.viewRefreshInterval": {
                     "type": "integer",
@@ -73,7 +73,10 @@
                 },
                 "splunk.spec.FileVersion": {
                     "type": "string",
-                    "enum": ["7.3", "8.0"],
+                    "enum": [
+                        "7.3",
+                        "8.0"
+                    ],
                     "scope": "resource",
                     "default": "8.0",
                     "description": "Specifies the version of spec files to use.\nNote: this setting is ignored if you specify a Spec File Path."
@@ -98,7 +101,11 @@
                 },
                 "splunk.search.searchOutputMode": {
                     "type": "string",
-                    "enum": ["csv","json","xml"],
+                    "enum": [
+                        "csv",
+                        "json",
+                        "xml"
+                    ],
                     "scope": "resource",
                     "default": "csv",
                     "description": "Controls how Splunk search results are rendered"
@@ -106,27 +113,27 @@
             }
         },
         "viewsContainers": {
-			"activitybar": [
-				{
+            "activitybar": [
+                {
                     "id": "splunk-bar",
-					"title": "Splunk",
+                    "title": "Splunk",
                     "icon": "images/splunk.svg"
-				}
-			]
+                }
+            ]
         },
         "views": {
-			"splunk-bar": [
-				{
-					"id": "savedSearches",
+            "splunk-bar": [
+                {
+                    "id": "savedSearches",
                     "name": "Saved Searches",
                     "when": "config.splunk.enableSplunkExplorer == true"
                 },
                 {
-					"id": "embeddedReports",
+                    "id": "embeddedReports",
                     "name": "Report Views",
                     "when": "config.splunk.enableSplunkExplorer == true"
                 }
-			]
+            ]
         },
         "menus": {
             "commandPalette": [
@@ -209,6 +216,11 @@
                 "command": "splunk.new.command",
                 "title": "New Custom Command",
                 "category": "Splunk"
+            },
+            {
+                "command": "splunk.new.resthandler",
+                "title": "New Custom REST Handler",
+                "category": "Splunk"
             }
         ]
     },
@@ -220,6 +232,7 @@
         "onCommand:splunk.search.saved",
         "onCommand:splunk.new.modviz",
         "onCommand:splunk.new.command",
+        "onCommand:splunk.new.resthandler",
         "onCommand:splunk.embeddedReport.show",
         "onView:savedSearches",
         "onView:embeddedReports"
@@ -236,11 +249,14 @@
         "request": "^2.88.0"
     },
     "devDependencies": {
-        "typescript": "^2.6.1",
-        "vscode": "^1.1.6",
-        "eslint": "^4.11.0",
-        "@types/node": "^7.0.43",
         "@types/mocha": "^2.2.42",
-        "request": "^2.88.0"
+        "@types/node": "^7.0.43",
+        "eslint": "^4.11.0",
+        "request": "^2.88.0",
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.36"
+    },
+    "scripts": {
+        "postinstall": "node ./node_modules/vscode/bin/install"
     }
 }

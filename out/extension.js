@@ -10,6 +10,7 @@ const splunkEmbeddedReportProvider = require("./embeddedReportProvider");
 const splunkFoldingRangeProvider = require("./foldingRangeProvider.js");
 const splunkModViz = require('./modViz.js');
 const splunkCustomCommand = require('./customCommand.js')
+const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
 const DROPDOWN_PLACEHOLDER_REGEX = /\[\w+(\|\w+)+]/g
@@ -230,6 +231,29 @@ function activate(context) {
             splunkCustomCommand.createCommand(commandAppName, destFolder, context);
             vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(path.join(destFolder[0].path, commandAppName)), true);
             vscode.env.openExternal(vscode.Uri.parse('https://dev.splunk.com/enterprise/docs/developapps/customsearchcommands/createcustomsearchcmd'));
+        }
+
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('splunk.new.resthandler', async () => {
+        let destFolder = await vscode.window.showOpenDialog({
+            canSelectFiles: false,
+            canSelectFolders: true,
+            canSelectMany: false,
+            openLabel: "Select project path"
+        });
+
+        let handlerAppName = await vscode.window.showInputBox({
+            placeHolder: "App name",
+            prompt: "Specify an app name for this custom REST handler."
+        })
+
+        if((!destFolder) || (!handlerAppName)) {
+            return
+        } else {
+            splunkCustomRESTHandler.createRESTHandler(handlerAppName, destFolder, context);
+            vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(path.join(destFolder[0].path, handlerAppName)), true);
+            // vscode.env.openExternal(vscode.Uri.parse('https://github.com/jrervin/splunk-rest-examples'));
         }
 
     }));
