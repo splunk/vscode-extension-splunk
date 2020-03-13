@@ -12,3 +12,4 @@ Icon?
 *~
 *.bak
 *.pyc
+package-lock.json

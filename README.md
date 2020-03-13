@@ -4,7 +4,7 @@ The Visual Studio Code Extension for Splunk helps developers create, test, and d
 
 ## Working with .conf files
 
-![Splunk Extension Demo](images/demo1.gif)
+![Splunk Extension Demo](https://raw.githubusercontent.com/splunk/vscode-extension-splunk/master/images/demo1.gif)
 
 * Syntax highlighting for .conf files
 * IntelliSense for stanzas and parameters
@@ -40,26 +40,3 @@ Splunk Enterprise can be running on the same machine as Visual Studio Code, on a
 
 This software is released as-is. Splunk provides no warranty and no support on this software.
 If you have any issues with the software, please file an issue on the repository.
-
-## Release Notes
-
-
-### 0.2.0
-
-- Added the following commands:
-  - `splunk.search.adhoc` - run an ad-hoc search. Results render in Splunk channel in the OUTPUT view tab.
-  - `splunk.savedSearch.run` - runs a Splunk saved search. Results render in Splunk channel in the OUTPUT view tab.
-  - `splunk.savedSearches.refresh` - requests Saved searches from the configured Splunk instance.
-  - `splunk.new.modviz` - creates scaffolding for a Splunk custom visualization.
-  - `splunk.new.command` - creates scaffolding for a Splunk custom search command.
-  - `splunk.embeddedReport.show` - shows a Splunk embedded report in a Visual Studio Code panel.
-
-- Added the following views:
-  - `savedSearches` - displays Splunk saved searches in the Splunk view container
-  - `embeddedReports` - displays Splunk embedded reports in the Splunk view container
-
-### 0.1.0
-
-Initial release
-
-* Grammar adapted from the [Sublime Text syntax highlighting for .conf files](https://github.com/shakeelmohamed/sublime-splunk-conf-highlighting) repo.
