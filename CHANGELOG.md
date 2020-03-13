@@ -8,6 +8,8 @@
   - `<decimal number>`, `<number>`, `<unsigned long>`, `<decimal>`, `<double>`
   
 - Removed dependency on Remote SSH extension - this caused issues on systems using WSL.  See issue [#3](https://github.com/splunk/vscode-extension-splunk/issues/3).
+- Added a command to create a custom Splunk REST handler:
+  - `splunk.new.resthandler` - creates scaffolding for a custom Splunk REST handler
 
 ## [0.2.0]
 
@@ -27,3 +29,4 @@
 ## [0.1.0]
 
 - Initial release
+- Grammar adapted from the [Sublime Text syntax highlighting for .conf files](https://github.com/shakeelmohamed/sublime-splunk-conf-highlighting) repo.
