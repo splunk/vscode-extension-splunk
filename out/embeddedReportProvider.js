@@ -28,7 +28,7 @@ exports.SplunkReportProvider = SplunkReportProvider;
 
 async function getSavedSearchEmbedToken(searchLink) {
 
-    let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunk REST Url');
+    let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.restUrl');
     let splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
     if ((!splunkUrl) || (!splunkToken)) {
         return [new vscode.TreeItem("Splunk URL and Token required. Check extension settings.")];
