@@ -26,8 +26,8 @@ const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(:|::|::...))[\<|\w|\/]/   // 
 const STANZA_FREEFORM_REGEX = /^\[\<(?<stanza>.*?)\>\]/           // matches things like [<spec>] or [<custom_alert_action>]
 const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>[^\<\>\:\/]+)\]/      // matches things like [tcp] or [SSL] (does not allow <, >, :, or /)
 
-const SETTING_REGEX = /^(?<setting>[\w\-_\<\>\.]+)\s*=\s*(?<value>[^\r\n]+)/
-const SETTING_PREFIX_REGEX = /^(?<prefix>[^-].*?-)\<\w+\>/
+const SETTING_REGEX = /^(?<setting>\w.*?)\s*=\s*(?<value>[^\r\n]+)/
+const SETTING_PREFIX_REGEX = /^(?<prefix>[^-\.].*?[-|\.])\<.*?\>/
 
 const lineTypes = {
     DEFAULT_STANZA: 'defaultStanza',
@@ -68,6 +68,13 @@ function parse (str, name) {
 
     // Remove blank lines to make life easier
     str = str.replace(BLANK_LINE_REGEX, "")
+
+    if(name == "indexes.conf.spec") {
+        str = str.replace("# PER INDEX OPTIONS", "[<index>]");
+        str = str.replace("# PER VIRTUAL INDEX OPTIONS", "[<virtual-index>]");
+        str = str.replace("# [provider-family:family_name]", "[provider-family:<family_name>]");
+        str = str.replace(/^#\s*\[volume:volume_name\]/gm, "[volume:<volume_name>]")
+    }
 
     while(str.length) {
 
@@ -268,8 +275,8 @@ function getStanzaSettings(specConfig, stanzaName) {
 
     let settings = []
     let defaultSettings = getStanzaSettingsByStanzaName(specConfig, "[default]")
-    if(stanzaName == "[default]") { return defaultSettings }
     let stanzaType = getStanzaType(stanzaName)
+    if((stanzaName == "[default]") && (!specConfig.allowsFreeformStanzas)) { return defaultSettings }
 
     switch(stanzaType) {
 
@@ -313,8 +320,8 @@ function getStanzaSettings(specConfig, stanzaName) {
                 if (stanzaName != "[default]") {
                     settings.push(...defaultSettings)
                 }
-                return settings
             }
+            return settings
             
             break
         }
@@ -341,6 +348,45 @@ function isStanzaValid(specConfig, stanzaName) {
     return false
 }
 
+function isValueValid(specValue, settingValue) {
+
+    let isValid = true
+
+    switch(specValue) {
+        case "<boolean>": {
+            let booleans = ["true", "false", "1", "0"]
+            if (!booleans.includes(settingValue.toLowerCase())) isValid = false;
+            break
+        }
+        case "<0 or positive integer>":
+        case "<unsigned integer>":
+        case "<positive integer>":
+        case "<nonnegative integer>":
+        case "<non-negative integer>": {
+            let INT_REGEX = /^\d+\s*$/
+            isValid = INT_REGEX.test(settingValue)
+            break
+        }
+        case "<int>":
+        case "<integer>": {
+            let INT_REGEX = /^[-]?\d+\s*$/
+            isValid = INT_REGEX.test(settingValue)
+            break
+        }
+        case "<decimal number>":
+        case "<number>":
+        case "<unsigned long>":
+        case "<decimal>":
+        case "<double>": {
+            let FLOAT_REGEX = /^[-]?[0-9]*\.?[0-9]+\s*$/
+            isValid = FLOAT_REGEX.test(settingValue)
+            break
+        }
+    }
+
+    return isValid;
+}
+
 function isSettingValid(specConfig, stanzaName, settingString) {
 
     let isValid = false
@@ -361,10 +407,12 @@ function isSettingValid(specConfig, stanzaName, settingString) {
 
         // Look for this exact setting in the specConfig
         if(specSetting["name"] == settingName) {
-            isValid = true;
+            // The setting name is valid, is the setting value valid also?
+            isValid = isValueValid(specSetting["value"], settingValue);
+
         } else if (SETTING_PREFIX_REGEX.test(specSetting["name"])) {
 
-            // There is still a chance this is a valid setting
+            // There is still a chance this is a valid setting.
             // Some settings are prefix settings.
             // For example REPORT-<class> or FIELDALIAS-<class>
 
@@ -374,9 +422,6 @@ function isSettingValid(specConfig, stanzaName, settingString) {
                 isValid = true
             }
         }
-
-        
-        
     });
 
     return isValid
