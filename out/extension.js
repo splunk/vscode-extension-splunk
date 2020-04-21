@@ -94,6 +94,11 @@ function getDocumentItems(document, PATTERN) {
 
     for (var i=0; i < document.lineCount; i++) {
         if(PATTERN.test(document.lineAt(i).text)) {
+            // If the parent line ends with a '\', this is a continuation line,
+            // so do not add it.
+            if(i>0 && PATTERN == SETTING_REGEX && document.lineAt(i-1) && document.lineAt(i-1).text.trim().endsWith("\\")) {
+                continue
+            }
             let item = {}
             item["text"] = document.lineAt(i).text
             item["line"] = i
@@ -148,7 +153,7 @@ function activate(context) {
     });
 
     context.subscriptions.push(vscode.commands.registerCommand('splunk.search.adhoc', async () => {
-        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunk REST Url')
+        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.restUrl')
         let splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token')
         let outputMode = vscode.workspace.getConfiguration().get('splunk.search.searchOutputMode')
         
