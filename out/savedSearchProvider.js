@@ -20,7 +20,7 @@ class SavedSearchProvider {
 
     async getSavedSearches(filter="") {
 
-        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunk REST Url');
+        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunkRestUrl');
         let splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
         if ((!splunkUrl) || (!splunkToken)) {
             return [new vscode.TreeItem("Splunk URL and Token required. Check extension settings.")];
@@ -59,7 +59,7 @@ class SavedSearchProvider {
 
     async runSavedSearch(savedSearchItem) {
 
-        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunk REST Url');
+        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunkRestUrl');
         let splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
         let outputMode = vscode.workspace.getConfiguration().get('splunk.search.searchOutputMode');
 

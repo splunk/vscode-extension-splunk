@@ -36,6 +36,10 @@ This extension also provides capabilities for debugging user-generated Python co
 
 Splunk Enterprise can be running on the same machine as Visual Studio Code, on a remote machine, or in a public cloud provider.
 
+## Documentation
+Documentation can be found in the [wiki](https://github.com/splunk/vscode-extension-splunk/wiki) hosted on the public repository.
+
+[https://github.com/splunk/vscode-extension-splunk/wiki](https://github.com/splunk/vscode-extension-splunk/wiki)
 
 ## Support
 

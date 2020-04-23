@@ -1,6 +1,10 @@
 # Change Log
 
-## [0.2.1]
+## [0.2.3]
+- Added support for multi-line values in .conf files.  See issue [#12](https://github.com/splunk/vscode-extension-splunk/issues/12)
+- Fix for "The URL specified for the Splunk REST API is incorrect". See issue [#14](https://github.com/splunk/vscode-extension-splunk/issues/14)
+
+## [0.2.2]
 - Added configuration checking for .conf file values:
   - `<boolean>`
   - `<0 or positive integer>`, `<unsigned integer>`, `<positive integer>`, `<non-negative integer>`

@@ -1,6 +1,6 @@
 {
     "name": "splunk",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.40.0"
@@ -86,7 +86,7 @@
                     "default": false,
                     "description": "When auto-completing settings, trim whitespace around the '=' sign. For example, key = value will become key=value.\nNote: changing this setting requires a restart of Visual Studio Code."
                 },
-                "splunk.commands.splunk REST URL": {
+                "splunk.commands.splunkRestUrl": {
                     "type": "string",
                     "scope": "resource",
                     "default": "https://localhost:8089",
