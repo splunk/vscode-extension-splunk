@@ -153,7 +153,7 @@ function activate(context) {
     });
 
     context.subscriptions.push(vscode.commands.registerCommand('splunk.search.adhoc', async () => {
-        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.restUrl')
+        let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.slkunkRestUrl')
         let splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token')
         let outputMode = vscode.workspace.getConfiguration().get('splunk.search.searchOutputMode')
         
