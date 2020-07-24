@@ -22,12 +22,12 @@ const BLANK_LINE_REGEX = /^\s*\n/gm
 const DEFAULT_STANZA_REGEX = /^# Use the \[default\] stanza/
 
 const STANZA_REGEX = /^\[(?<stanza>[^\]].*?)\]/
-const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(:|::|::...))[\<|\w|\/]/   // matches things like [tcp:<port>], [tcp:123], [source::...a...], [tcp://<remote server>:<port>], or [tcp://123]
+const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(=|:|::|::...|_))[\<|\w|\/]/   // matches things like [author=<name>], [tcp:<port>], [tcp:123], [source::...a...], [tcp://<remote server>:<port>], or [tcp://123]
 const STANZA_FREEFORM_REGEX = /^\[\<(?<stanza>.*?)\>\]/           // matches things like [<spec>] or [<custom_alert_action>]
 const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>[^\<\>\:\/]+)\]/      // matches things like [tcp] or [SSL] (does not allow <, >, :, or /)
 
 const SETTING_REGEX = /^(?<setting>\w.*?)\s*=\s*(?<value>[^\r\n]+)/
-const SETTING_PREFIX_REGEX = /^(?<prefix>[^-\.].*?[-|\.])\<.*?\>/
+const SETTING_PREFIX_REGEX = /^(?<prefix>[^-\.].*?)\<.*?\>/
 
 const lineTypes = {
     DEFAULT_STANZA: 'defaultStanza',
@@ -85,8 +85,8 @@ function parse (str, name) {
         let stanza = createStanza(section)
 
         // Some spec files can create empty default stanzas if the spec file explicitlly defines [default].
-        // limits.conf.spec does this for example
-        // In these cases, a default stanza can be produced with no settings
+        // limits.conf.spec does this for example.
+        // In these cases, a default stanza can be produced with no settings.
 
         if(stanza["stanzaName"] != "default") {
             specConfig["stanzas"].push(stanza)
@@ -103,6 +103,7 @@ function parse (str, name) {
         str = str.replace(BLANK_LINE_REGEX, "")
 
     }
+
     return specConfig
 }
 
@@ -132,6 +133,7 @@ function createStanza (str) {
     let stanzaSetting = {}
     let lines = str.split(/[\r\n]+/g)
     let defaultStanzaCreated = false
+
 
     lines.forEach(function (line) {
 
@@ -255,10 +257,10 @@ function getStanzaType(stanza) {
 
     let stanzaType = stanzaTypes.UNKNOWN
 
-    if (STANZA_PREFIX_REGEX.test(stanza)) { 
-        stanzaType = stanzaTypes.PREFIX
-    } else if (STANZA_FREEFORM_REGEX.test(stanza)) {
+    if (STANZA_FREEFORM_REGEX.test(stanza)) {
         stanzaType = stanzaTypes.FREEFORM
+    } else if (STANZA_PREFIX_REGEX.test(stanza)) { 
+        stanzaType = stanzaTypes.PREFIX
     } else if (STANZA_ABSOLUTE_REGEX.test(stanza)) {
         stanzaType = stanzaTypes.ABSOLUTE
     }
@@ -274,6 +276,17 @@ function getStanzaSettings(specConfig, stanzaName) {
     //    * freeform - examples: [my:sourcetype], [my_alert_action], [foo] (if the spec allows freeform)
 
     let settings = []
+    
+    // Special case for indexes.conf - see https://github.com/splunk/vscode-extension-splunk/issues/23
+    // All the settings in indexes.conf are valid, so return them all.
+    if(specConfig.specName == "indexes.conf.spec") {
+        let settings = []
+        for (var i=0; i < specConfig["stanzas"].length; i++) {
+            settings.push(...specConfig["stanzas"][i].settings)
+        }
+        return settings
+    }
+
     let defaultSettings = getStanzaSettingsByStanzaName(specConfig, "[default]")
     let stanzaType = getStanzaType(stanzaName)
     if((stanzaName == "[default]") && (!specConfig.allowsFreeformStanzas)) { return defaultSettings }
@@ -281,15 +294,15 @@ function getStanzaSettings(specConfig, stanzaName) {
     switch(stanzaType) {
 
         case stanzaTypes.PREFIX: {
-            // There are 2 types of prefix stanzas:
-            //    1) [tcp:port]
-            //    2) [tcp://port]
             let colonMatch = /^\[(?<prefix>[^:].*?:)[\w|\<]/        // Example: [tcp:test] OR [tcp:<...
-            let uriMatch   = /^\[(?<prefix>[^:].*?:\/\/)[\w|\<]/    // Example: [tcp://test] OR [tcp://<...
+            let uriMatch   = /^\[(?<prefix>[^:].*?:\/\/)[\w|\<|\/]/    // Example: [tcp://test] OR [tcp://<... OR [script:///]
+            let sepMatch    = /^\[(?<prefix>.*?[=|_|:])[\w|\<|\/]/     // Example [author=test] OR [role_name]
             if (uriMatch.test(stanzaName)) {
                 settings = getStanzaSettingsByPrefix(specConfig, stanzaName, uriMatch)
             } else if (colonMatch.test(stanzaName)) {
                 settings = getStanzaSettingsByPrefix(specConfig, stanzaName, colonMatch)
+            } else if (sepMatch.test(stanzaName)) {
+                settings = getStanzaSettingsByPrefix(specConfig, stanzaName, sepMatch)
             } else {
                 settings = null
             }

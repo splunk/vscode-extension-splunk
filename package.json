@@ -1,16 +1,19 @@
 {
     "name": "splunk",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.40.0"
     },
     "license": "MIT",
     "displayName": "Splunk Extension",
-    "description": "Splunk Python Debugging (local, remote), Linting, IntelliSense, code formatting, and more.",
+    "description": "Splunk Python Debugging (local, remote), Linting, IntelliSense, Snippets, Templates.",
     "categories": [
         "Programming Languages",
         "Linters",
+        "Snippets",
+        "Debuggers",
+        "Formatters",
         "Other"
     ],
     "keywords": [
