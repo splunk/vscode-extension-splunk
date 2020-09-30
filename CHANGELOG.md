@@ -1,5 +1,8 @@
 # Change Log
 
+## [0.2.5]
+- An update to Visual Studio Code changed how Diagnostics are initialized which broke linting. Version 0.2.5 addresses this issue.
+
 ## [0.2.4]
 - Fixed an issue when running ad-hoc searches from the command palette.
 - Fixed an issue displaying invalid interval for `script:/// stanzas`.  Issue [#21](https://github.com/splunk/vscode-extension-splunk/issues/21)

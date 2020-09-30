@@ -513,11 +513,10 @@ function updateDiagnostics(specConfig, document, diagnosticCollection) {
     let docStanzas = getDocumentItems(document, STANZA_REGEX)
     docStanzas.forEach(stanza => {
         if(!splunkSpec.isStanzaValid(specConfig, stanza.text)) {
-            let diagnostic = new vscode.Diagnostic()
-            diagnostic.range = new vscode.Range(new vscode.Position(stanza.line, 0), new vscode.Position(stanza.line, stanza.text.length))
-            diagnostic.message = `Stanza ${stanza.text} does not seem to be a valid stanza.`
-            diagnostic.severity = vscode.DiagnosticSeverity.Error
-            diagnostics.push(diagnostic)
+            let range = new vscode.Range(new vscode.Position(stanza.line, 0), new vscode.Position(stanza.line, stanza.text.length))
+            let message = `Stanza ${stanza.text} does not seem to be a valid stanza.`
+            let severity = vscode.DiagnosticSeverity.Error
+            diagnostics.push(new vscode.Diagnostic(range, message, severity))
         }
     });
 
@@ -526,12 +525,10 @@ function updateDiagnostics(specConfig, document, diagnosticCollection) {
     docSettings.forEach(setting => {
         let parentStanza = getParentStanza(document, setting.line)
         if(!splunkSpec.isSettingValid(specConfig, parentStanza, setting.text)) {
-            let diagnostic = new vscode.Diagnostic()
-            diagnostic.range = new vscode.Range(new vscode.Position(setting.line, 0), new vscode.Position(setting.line, setting.text.length))
-            // Invalid key in stanza [my:stanza] in /Applications/Splunk/etc/apps/TA-test/local/app.conf, line 26: this  (value:  that).
-            diagnostic.message = `Invalid key in stanza ${parentStanza} in ${path.basename(vscode.window.activeTextEditor.document.uri.fsPath)}, line ${setting.line + 1}: ${setting.text}.`
-            diagnostic.severity = vscode.DiagnosticSeverity.Error
-            diagnostics.push(diagnostic)
+            let range = new vscode.Range(new vscode.Position(setting.line, 0), new vscode.Position(setting.line, setting.text.length))
+            let message = `Invalid key in stanza ${parentStanza} in ${path.basename(vscode.window.activeTextEditor.document.uri.fsPath)}, line ${setting.line + 1}: ${setting.text}.`
+            let severity = vscode.DiagnosticSeverity.Error
+            diagnostics.push(new vscode.Diagnostic(range, message, severity))
         }
     });
 
