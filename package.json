@@ -171,6 +171,12 @@
                     "when": "view == embeddedReports",
                     "group": "inline"
                 }
+            ],
+            "editor/context": [
+                {
+                    "command": "splunk.previewGlobalConfig",
+                    "when": "resourceFilename == globalConfig.json"
+                }
             ]
         },
         "commands": [
