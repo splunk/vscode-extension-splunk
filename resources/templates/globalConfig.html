@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <title>Config Preview</title>
+</head>
+
+<body class="vscode-light" data-vscode-theme-kind="vscode-light" data-vscode-theme-name="FlatUI Immersed">
+    <div >
+        <nav class="navbar navbar-expand-lg bg-success">
+            <div class="container" id="main-nav">
+            </div>
+        </nav>
+    </div>
+    <hr>
+    <div id="config-container" hidden>
+        <nav class="navbar navbar-expand-lg">
+            <div class="container" id="config-tab">
+            </div>
+        </nav>
+    </div>
+    <h2>Form Fields:</h2>
+    <form id="entry-form">
+        <div class="mb-3">
+            <label for="exampleInputEmail1" class="form-label">Email address</label>
+            <input type="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+        </div>
+        <div class="mb-3">
+            <label for="exampleInputPassword1" class="form-label">Password</label>
+            <input type="password" class="form-control" id="exampleInputPassword1">
+        </div>
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="exampleCheck1">
+            <label class="form-check-label" for="exampleCheck1">Check me out</label>
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+    </form>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
+        crossorigin="anonymous"></script>
+    <script>
+        const toggleConfigNav = (show=true) => document.getElementById("config-container").hidden = !show
+
+        const updateMainNav = (pages) => {
+            const mainNavContainer = document.getElementById('main-nav')
+            mainNavContainer.innerHTML = ''
+            Object.keys(pages).forEach((page) => {
+                const a = document.createElement("a")
+                a.innerText = page
+                a.className = "nav-link text-white"
+                a.setAttribute("href", "#")
+                mainNavContainer.append(a)
+                a.onclick = () => {
+                    if (page === "configuration") {
+                        toggleConfigNav(true)
+                    } else {
+                        toggleConfigNav(false);
+                    }
+                }
+            })
+        }
+
+        function updateConfigTabs (tabs) {
+            const configTab = document.getElementById("config-tab");
+            configTab.innerHTML = ''
+            tabs.forEach((tab) => {
+                console.log('updating for tab ', tab)
+                const a = document.createElement("a");
+                a.innerText = tab.title;
+                a.className = "nav-link text-dark";
+                a.setAttribute("href", "#");
+                configTab.append(a)
+            })
+            toggleConfigNav(true)
+        }
+    
+    
+        window.addEventListener('message', event => {
+            const message = event.data;
+            if (message.action === "config-data") {
+                updateMainNav(message.data.pages)
+            }
+        })
+
+    </script>
+</body>
+
+</html>

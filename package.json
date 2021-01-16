@@ -142,6 +142,10 @@
                 {
                     "command": "splunk.embeddedReport.show",
                     "when": "false"
+                },
+                {
+                    "command": "splunk.previewGlobalConfig",
+                    "when": "resourceFilename == globalConfig.json"
                 }
             ],
             "view/title": [
@@ -223,6 +227,12 @@
                 "command": "splunk.new.resthandler",
                 "title": "New Custom REST Handler",
                 "category": "Splunk"
+            },
+            {
+                "command": "splunk.previewGlobalConfig",
+                "title": "Preview Global Config",
+                "category": "Splunk",
+                "enablement": "resourceFilename == globalConfig.json"
             }
         ]
     },
@@ -236,6 +246,7 @@
         "onCommand:splunk.new.command",
         "onCommand:splunk.new.resthandler",
         "onCommand:splunk.embeddedReport.show",
+        "onCommand:splunk.previewGlobalConfig",
         "onView:savedSearches",
         "onView:embeddedReports"
     ],
@@ -245,7 +256,6 @@
     },
     "icon": "images/icon.png",
     "extensionDependencies": [
-        "ms-python.python"
     ],
     "dependencies": {
         "request": "^2.88.0"
