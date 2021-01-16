@@ -7,7 +7,7 @@
     <title>Config Preview</title>
 </head>
 
-<body class="vscode-light" data-vscode-theme-kind="vscode-light" data-vscode-theme-name="FlatUI Immersed">
+<body>
     <div >
         <nav class="navbar navbar-expand-lg bg-success">
             <div class="container" id="main-nav">
@@ -28,7 +28,25 @@
         integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
         crossorigin="anonymous"></script>
     <script>
-        const toggleConfigNav = (show=true) => document.getElementById("config-container").hidden = !show
+        const toggleConfigNav = (show=true) => {
+            document.getElementById("config-container").hidden = !show
+            hideForm()
+        }
+        let activeForm = '';
+        let showConfigTab = true;
+        let forms = {};
+
+        const hideForm = () => {
+            if (activeForm) {
+                forms[activeForm].hidden = true
+            }
+        }
+
+        const showForm = formName => {
+            hideForm()
+            forms[formName].hidden = false
+            activeForm = formName
+        }
 
         const updateMainNav = (pages) => {
             const mainNavContainer = document.getElementById('main-nav')
@@ -57,6 +75,10 @@
                 a.innerText = tab.title;
                 a.className = "nav-link text-dark";
                 a.setAttribute("href", "#");
+                a.onclick = () => {
+                    showForm(tab.name)
+                    activeForm = tab.name
+                }
                 configTab.append(a)
             })
             toggleConfigNav(true)
@@ -65,8 +87,10 @@
         function updateEntityForm (entities, name) {
             console.log('updating form ', name)
             const form = document.createElement("form")
+            form.hidden = true
             form.id = name;
             document.getElementById("form-container").append(form)
+            forms[name]=form
             entities.forEach((entity) => {
                 const div = document.createElement("div")
                 div.className = "mb-3"
@@ -96,7 +120,7 @@
                             ${entity.label}
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            ${entity.options.autoCompleteFields.map(f => `<li><a class="dropdown-item" href="#">${f.label}</a></li>`)}
+                            ${entity.options?.autoCompleteFields?.map(f => `<li><a class="dropdown-item" href="#">${f.label}</a></li>`)}
                         </ul>
                     </div>
                     `
@@ -114,6 +138,8 @@
                 message.data.pages.configuration.tabs.forEach((tab) => updateEntityForm(tab.entity, tab.name))
                 // update input forms
                 message.data.pages.inputs.services.forEach((srv) => updateEntityForm(srv.entity, srv.name))
+                toggleConfigNav(showConfigTab)
+                showForm(activeForm)
             }
         })
 
