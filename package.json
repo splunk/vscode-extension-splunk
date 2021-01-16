@@ -236,7 +236,7 @@
             },
             {
                 "command": "splunk.previewGlobalConfig",
-                "title": "Preview Global Config",
+                "title": "Preview globalConfig.json",
                 "category": "Splunk",
                 "enablement": "resourceFilename == globalConfig.json"
             }

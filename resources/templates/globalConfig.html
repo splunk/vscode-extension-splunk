@@ -28,23 +28,26 @@
         integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
         crossorigin="anonymous"></script>
     <script>
-        const toggleConfigNav = (show=true) => {
-            document.getElementById("config-container").hidden = !show
-            hideForm()
-        }
         let activeForm = '';
         let showConfigTab = true;
         let forms = {};
 
+        const toggleConfigNav = (show=true) => {
+            document.getElementById("config-container").hidden = !show
+            hideForm()
+        }
+
         const hideForm = () => {
-            if (activeForm) {
+            if (activeForm && forms[activeForm]) {
                 forms[activeForm].hidden = true
             }
         }
 
         const showForm = formName => {
             hideForm()
-            forms[formName].hidden = false
+            if (forms[formName]) {
+                forms[formName].hidden = false
+            }
             activeForm = formName
         }
 
@@ -85,7 +88,6 @@
         }
         
         function updateEntityForm (entities, name) {
-            console.log('updating form ', name)
             const form = document.createElement("form")
             form.hidden = true
             form.id = name;
