@@ -7,7 +7,7 @@
     <title>Config Preview</title>
 </head>
 
-<body>
+<body style="font-size: 0.7rem;">
     <div >
         <nav class="navbar navbar-expand-lg bg-success">
             <div class="container" id="main-nav">
@@ -16,11 +16,12 @@
     </div>
     <hr>
     <div id="config-container" hidden>
-        <nav class="navbar navbar-expand-lg">
+        <nav class="navbar navbar-expand-lg bg-light">
             <div class="container" id="config-tab">
             </div>
         </nav>
     </div>
+    <hr />
     <p>Form Fields:</p>
     <div id="form-container">
     </div>
@@ -58,6 +59,8 @@
                 const a = document.createElement("a")
                 a.innerText = page
                 a.className = "nav-link text-white"
+                a.setAttribute("href", "#");
+                a.style.fontSize = '0.9rem'
                 a.setAttribute("href", "#")
                 mainNavContainer.append(a)
                 a.onclick = () => {
@@ -78,6 +81,7 @@
                 a.innerText = tab.title;
                 a.className = "nav-link text-dark";
                 a.setAttribute("href", "#");
+                a.style.fontSize = '0.8rem'
                 a.onclick = () => {
                     showForm(tab.name)
                     activeForm = tab.name
@@ -102,8 +106,7 @@
                     <input type="text" class="form-control">`
                 } else if (entity.type === "checkbox") {
                     div.className += "form-check"
-                    div.innerHTML = `
-                    <input type="checkbox" class="form-check-input" id="exampleCheck1">
+                    div.innerHTML = `<input type="checkbox" class="form-check-input" id="exampleCheck1">
                     <label class="form-check-label" for="exampleCheck1">${entity.label}</label>`
                 } else if (entity.type === "radio") {
                     div.innerHTML += `<p>${entity.label}</p>`
@@ -116,19 +119,18 @@
                         </div>`
                     })
                 } else if (entity.type === "singleSelect") {
-                    div.innerHTML = `
-                    <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="${entity.field}" data-bs-toggle="dropdown" aria-expanded="false">
+                    div.innerHTML = `<div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="${entity.field}" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8rem">
                             ${entity.label}
                         </button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            ${entity.options?.autoCompleteFields?.map(f => `<li><a class="dropdown-item" href="#">${f.label}</a></li>`)}
+                            ${entity.options?.autoCompleteFields?.map(f => `<li><a class="dropdown-item" style="font-size: 0.8rem" href="#">${f.label}</a></li>`).join('')}
                         </ul>
                     </div>
                     `
                 }
             })
-            form.innerHTML += `<button type="submit" class="btn btn-success">Save</button>`
+            form.innerHTML += `<button type="submit" class="btn btn-success" style="font-size: 0.8rem">Save</button>`
         }
     
         window.addEventListener('message', event => {
