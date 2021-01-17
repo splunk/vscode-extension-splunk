@@ -1,152 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
     <title>Config Preview</title>
 </head>
 
-<body style="font-size: 0.7rem;">
-    <div >
+<body style="font-size: 0.7rem;" x-data="data()" x-init="listen()">
+    <div>
         <nav class="navbar navbar-expand-lg bg-success">
             <div class="container" id="main-nav">
+                <template x-for="page in pages" :key="page">
+                    <a class="nav-link text-white" href="#" x-text="page" @click="updatePage(page)"></a>
+                </template>
             </div>
         </nav>
     </div>
     <hr>
-    <div id="config-container" hidden>
+    <div id="config-container" x-show="activePage === 'Configuration'">
         <nav class="navbar navbar-expand-lg bg-light">
             <div class="container" id="config-tab">
+                <template x-for="tab in configTabs" :key="tab">
+                    <a class="nav-link text-dark" href="#" x-text="tab" @click="updateEntities(tab)"></a>
+                </template>
             </div>
         </nav>
     </div>
     <hr />
     <p>Form Fields:</p>
     <div id="form-container">
+        <form>
+            <template x-for="entity in entities">
+                <div>
+                    <template x-if="entity.type === 'text' ">
+                        <div class="mb-3">
+                            <label class="form-label" x-text="entity.label"></label>
+                            <input type="text" class="form-control">
+                        </div>
+                    </template>
+                    <template x-if="entity.type === 'checkbox' ">
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="exampleCheck1">
+                            <label class="form-check-label" for="exampleCheck1" x-text="entity.label"></label>
+                        </div>
+                    </template>
+                    <template x-if="entity.type === 'radio' ">
+                        <div>
+                            <p x-text="entity.label"></p>
+                            <template x-for="option in entity.options.items">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" :name="option.label"
+                                        :id="option.value">
+                                    <label class="form-check-label" :for="option.value" x-text="option.label">
+                                    </label>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                    <template x-if="entity.type === 'singleSelect' ">
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" :id="entity.field"
+                                data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8rem"
+                                x-text="entity.label">
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                <template x-for="option in entity.options.autoCompleteFields">
+                                    <li><a class="dropdown-item" style="font-size: 0.8rem" href="#"
+                                            x-text="option.label"></a></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </form>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW"
         crossorigin="anonymous"></script>
     <script>
-        let activeForm = '';
-        let showConfigTab = true;
-        let forms = {};
+        const unwrap = data => JSON.parse(JSON.stringify(data))
 
-        const toggleConfigNav = (show=true) => {
-            document.getElementById("config-container").hidden = !show
-            hideForm()
-        }
-
-        const hideForm = () => {
-            if (activeForm && forms[activeForm]) {
-                forms[activeForm].hidden = true
-            }
-        }
-
-        const showForm = formName => {
-            hideForm()
-            if (forms[formName]) {
-                forms[formName].hidden = false
-            }
-            activeForm = formName
-        }
-
-        const updateMainNav = (pages) => {
-            const mainNavContainer = document.getElementById('main-nav')
-            mainNavContainer.innerHTML = ''
-            Object.keys(pages).forEach((page) => {
-                const a = document.createElement("a")
-                a.innerText = page
-                a.className = "nav-link text-white"
-                a.setAttribute("href", "#");
-                a.style.fontSize = '0.9rem'
-                a.setAttribute("href", "#")
-                mainNavContainer.append(a)
-                a.onclick = () => {
-                    if (page === "configuration") {
-                        toggleConfigNav(true)
-                    } else {
-                        toggleConfigNav(false);
-                    }
-                }
-            })
-        }
-
-        function updateConfigTabs (tabs) {
-            const configTab = document.getElementById("config-tab");
-            configTab.innerHTML = ''
-            tabs.forEach((tab) => {
-                const a = document.createElement("a");
-                a.innerText = tab.title;
-                a.className = "nav-link text-dark";
-                a.setAttribute("href", "#");
-                a.style.fontSize = '0.8rem'
-                a.onclick = () => {
-                    showForm(tab.name)
-                    activeForm = tab.name
-                }
-                configTab.append(a)
-            })
-            toggleConfigNav(true)
-        }
-        
-        function updateEntityForm (entities, name) {
-            const form = document.createElement("form")
-            form.hidden = true
-            form.id = name;
-            document.getElementById("form-container").append(form)
-            forms[name]=form
-            entities.forEach((entity) => {
-                const div = document.createElement("div")
-                div.className = "mb-3"
-                form.append(div)
-                if (entity.type === "text") {
-                    div.innerHTML = `<label class="form-label">${entity.label}</label>
-                    <input type="text" class="form-control">`
-                } else if (entity.type === "checkbox") {
-                    div.className += "form-check"
-                    div.innerHTML = `<input type="checkbox" class="form-check-input" id="exampleCheck1">
-                    <label class="form-check-label" for="exampleCheck1">${entity.label}</label>`
-                } else if (entity.type === "radio") {
-                    div.innerHTML += `<p>${entity.label}</p>`
-                    entity.options.items.forEach((option) => {
-                        div.innerHTML += `<div class="form-check">
-                            <input class="form-check-input" type="radio" name="${option.label}" id="${option.value}">
-                            <label class="form-check-label" for="${option.value}">
-                            ${option.label}
-                            </label>
-                        </div>`
+        function data() {
+            let globalConfig = {}
+            return {
+                globalConfig,
+                activePage: 'Configuration',
+                activeForm: '',
+                pages: [],
+                configTabs: [],
+                entities: [],
+                listen() {
+                    window.addEventListener('message', event => {
+                        const message = event.data;
+                        if (message.action === "config-data") {
+                            this.globalConfig = message.data
+                            this.pages = Object.keys(message.data.pages).map(p => this.globalConfig.pages[p].title)
+                            this.configTabs = this.globalConfig.pages.configuration.tabs.map(t => t.name)
+                            this.updateEntities(this.activeForm)
+                        }
                     })
-                } else if (entity.type === "singleSelect") {
-                    div.innerHTML = `<div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="${entity.field}" data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8rem">
-                            ${entity.label}
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            ${entity.options?.autoCompleteFields?.map(f => `<li><a class="dropdown-item" style="font-size: 0.8rem" href="#">${f.label}</a></li>`).join('')}
-                        </ul>
-                    </div>
-                    `
+                },
+                updateEntities(newForm) {
+                    this.activeForm = newForm
+                    const form = this.globalConfig.pages?.configuration?.tabs?.find(t => t.name === this.activeForm);
+                    if (form) {
+                        this.entities = form.entity
+                    } else {
+                        this.entities = []
+                    }
+                },
+                updatePage(page) {
+                    this.activePage = page;
+                    this.updateEntities('')
                 }
-            })
-            form.innerHTML += `<button type="submit" class="btn btn-success" style="font-size: 0.8rem">Save</button>`
-        }
-    
-        window.addEventListener('message', event => {
-            const message = event.data;
-            if (message.action === "config-data") {
-                updateMainNav(message.data.pages);
-                updateConfigTabs(message.data.pages.configuration.tabs)
-                // update config forms
-                message.data.pages.configuration.tabs.forEach((tab) => updateEntityForm(tab.entity, tab.name))
-                // update input forms
-                message.data.pages.inputs.services.forEach((srv) => updateEntityForm(srv.entity, srv.name))
-                toggleConfigNav(showConfigTab)
-                showForm(activeForm)
             }
-        })
-
+        }
     </script>
 </body>
 
