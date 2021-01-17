@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
@@ -46,7 +47,7 @@
                         </div>
                     </template>
                     <template x-if="entity.type === 'radio' ">
-                        <div>
+                        <div class="mb-3">
                             <p x-text="entity.label"></p>
                             <template x-for="option in entity.options.items">
                                 <div class="form-check">
@@ -59,17 +60,23 @@
                         </div>
                     </template>
                     <template x-if="entity.type === 'singleSelect' ">
-                        <div class="dropdown">
-                            <button class="btn btn-secondary dropdown-toggle" type="button" :id="entity.field"
-                                data-bs-toggle="dropdown" aria-expanded="false" style="font-size: 0.8rem"
-                                x-text="entity.label">
-                            </button>
-                            <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <div class="mb-3">
+                            <p x-text="entity.label"></p>
+                            <select :id="entity.field" class="form-select form-select-sm" aria-label="entity.label">
                                 <template x-for="option in entity.options.autoCompleteFields">
-                                    <li><a class="dropdown-item" style="font-size: 0.8rem" href="#"
-                                            x-text="option.label"></a></li>
+                                    <option :value="option.value" x-text="option.label"></option>
                                 </template>
-                            </ul>
+                            </select>
+                        </div>
+                    </template>
+                    <template x-if="entity.type === 'multipleSelect'">
+                        <div class="mb-3">
+                            <p x-text="entity.label"></p>
+                            <select class="form-select form-select-sm" multiple :id="entity.field" aria-label="entity.label" >
+                                <template x-for="option in entity.options.items">
+                                    <option :value="option.value" x-text="option.label"></option>
+                                </template>
+                            </select>
                         </div>
                     </template>
                 </div>
