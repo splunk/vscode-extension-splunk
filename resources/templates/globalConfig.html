@@ -23,16 +23,30 @@
         </nav>
     </div>
     <hr>
-    <div id="config-container" x-show="activePage === 'Configuration'">
+    <div class="mb-5">
+        <p>Tabs: </p>
         <nav class="navbar navbar-expand-lg bg-light">
-            <div class="container" id="config-tab">
-                <template x-for="tab in configTabs" :key="tab">
-                    <a class="nav-link text-dark" href="#" x-text="tab" @click="updateEntities(tab)"></a>
+            <div class="container">
+                <template x-for="tab in tabs">
+                    <a class="nav-link text-dark" href="#" x-text="tab.title" @click="updateEntities(tab.name)"></a>
                 </template>
             </div>
         </nav>
     </div>
     <hr />
+    <div class="mb-5">
+        <p>Table:</p>
+        <table class="table">
+            <thead>
+                <th>Auth</th>
+                <th>Auth Type</th>
+            </thead>
+            <tbody>
+                <td>Sample</td>
+                <td>Sample</td>
+            </tbody>
+        </table>
+    </div>
     <p>Form Fields:</p>
     <div id="form-container">
         <form>
@@ -46,7 +60,7 @@
                     </template>
                     <template x-if="entity.type === 'checkbox' ">
                         <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="exampleCheck1">
+                            <input type="checkbox" class="form-check-input" id="exampleCheck1" value="entity.field">
                             <label class="form-check-label" for="exampleCheck1" x-text="entity.label"></label>
                         </div>
                     </template>
@@ -55,8 +69,8 @@
                             <p x-text="entity.label"></p>
                             <template x-for="option in entity.options.items">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" :name="option.label"
-                                        :id="option.value">
+                                    <input class="form-check-input" type="radio" :name="entity.field" :id="option.value"
+                                        :value="option.value">
                                     <label class="form-check-label" :for="option.value" x-text="option.label">
                                     </label>
                                 </div>
@@ -66,19 +80,40 @@
                     <template x-if="entity.type === 'singleSelect' ">
                         <div class="mb-3">
                             <p x-text="entity.label"></p>
-                            <select :id="entity.field" aria-label="entity.label">
-                                <template x-for="option in entity.options.autoCompleteFields">
-                                    <option :value="option.value" x-text="option.label"></option>
-                                </template>
-                            </select>
+                            <template x-if="entity.options && entity.options.autoCompleteFields">
+                                <select :id="entity.field" :aria-label="entity.label">
+                                    <template x-for="option in entity.options.autoCompleteFields">
+                                        <template x-if="option.value">
+                                            <option :value="option.value" x-text="option.label"></option>
+                                        </template>
+                                    </template>
+                                    <template x-for="option in entity.options.autoCompleteFields">
+                                        <template x-if="option.children">
+                                            <optgroup :label="option.label">
+                                                <template x-for="opt in option.children">
+                                                    <option x-text="opt.label" :value="opt.value"></option>
+                                                </template>
+                                            </optgroup>
+                                        </template>
+                                    </template>
+                                </select>
+                            </template>
+                            <template x-if="entity.options.endpointUrl">
+                                <select :id="entity.field" :aria-label="entity.label">
+                                    <option x-text="'Options will populate from ' + entity.options.endpointUrl"
+                                        :value="entity.options.endpointUrl"></option>
+                                </select>
+                            </template>
                         </div>
                     </template>
                     <template x-if="entity.type === 'multipleSelect'">
                         <div class="mb-3">
                             <p x-text="entity.label"></p>
-                            <select multiple :id="entity.field" aria-label="entity.label" >
-                                <template x-for="option in entity.options.items">
-                                    <option :value="option.value" x-text="option.label"></option>
+                            <select multiple :id="entity.field" aria-label="entity.label">
+                                <template x-if="entity.options && entity.options.items">
+                                    <template x-for="option in entity.options.items">
+                                        <option :value="option.value" x-text="option.label"></option>
+                                    </template>
                                 </template>
                             </select>
                         </div>
@@ -97,28 +132,27 @@
             let globalConfig = {}
             return {
                 globalConfig,
-                activePage: 'Configuration',
+                activePage: '',
                 activeForm: '',
                 pages: [],
-                configTabs: [],
                 entities: [],
                 slimSelects: [],
+                tabs: [],
                 listen() {
                     window.addEventListener('message', event => {
                         const message = event.data;
                         if (message.action === "config-data") {
-                            this.slimSelects.forEach(s => s?.destroy())
-                            this.slimSelects = []
                             this.globalConfig = message.data
                             this.pages = Object.keys(message.data.pages).map(p => this.globalConfig.pages[p].title)
-                            this.configTabs = this.globalConfig.pages.configuration.tabs.map(t => t.name)
                             this.updateEntities(this.activeForm);
                         }
                     })
                 },
                 updateEntities(newForm) {
+                    this.slimSelects.forEach(s => s?.destroy())
+                    this.slimSelects = []
                     this.activeForm = newForm
-                    const form = this.globalConfig.pages?.configuration?.tabs?.find(t => t.name === this.activeForm);
+                    let form = this.globalConfig.pages.configuration.tabs.find(t => t.name === newForm) || this.globalConfig.pages.inputs.services.find(t => t.name === newForm);
                     if (form) {
                         this.entities = form.entity
                     } else {
@@ -128,11 +162,16 @@
                 },
                 updatePage(page) {
                     this.activePage = page;
-                    this.updateEntities('')
+                    this.updateEntities('');
+                    if (page === 'Configuration') {
+                        this.tabs = this.globalConfig.pages.configuration.tabs
+                    } else {
+                        this.tabs = this.globalConfig.pages.inputs.services
+                    }
                 },
                 initMultiSelect(id) {
                     this.entities.forEach((entity) => {
-                        if(entity.type === 'singleSelect' || entity.type === 'multipleSelect') {
+                        if (entity.type === 'singleSelect' || entity.type === 'multipleSelect') {
                             this.slimSelects.push(new SlimSelect({ select: `#${entity.field}` }))
                         }
                     })
