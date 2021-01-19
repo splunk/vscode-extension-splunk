@@ -82,19 +82,15 @@
                             <p x-text="entity.label"></p>
                             <template x-if="entity.options && entity.options.autoCompleteFields">
                                 <select :id="entity.field" :aria-label="entity.label">
-                                    <template x-for="option in entity.options.autoCompleteFields">
-                                        <template x-if="option.value">
-                                            <option :value="option.value" x-text="option.label"></option>
-                                        </template>
+                                    <template x-for="opt in entity.singleOptions" :key="opt.value">
+                                        <option :value="opt.value" x-text="opt.label"></option>
                                     </template>
-                                    <template x-for="option in entity.options.autoCompleteFields">
-                                        <template x-if="option.children">
-                                            <optgroup :label="option.label">
-                                                <template x-for="opt in option.children">
-                                                    <option x-text="opt.label" :value="opt.value"></option>
-                                                </template>
-                                            </optgroup>
-                                        </template>
+                                    <template x-for="group in entity.optionGroups">
+                                        <optgroup :label="group.label">
+                                            <template x-for="opt in group.options">
+                                                <option x-text="opt.label" :value="opt.value"></option>
+                                            </template>
+                                        </optgroup>
                                     </template>
                                 </select>
                             </template>
@@ -154,7 +150,27 @@
                     this.activeForm = newForm
                     let form = this.globalConfig.pages.configuration.tabs.find(t => t.name === newForm) || this.globalConfig.pages.inputs.services.find(t => t.name === newForm);
                     if (form) {
-                        this.entities = form.entity
+                        this.entities = form.entity.map(entity => {
+                            // normalizing single and optiongroups here because alpine.js 
+                            // doesn't support x-if inside x-fors that will allow matching both of these in the template
+                            if(entity.type === 'singleSelect') {
+                                const singleOptions = []
+                                const optionGroups = []
+                                entity.options?.autoCompleteFields?.forEach((opt) => {
+                                    if(opt.value) {
+                                        singleOptions.push(opt)
+                                    } else if(opt.children) {
+                                        optionGroups.push({
+                                            label: opt.label,
+                                            options: opt.children
+                                        })
+                                    }
+                                })
+                                return {...entity, optionGroups, singleOptions }
+                            } else {
+                                return entity
+                            }
+                        })
                     } else {
                         this.entities = []
                     }
