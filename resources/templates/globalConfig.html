@@ -65,7 +65,7 @@
                             <template x-if="entity.type === 'singleSelect' ">
                                 <div class="mb-3">
                                     <p x-text="entity.label"></p>
-                                    <template x-if="entity.options">
+                                    <template x-if="entity.options && !entity.options.endpointUrl">
                                         <select :id="entity.field" :aria-label="entity.label">
                                             <template x-for="opt in entity.singleOptions" :key="opt.value">
                                                 <option :value="opt.value" x-text="opt.label"></option>
@@ -123,7 +123,7 @@
                         if (message.action === "config-data") {
                             this.globalConfig = message.data
                             this.pages = Object.keys(message.data.pages).map(p => this.globalConfig.pages[p].title)
-                            if(message.data.alerts.length > 0) {
+                            if(message.data.alerts?.length > 0) {
                                 this.pages.push("Alerts");
                             }
                             this.updatePage(this.activePage, this.activeForm)
