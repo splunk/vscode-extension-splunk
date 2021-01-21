@@ -5,7 +5,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/slim-select/1.27.0/slimselect.min.css" rel="stylesheet">
-    </link>
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/slim-select/1.27.0/slimselect.min.js"></script>
     <title>Config Preview</title>
@@ -35,22 +34,22 @@
             <div id="form-container">
                 <form>
                     <template x-for="entity in entities">
-                        <div>
+                        <div class="mb-3">
                             <template x-if="entity.type === 'text' ">
-                                <div class="mb-3">
-                                    <label class="form-label" x-text="entity.label"></label>
-                                    <input type="text" class="form-control form-control-sm">
+                                <div>
+                                    <label class="form-label" x-text="entity.label" :for="entity.field"></label>
+                                    <input type="text" :id="entity.field" class="form-control form-control-sm">
                                 </div>
                             </template>
                             <template x-if="entity.type === 'checkbox' ">
-                                <div class="mb-3 form-check">
+                                <div class="form-check">
                                     <input type="checkbox" class="form-check-input" id="exampleCheck1"
                                         value="entity.field">
                                     <label class="form-check-label" for="exampleCheck1" x-text="entity.label"></label>
                                 </div>
                             </template>
                             <template x-if="entity.type === 'radio' ">
-                                <div class="mb-3">
+                                <div>
                                     <p x-text="entity.label"></p>
                                     <template x-for="option in entity.options.items">
                                         <div class="form-check">
@@ -63,7 +62,7 @@
                                 </div>
                             </template>
                             <template x-if="entity.type === 'singleSelect' ">
-                                <div class="mb-3">
+                                <div>
                                     <p x-text="entity.label"></p>
                                     <template x-if="entity.options && !entity.options.endpointUrl">
                                         <select :id="entity.field" :aria-label="entity.label">
@@ -88,7 +87,7 @@
                                 </div>
                             </template>
                             <template x-if="entity.type === 'multipleSelect'">
-                                <div class="mb-3">
+                                <div>
                                     <p x-text="entity.label"></p>
                                     <select multiple :id="entity.field" aria-label="entity.label">
                                         <template x-if="entity.options && entity.options.items">
@@ -98,6 +97,9 @@
                                         </template>
                                     </select>
                                 </div>
+                            </template>
+                            <template x-if="entity.help">
+                                <span class="help-block text-secondary" x-text="entity.help"></span>
                             </template>
                         </div>
                     </template>
