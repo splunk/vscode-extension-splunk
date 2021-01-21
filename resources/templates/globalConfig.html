@@ -174,7 +174,8 @@
                             } else {
                                 return entity
                             }
-                        })
+                        // don't render fields with options.display set as false
+                        }).filter((e) => !e.options || e.options.display !== false)
                     } else {
                         this.entities = []
                     }
