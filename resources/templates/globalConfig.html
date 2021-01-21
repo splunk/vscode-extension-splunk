@@ -25,7 +25,7 @@
             <nav class="navbar navbar-expand-lg bg-light">
                 <div class="container">
                     <template x-for="tab in tabs">
-                        <a :class="activeForm===tab.name ? styles.subNav.active : styles.subNav.inActive" href="#" x-text="tab.title" @click="updateEntities(tab.name)"></a>
+                        <a :class="activeForm===tab.name ? styles.subNav.active : styles.subNav.inActive" href="#" x-text="tab.title || tab.label" @click="updateEntities(tab.name||tab.label)"></a>
                     </template>
                 </div>
             </nav>
@@ -65,7 +65,7 @@
                             <template x-if="entity.type === 'singleSelect' ">
                                 <div class="mb-3">
                                     <p x-text="entity.label"></p>
-                                    <template x-if="entity.options && entity.options.autoCompleteFields">
+                                    <template x-if="entity.options">
                                         <select :id="entity.field" :aria-label="entity.label">
                                             <template x-for="opt in entity.singleOptions" :key="opt.value">
                                                 <option :value="opt.value" x-text="opt.label"></option>
@@ -109,9 +109,8 @@
         const unwrap = data => JSON.parse(JSON.stringify(data))
 
         function data() {
-            let globalConfig = {}
             return {
-                globalConfig,
+                globalConfig: {},
                 activePage: '',
                 activeForm: '',
                 pages: [],
@@ -124,6 +123,9 @@
                         if (message.action === "config-data") {
                             this.globalConfig = message.data
                             this.pages = Object.keys(message.data.pages).map(p => this.globalConfig.pages[p].title)
+                            if(message.data.alerts.length > 0) {
+                                this.pages.push("Alerts");
+                            }
                             this.updatePage(this.activePage, this.activeForm)
                             this.updateEntities(this.activeForm);
                         }
@@ -133,7 +135,14 @@
                     this.slimSelects.forEach(s => s?.destroy())
                     this.slimSelects = []
                     this.activeForm = newForm
-                    let form = this.globalConfig.pages.configuration.tabs.find(t => t.name === newForm) || this.globalConfig.pages.inputs.services.find(t => t.name === newForm);
+                    let form;
+                    if (this.activePage === 'Configuration') {
+                        form = this.globalConfig.pages.configuration.tabs.find(t => t.name === newForm);
+                    } else if (this.activePage === 'Inputs') {
+                        form = this.globalConfig.pages.inputs.services.find(t => t.name === newForm);
+                    } else if(this.activePage === 'Alerts') {
+                        form = this.globalConfig.alerts.find(alert => alert.name === this.activeForm);
+                    }
                     if (form) {
                         this.entities = form.entity.map(entity => {
                             // normalizing single and optiongroups here because alpine.js 
@@ -141,7 +150,7 @@
                             if (entity.type === 'singleSelect') {
                                 const singleOptions = []
                                 const optionGroups = []
-                                entity.options?.autoCompleteFields?.forEach((opt) => {
+                                const addOpt = (opt) => {
                                     if (opt.value) {
                                         singleOptions.push(opt)
                                     } else if (opt.children) {
@@ -150,7 +159,9 @@
                                             options: opt.children
                                         })
                                     }
-                                })
+                                }
+                                entity.options?.autoCompleteFields?.forEach(addOpt)
+                                entity.options?.items?.forEach(addOpt)
                                 return { ...entity, optionGroups, singleOptions }
                             } else {
                                 return entity
@@ -168,12 +179,19 @@
                         this.tabs = this.globalConfig.pages.configuration.tabs
                     } else if (page === 'Inputs') {
                         this.tabs = this.globalConfig.pages.inputs.services
+                    } else if (page === 'Alerts') {
+                        this.tabs = this.globalConfig.alerts || []
                     }
                 },
                 initMultiSelect(id) {
                     this.entities.forEach((entity) => {
                         if (entity.type === 'singleSelect' || entity.type === 'multipleSelect') {
-                            this.slimSelects.push(new SlimSelect({ select: `#${entity.field}` }))
+                            try {
+                                const s = new SlimSelect({ select: `#${entity.field}` })
+                                this.slimSelects.push(s)
+                            } catch(e) {
+                                // NOOP
+                            }
                         }
                     })
                 },
