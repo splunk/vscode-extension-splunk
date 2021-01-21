@@ -98,6 +98,11 @@
                                     </select>
                                 </div>
                             </template>
+                            <template x-if="entity.type === 'helpLink' && entity.options && entity.options.text">
+                                <div>
+                                    <a x-text="entity.options.text" :href="entity.options.link || '#'"></a>
+                                </div>
+                            </template>
                             <template x-if="entity.help">
                                 <span class="help-block text-secondary" x-text="entity.help"></span>
                             </template>
@@ -134,6 +139,7 @@
                     })
                 },
                 updateEntities(newForm) {
+                    // destroying all old slim-selects as they will be removed from the DOM.
                     this.slimSelects.forEach(s => s?.destroy())
                     this.slimSelects = []
                     this.activeForm = newForm
@@ -172,15 +178,17 @@
                     } else {
                         this.entities = []
                     }
+                    //using a custom event to trigger initializing slim-selects. 
+                    // required to ensure <select> nodes are added to DOM *before* trying to initialize.
                     window.dispatchEvent(new CustomEvent('update-slim-select'));
                 },
                 updatePage(page, form = '') {
                     this.activePage = page;
                     this.updateEntities(form);
                     if (page === 'Configuration') {
-                        this.tabs = this.globalConfig.pages.configuration.tabs
+                        this.tabs = this.globalConfig.pages.configuration?.tabs || []
                     } else if (page === 'Inputs') {
-                        this.tabs = this.globalConfig.pages.inputs.services
+                        this.tabs = this.globalConfig.pages.inputs?.services || []
                     } else if (page === 'Alerts') {
                         this.tabs = this.globalConfig.alerts || []
                     }
