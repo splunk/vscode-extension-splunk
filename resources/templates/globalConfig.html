@@ -194,6 +194,11 @@
                     window.dispatchEvent(new CustomEvent('update-slim-select'));
                 },
                 updatePage(page) {
+                    let renderForm = this.activeForm
+                    if (this.activePage !== page) {
+                        // if navigating to a new page, reset the activeform
+                        renderForm = ''
+                    }
                     this.activePage = page;
                     // choose first page as selected if none seleceted
                     if(this.pages.length > 0 && !this.activePage) {
@@ -207,7 +212,7 @@
                         this.tabs = this.globalConfig.alerts || []
                     }
                     this.formSelect?.setData(this.tabs.map(t => ({ text: t.title || t.label, value: t.name || t.label })))
-                    this.updateEntities();
+                    this.updateEntities(renderForm);
                 },
                 initMultiSelect() {
                     this.entities.forEach((entity) => {
