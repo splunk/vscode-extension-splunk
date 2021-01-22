@@ -21,10 +21,21 @@
                 </template>
             </div>
         </nav>
-        <nav class="navbar navbar-expand-lg bg-light px-5 p-1 mb-2 shadow-sm">
+        <nav class="navbar navbar-expand-lg bg-light px-5 p-1 mb-2 shadow-sm" x-show="activePage==='Inputs' ">
             <select id="form-select" aria-label="Form Selection">
             </select>
         </nav>
+        <template x-if="activePage!== 'Inputs' ">
+            <div class="mb-2 shadow-sm">
+                <nav class="navbar navbar-expand-lg bg-light">
+                    <div class="container">
+                        <template x-for="tab in tabs">
+                            <a :class="activeForm===tab.name ? styles.subNav.active : styles.subNav.inActive" href="#" x-text="tab.title || tab.label" @click="updateEntities(tab.name||tab.label)"></a>
+                        </template>
+                    </div>
+                </nav>
+            </div>
+        </template>
         <div class="p-5">
             <div id="form-container">
                 <form>
@@ -125,8 +136,14 @@
                         const message = event.data;
                         if (message.action === "config-data") {
                             this.globalConfig = message.data
-                            this.pages = Object.keys(message.data.pages).map(p => this.globalConfig.pages[p].title)
-                            if (message.data.alerts?.length > 0) {
+                            this.pages = []
+                            if(this.globalConfig.pages?.inputs?.services) {
+                                this.pages.push('Inputs')
+                            }
+                            if(this.globalConfig.pages?.configuration?.tabs) {
+                                this.pages.push('Configuration')
+                            }
+                            if (this.globalConfig.alerts?.length > 0) {
                                 this.pages.push("Alerts");
                             }
                             this.updatePage(this.activePage)
@@ -234,6 +251,10 @@
                         inActive: 'nav-link text-white',
                         active: 'nav-link text-dark bg-light rounded'
                     },
+                    subNav: {
+                        inActive: 'nav-link text-dark',
+                        active: 'nav-link text-white bg-dark rounded'
+                    }
                 }
             }
         }
