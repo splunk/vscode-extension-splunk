@@ -16,21 +16,16 @@
         <nav class="navbar navbar-expand-lg bg-success shadow">
             <div class="container" id="main-nav">
                 <template x-for="page in pages" :key="page">
-                    <a :class="activePage===page ? styles.mainNav.active : styles.mainNav.inActive" href="#" x-text="page" @click="updatePage(page)"></a>
+                    <a :class="activePage===page ? styles.mainNav.active : styles.mainNav.inActive" href="#"
+                        x-text="page" @click="updatePage(page)"></a>
                 </template>
             </div>
         </nav>
-        <div class="mb-2 shadow-sm">
-            <nav class="navbar navbar-expand-lg bg-light">
-                <div class="container">
-                    <template x-for="tab in tabs">
-                        <a :class="activeForm===tab.name ? styles.subNav.active : styles.subNav.inActive" href="#" x-text="tab.title || tab.label" @click="updateEntities(tab.name||tab.label)"></a>
-                    </template>
-                </div>
-            </nav>
-        </div>
+        <nav class="navbar navbar-expand-lg bg-light px-5 p-1 mb-2 shadow-sm">
+            <select id="form-select" aria-label="Form Selection">
+            </select>
+        </nav>
         <div class="p-5">
-            <p>Form Fields:</p>
             <div id="form-container">
                 <form>
                     <template x-for="entity in entities">
@@ -124,31 +119,46 @@
                 entities: [],
                 slimSelects: [],
                 tabs: [],
+                formSelect: null,
                 listen() {
                     window.addEventListener('message', event => {
                         const message = event.data;
                         if (message.action === "config-data") {
                             this.globalConfig = message.data
                             this.pages = Object.keys(message.data.pages).map(p => this.globalConfig.pages[p].title)
-                            if(message.data.alerts?.length > 0) {
+                            if (message.data.alerts?.length > 0) {
                                 this.pages.push("Alerts");
                             }
-                            this.updatePage(this.activePage, this.activeForm)
-                            this.updateEntities(this.activeForm);
+                            this.updatePage(this.activePage)
                         }
                     })
+                    return () => {
+                        // initialize the dropdown for the forms in the page
+                        this.formSelect = new SlimSelect({
+                            select: "#form-select",
+                            showSearch: false,
+                            onChange: ({ value }) => {
+                                this.updateEntities(value)
+                            }
+                        })
+                    }
                 },
                 updateEntities(newForm) {
                     // destroying all old slim-selects as they will be removed from the DOM.
                     this.slimSelects.forEach(s => s?.destroy())
                     this.slimSelects = []
                     this.activeForm = newForm
+                    // choose the first tab as default if none selected
+                    if(this.tabs.length > 0 && !this.activeForm) {
+                        const t = this.tabs[0]
+                        this.activeForm = t.name || t.label
+                    }
                     let form;
                     if (this.activePage === 'Configuration') {
-                        form = this.globalConfig.pages.configuration.tabs.find(t => t.name === newForm);
+                        form = this.globalConfig.pages.configuration.tabs.find(t => t.name === this.activeForm);
                     } else if (this.activePage === 'Inputs') {
-                        form = this.globalConfig.pages.inputs.services.find(t => t.name === newForm);
-                    } else if(this.activePage === 'Alerts') {
+                        form = this.globalConfig.pages.inputs.services.find(t => t.name === this.activeForm);
+                    } else if (this.activePage === 'Alerts') {
                         form = this.globalConfig.alerts.find(alert => alert.name === this.activeForm);
                     }
                     if (form) {
@@ -174,7 +184,7 @@
                             } else {
                                 return entity
                             }
-                        // don't render fields with options.display set as false
+                            // don't render fields with options.display set as false
                         }).filter((e) => !e.options || e.options.display !== false)
                     } else {
                         this.entities = []
@@ -183,24 +193,32 @@
                     // required to ensure <select> nodes are added to DOM *before* trying to initialize.
                     window.dispatchEvent(new CustomEvent('update-slim-select'));
                 },
-                updatePage(page, form = '') {
+                updatePage(page) {
                     this.activePage = page;
-                    this.updateEntities(form);
-                    if (page === 'Configuration') {
+                    // choose first page as selected if none seleceted
+                    if(this.pages.length > 0 && !this.activePage) {
+                        this.activePage = this.pages[0]
+                    }
+                    if (this.activePage === 'Configuration') {
                         this.tabs = this.globalConfig.pages.configuration?.tabs || []
-                    } else if (page === 'Inputs') {
+                    } else if (this.activePage === 'Inputs') {
                         this.tabs = this.globalConfig.pages.inputs?.services || []
-                    } else if (page === 'Alerts') {
+                    } else if (this.activePage === 'Alerts') {
                         this.tabs = this.globalConfig.alerts || []
                     }
+                    this.formSelect?.setData(this.tabs.map(t => ({ text: t.title || t.label, value: t.name || t.label })))
+                    this.updateEntities();
                 },
-                initMultiSelect(id) {
+                initMultiSelect() {
                     this.entities.forEach((entity) => {
                         if (entity.type === 'singleSelect' || entity.type === 'multipleSelect') {
                             try {
-                                const s = new SlimSelect({ select: `#${entity.field}` })
+                                const s = new SlimSelect({
+                                    select: `#${entity.field}`,
+                                    showSearch: false,
+                                })
                                 this.slimSelects.push(s)
-                            } catch(e) {
+                            } catch (e) {
                                 // NOOP
                             }
                         }
@@ -211,14 +229,9 @@
                         inActive: 'nav-link text-white',
                         active: 'nav-link text-dark bg-light rounded'
                     },
-                    subNav: {
-                        inActive: 'nav-link text-dark',
-                        active: 'nav-link text-white bg-dark rounded'
-                    }
                 }
             }
         }
-
     </script>
 </body>
 
