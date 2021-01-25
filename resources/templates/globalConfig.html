@@ -8,12 +8,18 @@
     <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/slim-select/1.27.0/slimselect.min.js"></script>
     <title>Config Preview</title>
+    <style>
+        .mx-n1 {
+            margin-left: -0.75rem;
+            margin-right: -0.75rem;
+        }
+    </style>
 </head>
 
 <body style="font-size: 0.7rem;" x-data="data()" x-init="listen()"
     @update-slim-select.window="$nextTick(() => { initMultiSelect() });">
-    <main class="container m-1 mt-2 shadow rounded">
-        <nav class="navbar navbar-expand-lg bg-success shadow">
+    <main class="container mx-auto my-2 shadow rounded">
+        <nav class="navbar navbar-expand-lg bg-success shadow mx-n1">
             <div class="container" id="main-nav">
                 <template x-for="page in pages" :key="page">
                     <a :class="activePage===page ? styles.mainNav.active : styles.mainNav.inActive" href="#"
@@ -21,12 +27,12 @@
                 </template>
             </div>
         </nav>
-        <nav class="navbar navbar-expand-lg bg-light px-5 p-1 mb-2 shadow-sm" x-show="activePage==='Inputs' ">
+        <nav class="navbar navbar-expand-lg bg-light mx-n1 px-5 p-1 mb-2 shadow-sm" x-show="activePage==='Inputs' ">
             <select id="form-select" aria-label="Form Selection">
             </select>
         </nav>
         <template x-if="activePage!== 'Inputs' ">
-            <div class="mb-2 shadow-sm">
+            <div class="mb-2 mx-n1 shadow-sm">
                 <nav class="navbar navbar-expand-lg bg-light">
                     <div class="container">
                         <template x-for="tab in tabs">
