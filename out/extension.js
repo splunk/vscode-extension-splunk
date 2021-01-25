@@ -9,10 +9,14 @@ const splunkSavedSearchProvider = require("./savedSearchProvider.js");
 const splunkEmbeddedReportProvider = require("./embeddedReportProvider");
 const splunkFoldingRangeProvider = require("./foldingRangeProvider.js");
 const splunkModViz = require('./modViz.js');
-const splunkCustomCommand = require('./customCommand.js')
+const splunkCustomCommand = require('./customCommand.js');
+const globalConfigPreview = require('./globalConfigPreview')
+
 const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
 const { isArray } = require("util");
+
+
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
 const DROPDOWN_PLACEHOLDER_REGEX = /\[\w+(\|\w+)+]/g
 const STANZA_REGEX = /^\[(?<stanza>[^\]].*?)\]/
@@ -141,6 +145,8 @@ function getDocumentItems(document, PATTERN) {
 function activate(context) {
 
     let splunkOutputChannel = vscode.window.createOutputChannel("Splunk")
+
+    globalConfigPreview.init(context);
     
     const embeddedReportProvider = new splunkEmbeddedReportProvider.SplunkReportProvider();
     vscode.window.registerTreeDataProvider('embeddedReports', embeddedReportProvider);

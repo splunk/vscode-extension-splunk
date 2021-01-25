@@ -47,6 +47,12 @@
                 "path": "./syntaxes/splunk.tmLanguage.json"
             }
         ],
+        "jsonValidation": [
+            {
+                "fileMatch": "globalConfig.json",
+                "url": "https://raw.githubusercontent.com/splunk/addonfactory-ucc-generator/master/splunk_add_on_ucc_framework/UCC-UI-lib/schema/schema.json"
+            }
+        ],
         "configuration": {
             "title": "Splunk",
             "properties": {
@@ -142,6 +148,10 @@
                 {
                     "command": "splunk.embeddedReport.show",
                     "when": "false"
+                },
+                {
+                    "command": "splunk.previewGlobalConfig",
+                    "when": "resourceFilename == globalConfig.json"
                 }
             ],
             "view/title": [
@@ -166,6 +176,12 @@
                     "command": "splunk.embeddedReport.show",
                     "when": "view == embeddedReports",
                     "group": "inline"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "splunk.previewGlobalConfig",
+                    "when": "resourceFilename == globalConfig.json"
                 }
             ]
         },
@@ -223,6 +239,12 @@
                 "command": "splunk.new.resthandler",
                 "title": "New Custom REST Handler",
                 "category": "Splunk"
+            },
+            {
+                "command": "splunk.previewGlobalConfig",
+                "title": "Preview globalConfig.json",
+                "category": "Splunk",
+                "enablement": "resourceFilename == globalConfig.json"
             }
         ]
     },
@@ -236,6 +258,7 @@
         "onCommand:splunk.new.command",
         "onCommand:splunk.new.resthandler",
         "onCommand:splunk.embeddedReport.show",
+        "onCommand:splunk.previewGlobalConfig",
         "onView:savedSearches",
         "onView:embeddedReports"
     ],
@@ -245,7 +268,6 @@
     },
     "icon": "images/icon.png",
     "extensionDependencies": [
-        "ms-python.python"
     ],
     "dependencies": {
         "request": "^2.88.0"

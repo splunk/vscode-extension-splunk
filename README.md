@@ -1,5 +1,6 @@
 # Visual Studio Code Extension for Splunk
 
+
 The Visual Studio Code Extension for Splunk helps developers create, test, and debug Splunk Enterprise apps, add-ons, custom commands, REST handlers, etc.  The extension helps Splunk administrators edit Splunk .conf files by providing stanza and setting completions as well as setting checking.  For individuals living in Visual Studio Code, integrations are built in to run Splunk searches and display Splunk visualizations in Visual Studio Code.
 
 ## Working with .conf files

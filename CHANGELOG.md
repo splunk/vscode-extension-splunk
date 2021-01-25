@@ -5,9 +5,9 @@
 
 ## [0.2.4]
 - Fixed an issue when running ad-hoc searches from the command palette.
-- Fixed an issue displaying invalid interval for script:/// stanzas.  Issue [#21](https://github.com/splunk/vscode-extension-splunk/issues/21)
+- Fixed an issue displaying invalid interval for `script:/// stanzas`.  Issue [#21](https://github.com/splunk/vscode-extension-splunk/issues/21)
 - Added support for 'disabled' settings in inputs.conf since 'disabled' is a valid setting, but it is not specified in the spec file.  Issue [#18](https://github.com/splunk/vscode-extension-splunk/issues/18)
-- Fixed an issuere where prefix stanzas where not recognized.  Examples: `[author=<name>]` [#22](https://github.com/splunk/vscode-extension-splunk/issues/22), `[eventtype=name]` [#24](https://github.com/splunk/vscode-extension-splunk/issues/24), `[role_<name>]` [#28](https://github.com/splunk/vscode-extension-splunk/issues/28)
+- Fixed an issue where prefix stanzas where not recognized.  Examples: `[author=<name>]` [#22](https://github.com/splunk/vscode-extension-splunk/issues/22), `[eventtype=name]` [#24](https://github.com/splunk/vscode-extension-splunk/issues/24), `[role_<name>]` [#28](https://github.com/splunk/vscode-extension-splunk/issues/28)
 
 ## [0.2.3]
 - Added support for multi-line values in .conf files.  See issue [#12](https://github.com/splunk/vscode-extension-splunk/issues/12)
