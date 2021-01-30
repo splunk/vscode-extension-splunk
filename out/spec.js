@@ -4,10 +4,11 @@ exports.getStanzaSettings = getStanzaSettings
 exports.isStanzaValid = isStanzaValid
 exports.isSettingValid = isSettingValid
 
-const PREAMBLE_REGEX = /^.*?GLOBAL\sSETTINGS/s
+const PREAMBLE_REGEX = /^.*?((GLOBAL\sSETTINGS)|(Global\sstanza[^\[]*))/s
 // Start the match at the beginning of the string ^
 // Lazily match anything .*?
-// Match GLOBAL SETTINGS literally
+// Match GLOBAL SETTINGS literally 
+// OR match Global stanza until a [ is encountered (refer to serverclass.conf.spec for an example of this case)
 // Enable multiline /s
 
 const SECTION_REGEX = /^.*?(?=\n\[|$)/s
@@ -26,7 +27,8 @@ const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(=|:|::|::...|_))[\<|\w|\/]/  
 const STANZA_FREEFORM_REGEX = /^\[\<(?<stanza>.*?)\>\]/           // matches things like [<spec>] or [<custom_alert_action>]
 const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>[^\<\>\:\/]+)\]/      // matches things like [tcp] or [SSL] (does not allow <, >, :, or /)
 
-const SETTING_REGEX = /^(?<setting>\w.*?)\s*=\s*(?<value>[^\r\n]+)/
+//const SETTING_REGEX = /^(?<setting>\w.*?)\s*=\s*(?<value>[^\r\n]+)/
+const SETTING_REGEX = /^(?<setting>((\w)|\<name\>).*?)\s*=\s*(?<value>[^\r\n]+)/
 const SETTING_PREFIX_REGEX = /^(?<prefix>[^-\.].*?)\<.*?\>/
 
 const lineTypes = {
@@ -84,11 +86,12 @@ function parse (str, name) {
 
         let stanza = createStanza(section)
 
-        // Some spec files can create empty default stanzas if the spec file explicitlly defines [default].
-        // limits.conf.spec does this for example.
+        // Some spec files can create empty default stanzas if the spec file explicitlly defines [default] or [global]
+        // limits.conf.spec does this with [default]for example.
+        // serverclass.conf does this with [global] for example.
         // In these cases, a default stanza can be produced with no settings.
 
-        if(stanza["stanzaName"] != "default") {
+        if(!["default", "global"].includes(stanza["stanzaName"])) {
             specConfig["stanzas"].push(stanza)
         } else if(stanza["settings"].length > 0) {
             specConfig["stanzas"].push(stanza)
