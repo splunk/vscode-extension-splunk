@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.2.6]
+- Fixed an issue where setting names contained `<name>`.  Issue [#33](https://github.com/splunk/vscode-extension-splunk/issues/33)
+- Fixed an issue reading serverclass.conf.spec.  Issue [#35](https://github.com/splunk/vscode-extension-splunk/issues/35)
+- Fixed a Windows path issue when creating custom search commands, custom REST handlers, and modular visualizations.  Issue [#36](https://github.com/splunk/vscode-extension-splunk/issues/36)
+- Added functionality to preview the UI that [ucc-gen](https://github.com/splunk/addonfactory-ucc-generator) creates from `globalConfig.json`.  To use this functionality, create a `globalConfig.json` file ([reference](https://github.com/splunk/addonfactory-ucc-generator/blob/main/tests/data/globalConfig.json)), then right-click and choose Preview globalConfig.json.
+
+![Preview globalConfig.json](https://raw.githubusercontent.com/wiki/splunk/vscode-extension-splunk/images/previewGlobalConfig.png)
+
 ## [0.2.5]
 - An update to Visual Studio Code changed how Diagnostics are initialized which broke linting. Version 0.2.5 addresses this issue.
 
