@@ -1,6 +1,6 @@
 {
     "name": "splunk",
-    "version": "0.2.5",
+    "version": "0.2.6",
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.40.0"
@@ -182,6 +182,13 @@
                 {
                     "command": "splunk.previewGlobalConfig",
                     "when": "resourceFilename == globalConfig.json"
+                }
+            ],
+            "editor/title": [
+                {
+                    "command": "splunk.previewGlobalConfig",
+                    "when": "resourceFilename == globalConfig.json",
+                    "group": "navigation"
                 }
             ]
         },
