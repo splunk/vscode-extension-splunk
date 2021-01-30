@@ -8,7 +8,7 @@ function createRESTHandler(handlerName, handlerDestination, context) {
 
     // copy from source to dest folder
     let handlerSource = path.join(context.extensionPath, "resources", "projects", "resthandler_template");
-    let handlerDest = path.join(handlerDestination[0].path, handlerName);
+    let handlerDest = path.join(handlerDestination[0].fsPath, handlerName);
 
     if(fs.existsSync(handlerDest)) {
         vscode.window.showWarningMessage(`Path for REST handler already exists and will not be created. ${handlerDest}`)
@@ -17,7 +17,7 @@ function createRESTHandler(handlerName, handlerDestination, context) {
 
     copyDirectoryRecursiveSync(handlerSource, handlerDest);
 
-    let app_conf = path.join(handlerDestination[0].path, handlerName, "default", "app.conf");
+    let app_conf = path.join(handlerDestination[0].fsPath, handlerName, "default", "app.conf");
 
     try {
 
