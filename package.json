@@ -50,7 +50,7 @@
         "jsonValidation": [
             {
                 "fileMatch": "globalConfig.json",
-                "url": "https://raw.githubusercontent.com/splunk/addonfactory-ucc-generator/master/splunk_add_on_ucc_framework/UCC-UI-lib/schema/schema.json"
+                "url": "https://raw.githubusercontent.com/splunk/addonfactory-ucc-base-ui/main/src/main/webapp/schema/schema.json"
             }
         ],
         "configuration": {
