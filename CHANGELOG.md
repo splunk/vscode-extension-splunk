@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.2.7]
+- Added spec files for Splunk 8.1 and 8.2
+- Slight code refactor to support unit testing.  Also, Mocha unit tests were added.
+- Fixed issue where settings containing curly braces (`{}`) did not render choices.  Issue [#40](https://github.com/splunk/vscode-extension-splunk/issues/40)
+- Fixed syntax highlighting issue for settings that contain a comma (`,`).  Issue [#42](https://github.com/splunk/vscode-extension-splunk/issues/42)
+
 ## [0.2.6]
 - Fixed an issue where setting names contained `<name>`.  Issue [#33](https://github.com/splunk/vscode-extension-splunk/issues/33)
 - Fixed an issue reading serverclass.conf.spec.  Issue [#35](https://github.com/splunk/vscode-extension-splunk/issues/35)
