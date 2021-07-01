@@ -140,6 +140,4 @@ function getSearchEmbedToken(search) {
         )
 
     
-} 
-
-//# sourceMappingURL=SavedSearchProvider.js.map
+}

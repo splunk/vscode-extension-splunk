@@ -77,5 +77,3 @@ async function getWebviewContent(search) {
 }
 
 exports.getWebviewContent = getWebviewContent
-
-//# sourceMappingURL=embeddedReportProvider.js.map

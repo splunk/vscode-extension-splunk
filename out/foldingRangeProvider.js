@@ -51,4 +51,3 @@ class confFoldingRangeProvider {
 }
 
 exports.confFoldingRangeProvider = confFoldingRangeProvider;
-//# sourceMappingURL=foldingRangeProvider.js.map
