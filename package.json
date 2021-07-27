@@ -84,17 +84,11 @@
                     "enum": [
                         "7.3",
                         "8.0",
-                        "8.1.0",
-                        "8.1.1",
-                        "8.1.2",
-                        "8.1.3",
-                        "8.1.4",
-                        "8.1.5",
-                        "8.2.0",
-                        "8.2.1"
+                        "8.1",
+                        "8.2"
                     ],
                     "scope": "resource",
-                    "default": "8.2.1",
+                    "default": "8.2",
                     "description": "Specifies the version of spec files to use.\nNote: this setting is ignored if you specify a Spec File Path."
                 },
                 "splunk.spec.trimEqualSignWhitespace": {
