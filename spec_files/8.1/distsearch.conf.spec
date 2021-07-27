@@ -1,4 +1,4 @@
-#   Version 8.1.3
+#   Version 8.1.5
 #
 # This file contains possible attributes and values you can use to configure
 # distributed search.

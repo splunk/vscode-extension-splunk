@@ -1,4 +1,4 @@
-#   Version 8.1.3
+#   Version 8.1.5
 #
 # This file contains possible setting and value pairs for federated provider entries
 # for use in Data Fabric Search (DFS), when the federated search functionality is

@@ -1,4 +1,4 @@
-#   Version 8.1.3
+#   Version 8.1.5
 #
 ############################################################################
 # OVERVIEW
@@ -767,6 +767,13 @@ execute_postprocess_in_search = <boolean>
 * If true, try to run postprocess searches ahead of time in the search process
   instead of the main splunkd process.
 * Default: true
+
+max_fieldmeta_cnt_ui = <number>
+* The maximum number of field metadata displayed in the /jobs/fieldmeta endpoint.
+* When viewing the search job status for searches with a large
+  number of field metadata, decreasing this value will reduce the memory load on
+  splunkd mothership, but show less field metadata in the web UI.
+* Default: 1000
 
 ############################################################################
 # Parsing
@@ -1893,6 +1900,11 @@ enable_splunkd_kv_lookup_indexing = <boolean>
   process, potentially slowing search performance.
 * NOTE: Do not change this setting unless instructed to do so by Splunk Support.
 * Default: false
+
+enforce_auto_lookup_order = <boolean>
+* true: LOOKUP-<name>s in props.conf are looked up in ASCII order by <name>.
+* false: LOOKUP-<name>s in props.conf are looked up in random order.
+* Default : false
 
 [metadata]
 

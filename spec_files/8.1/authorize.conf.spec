@@ -1,4 +1,4 @@
-#   Version 8.1.3
+#   Version 8.1.5
 #
 ############################################################################
 # OVERVIEW
@@ -255,6 +255,8 @@ srchIndexesDisallowed = <semicolon-separated list>
 * Follows the same wildcarding semantics as the 'srchIndexesDefault' setting.
 * If you make any changes in the "Indexes" Settings panel for a role in Splunk Web,
   those values take precedence, and any wildcards you specify in this setting are lost.
+* All search heads and search peers must be running Splunk Enterprise version 
+  8.1.0 or higher.
 * No default.
 
 deleteIndexesAllowed = <semicolon-separated list>

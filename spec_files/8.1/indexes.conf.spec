@@ -1,4 +1,4 @@
-#   Version 8.1.3
+#   Version 8.1.5
 #
 ############################################################################
 # OVERVIEW
@@ -103,6 +103,8 @@ lastChanceIndex = <index name>
 * Default: empty string
 
 malformedEventIndex = <index name>
+* Currently not supported. This setting is related to a feature that is
+  still under development.
 * An index to receive malformed events.
 * If you do not specify a valid index with this setting, or Splunk software
   cannot use the index specified in the 'defaultDatabase' setting,
@@ -1283,6 +1285,24 @@ timePeriodInSecBeforeTsidxReduction = <positive integer>
 * When this time difference is exceeded, a bucket becomes eligible
   for tsidx reduction.
 * Default: 604800
+
+tsidxDedupPostingsListMaxTermsLimit = <positive integer>
+* This setting is valid only when 'tsidxWritingLevel' is at 4 or higher.
+* This max term limit sets an upper bound on the number of terms kept inside an
+  in-memory hash table that serves to improve tsidx compression.
+* The tsidx optimizer uses the hash table to identify terms with identical
+  postings lists. When the first instance of a term is received its postings
+  list is stored. When successive terms with identical postings lists are
+  received the tsidx optimizer makes them refer to the first instance of the
+  postings list rather than creating and storing term postings list duplicates.
+* Consider increasing this limit to improve compression for large tsidx files.
+  For example, a tsidx file created with 'tsidxTargetSizeMB' over 1500MB can
+  contain a large number of terms with identical postings lists.
+* Reducing this limit helps conserve memory consumed by optimization processes,
+  at the cost of reduced tsidx compression.
+* Set this limit to 0 to disable deduplicated postings list compression.
+* This setting cannot exceed 1,073,741,824 (2^30).
+* Default: 8,388,608 (2^23)
 
 tsidxTargetSizeMB = <positive integer>
 * The target size for tsidx files. The indexer attempts to make all tsidx files

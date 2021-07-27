@@ -1,4 +1,4 @@
-#   Version 8.1.3
+#   Version 8.1.5
 #
 # This file contains possible settings and values for configuring
 # authentication via authentication.conf.
@@ -746,15 +746,16 @@ redirectAfterLogoutToUrl = <string>
 defaultRoleIfMissing = <string>
 * If the IdP does not return any AD groups or Splunk roles as a part of the
   assertion, the Splunk platform uses this value if provided.
-* This setting is optional.
+* This setting is required when you configure
+  'skipAttributeQueryRequestForUsers'. Otherwise, it is optional.
 * No default.
 
-skipAttributeQueryRequestForUsers = <comma separated list of users>
-* To skip attribute query requests being sent to the IDP for certain users,
+skipAttributeQueryRequestForUsers = <comma-separated list of users>
+* To skip attribute query requests being sent to the IdP for certain users,
   add them with this setting.
 * By default, attribute query requests are skipped for local users.
-* For non-local users, use this in conjunction with 'defaultRoleIfMissing'.
-* This setting is optional.
+* If you configure this setting for non-local users, you must also
+  configure 'defaultRoleIfMissing'.
 * No default.
 
 maxAttributeQueryThreads = <integer>
@@ -816,7 +817,7 @@ getUsersPrecacheLimit = <integer>
   the 'getUsers' function returns.
 * Default: 1000
 
-getUserInfoTTL = <string>
+getUserInfoTtl = <string>
 * When you configure the auth system to use SAML as an authentication method,
   it runs the 'getUserInfo' script function to retrieve information from the
   SAML identity provider when users perform ad-hoc operations such as working
@@ -843,6 +844,16 @@ scriptSecureArguments = <key:value>;[<key:value>;]...
   are available as normal arguments for all functions.
 * This setting is optional.
 * No default.
+
+useAuthExtForTokenAuthOnly = <boolean>
+* Whether authentication extension scripts run for all types of authentication, 
+  or only for token based authentication.
+* If set to "true", the 'getUserInfo' script only runs when making token based authentication calls.
+* Other calls that rely on fetching SAML user information, 
+  such as saved searches and displaying SAML users,
+  will use the persistent cache that is defined in the [userToRoleMap_<saml-authSettings-key>] stanza.
+* This setting is optional.
+* Default: true
 
 assertionTimeSkew = <integer>
 * The amount of clock skew, in seconds, that can occur between the Splunk platform and
@@ -1106,7 +1117,9 @@ allowPartialSignatures = <boolean>
   for the SAML stanza specified by '<authSettings-key>'.
 * Follow this stanza name with several User-to-Role::Realname::Email mappings
   as defined below.
-* The stanza is used only when the IDP does not support Attribute Query Request
+* The auth system uses this stanza only in the following scenarios:
+  * The IdP that the auth system interacts with supports neither Attribute Query Requests nor authentication extension scripts.
+  * The IdP does support authentication scripts, but the 'useAuthExtForTokenAuthOnly' setting has a value of "true".
 
 <SAML User> = <Splunk Roles string>::<Realname>::<Email>
 * Maps a SAML user to a Splunk role(from authorize.conf), real name, and email

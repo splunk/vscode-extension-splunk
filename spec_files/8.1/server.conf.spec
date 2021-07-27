@@ -1,4 +1,4 @@
-#   Version 8.1.3
+#   Version 8.1.5
 #
 ############################################################################
 # OVERVIEW
@@ -2136,6 +2136,25 @@ poll.interval.check = <time range string>
 
 poll.blacklist.<name> = <regex>
 * UNSUPPORTED: This setting is no longer supported
+
+
+##########################################################################
+# AWS EC2 IMDS configuration
+##########################################################################
+
+[imds]
+
+imds_version = [v1|v2]
+* Sets IMDS version for EC2 instances metadata endpoints.
+* This setting is AWS specific.
+* Certain features of the Splunk platform use AWS Instance Metadata Service
+  (IMDS) when hosted on EC2. IMDS is accessible from the instance via a
+  link-local address. It provides metadata about the instance.
+* v1 uses request/response method while v2 uses a session-oriented method
+  to access IMDS. The version should match the setting used on your EC2
+  instance.
+* More information about IMDS can be found in the AWS documentation.
+* Default: v1
 
 
 ############################################################################
