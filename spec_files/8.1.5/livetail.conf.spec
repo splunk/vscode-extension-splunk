@@ -1,4 +1,4 @@
-# Version 8.0.0
+# Version 8.1.5
 #
 # ** FOR USE IN SPLUNK LIGHT ONLY
 #
@@ -22,16 +22,31 @@
 #   * There will be 3 default sounds (sound-ding, sound-airhorn, sound-alarm) in base64 encoding.
 #     They will be included as defaults for any keywords as a map for the sound a user chooses.
 
+sound-ding = <string>
+sound-airhorn = <string>
+sound-alarm = <string>
 
-sound-ding = SUQzBAAAAA
-sound-airhorn = SUQzBAAAAAE
-sound-alarm = SUQzBAAAAAEFd
+[<stanza name>]
+* Stanza name is the name of the keyword
+* All the settings below will be set via Splunk UI.
 
-[keyword-id-1234]
-threshold = 450
-playsound = 0
-sound = horn
-flash = false
-enabled = 1
-keyphrase = GET
-color = 0xFFF
+threshold = <int>
+* The number of matches this keyword can have before triggering any alarms.
+
+playsound = <boolean>
+* A boolean that determines whether or not to play a sound when the threshold is met.
+
+sound = <string>
+* The name of the sound to play when threshold is met and if playsound is set to true.
+
+flash = <boolean>
+* A boolean that determines whether or not to flash the screen when threshold is met.
+
+color = <string>
+* Hex string that is the keyword's highlight color
+
+keyphrase = <string>
+* The keyword/keyphrase string the user sets for matching in the results.
+
+enabled = <boolean>
+* A Boolean that determines if this keyword is enabled or not.
