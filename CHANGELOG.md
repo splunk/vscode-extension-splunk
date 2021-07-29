@@ -5,6 +5,7 @@
 - Slight code refactor to support unit testing.  Also, Mocha unit tests were added.
 - Fixed issue where settings containing curly braces (`{}`) did not render choices.  Issue [#40](https://github.com/splunk/vscode-extension-splunk/issues/40)
 - Fixed syntax highlighting issue for settings that contain a comma (`,`).  Issue [#42](https://github.com/splunk/vscode-extension-splunk/issues/42)
+- Added support for `eventgen.conf` files. Issue [#27](https://github.com/splunk/vscode-extension-splunk/issues/27)
 
 ## [0.2.6]
 - Fixed an issue where setting names contained `<name>`.  Issue [#33](https://github.com/splunk/vscode-extension-splunk/issues/33)
