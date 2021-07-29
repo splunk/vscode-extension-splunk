@@ -289,7 +289,11 @@ function getSpecFilePath(basePath, filename) {
     // Create a path to the spec file for the current document
     if(!settingsSpecFilePath) {
         // No path was configured in settings, so create a path to the built-in spec files
-        specFilePath = path.join(basePath, "spec_files", settingsSpecFileVersion, specFileName)
+        if(specFileName == "eventgen.conf.spec") {
+            specFilePath = path.join(basePath, "spec_files", specFileName)
+        } else {
+            specFilePath = path.join(basePath, "spec_files", settingsSpecFileVersion, specFileName)
+        }
     } else {
         specFilePath = path.join(specFilePath, specFileName)
     }
