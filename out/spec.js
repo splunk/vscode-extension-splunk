@@ -17,12 +17,12 @@ const SECTION_REGEX = /^.*?(?=\n\[|$)/s
 const COMMENT_REGEX = /^#/
 const BLANK_LINE_REGEX = /^\s*\n/gm
 
-const DEFAULT_STANZA_REGEX = /^# Use the \[default\] stanza/
+const DEFAULT_STANZA_REGEX = /^# Use the \[(default)\] stanza/
 
-const STANZA_REGEX = /^\[(?<stanza>[^\]].*?)\]/
-const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(=|:|::|::...|_))[\<|\w|\/]/   // matches things like [author=<name>], [tcp:<port>], [tcp:123], [source::...a...], [tcp://<remote server>:<port>], or [tcp://123]
+const STANZA_REGEX = /^\[(?<stanza>|[^\]].*?)\]/
+const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(=|:|::|::...|_|\/))[\<|\w|\/]/   // matches things like [author=<name>], [tcp:<port>], [tcp:123], [source::...a...], [tcp://<remote server>:<port>], [tcp://123], [views/<view_name>]
 const STANZA_FREEFORM_REGEX = /^\[\<(?<stanza>.*?)\>\]/           // matches things like [<spec>] or [<custom_alert_action>]
-const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>[^\<\>\:\/]+)\]/      // matches things like [tcp] or [SSL] (does not allow <, >, :, or /)
+const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>|[^\<\>\:\/]+)\]/      // matches things like [tcp] or [SSL] (does not allow <, >, :, or /)
 
 //const SETTING_REGEX = /^(?<setting>\w.*?)\s*=\s*(?<value>[^\r\n]+)/
 const SETTING_REGEX = /^(?<setting>((\w)|\<name\>|\<tag\d\>).*?)\s*=\s*(?<value>[^\r\n]+)/
@@ -121,7 +121,7 @@ function parseSpecConfig (str, name) {
         let stanza = createStanza(section)
 
         // Some spec files can create empty default stanzas if the spec file explicitlly defines [default] or [global]
-        // limits.conf.spec does this with [default]for example.
+        // limits.conf.spec does this with [default] for example.
         // serverclass.conf does this with [global] for example.
         // In these cases, a default stanza can be produced with no settings.
 
@@ -409,6 +409,11 @@ function isValueValid(specValue, settingValue) {
         }
         case "<enabled|disabled>": {
             let settings = ["enabled", "disabled"]
+            if (!settings.includes(settingValue.toLowerCase())) isValid = false;
+            break
+        }
+        case "<system|none>": {
+            let settings = ["system", "none"]
             if (!settings.includes(settingValue.toLowerCase())) isValid = false;
             break
         }
