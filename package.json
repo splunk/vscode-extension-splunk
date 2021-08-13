@@ -30,7 +30,9 @@
             {
                 "id": "splunk",
                 "extensions": [
-                    ".conf"
+                    ".conf",
+                    "default.meta",
+                    "local.meta"
                 ],
                 "aliases": [
                     "Splunk .conf files",
@@ -278,7 +280,7 @@
     "icon": "images/icon.png",
     "extensionDependencies": [],
     "dependencies": {
-        "request": "^2.88.0"
+        "axios": "^0.21.1"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
