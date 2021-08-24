@@ -6,6 +6,9 @@
 - Fixed issue where settings containing curly braces (`{}`) did not render choices.  Issue [#40](https://github.com/splunk/vscode-extension-splunk/issues/40)
 - Fixed syntax highlighting issue for settings that contain a comma (`,`).  Issue [#42](https://github.com/splunk/vscode-extension-splunk/issues/42)
 - Added support for `eventgen.conf` files. Issue [#27](https://github.com/splunk/vscode-extension-splunk/issues/27)
+- Replaced [request](https://www.npmjs.com/package/request) package with [axios](https://www.npmjs.com/package/axios) since request has been deprecated.
+- Added dynamic snippets. Issue [#20](https://github.com/splunk/vscode-extension-splunk/issues/20)
+- Added snippets for globalConfig.json files.
 
 ## [0.2.6]
 - Fixed an issue where setting names contained `<name>`.  Issue [#33](https://github.com/splunk/vscode-extension-splunk/issues/33)
