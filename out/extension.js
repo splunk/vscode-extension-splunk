@@ -12,15 +12,14 @@ const splunkCustomCommand = require('./customCommand.js');
 const globalConfigPreview = require('./globalConfigPreview')
 const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
-const { AsyncLocalStorage } = require("async_hooks");
+//const { AsyncLocalStorage } = require("async_hooks");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
 const DROPDOWN_PLACEHOLDER_REGEX = /(\[|{)\w+(\|\w+)+(]|})/g
-const STANZA_REGEX = /^\[(?<stanza>|[^\]].*?)\]/
-const SETTING_REGEX = /^(?<setting>[\w\-_\<\>\.]+)\s*=\s*(?<value>[^\r\n]+)/
 let specConfigs = {};
 let timeout = undefined;
 let diagnosticCollection = undefined;
 let specConfig = undefined;
+let snippets = {};
 
 function getParentStanza(document, line) {
     // Start at the passed in line and go backwards
@@ -44,7 +43,7 @@ function getDocumentItems(document, PATTERN) {
         if(PATTERN.test(document.lineAt(i).text)) {
             // If the parent line ends with a '\', this is a continuation line,
             // so do not add it.
-            if(i>0 && PATTERN == SETTING_REGEX && document.lineAt(i-1) && document.lineAt(i-1).text.trim().endsWith("\\")) {
+            if(i>0 && PATTERN == splunkSpec.SETTING_REGEX && document.lineAt(i-1) && document.lineAt(i-1).text.trim().endsWith("\\")) {
                 continue
             }
             let item = {}
@@ -195,9 +194,9 @@ function activate(context) {
         { language: 'splunk', pattern: '**/*.{conf,conf.spec}' }
     ], new splunkFoldingRangeProvider.confFoldingRangeProvider()));
 
-    // If vscode was opened with an active .conf file or metadata file, handle it.
-    if(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'splunk') {
-        handleSplunkSpecFile(context);
+    // If vscode was opened with an active Splunk file, handle it.
+    if(vscode.window.activeTextEditor && (vscode.window.activeTextEditor.document.languageId === 'splunk' || vscode.window.activeTextEditor.document.fileName.endsWith("globalConfig.json"))) {
+        handleSplunkFile(context);
     }
 
     // Set up listener for text document changes
@@ -210,20 +209,34 @@ function activate(context) {
 
     // Set up listener for active editor changing
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
-        if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.languageId === 'splunk') {
-            handleSplunkSpecFile(context);
+        if (vscode.window.activeTextEditor && (vscode.window.activeTextEditor.document.languageId === 'splunk' || vscode.window.activeTextEditor.document.fileName.endsWith("globalConfig.json"))) {
+            handleSplunkFile(context);
         }
     }));
 }
 exports.activate = activate;
 
-function handleSplunkSpecFile(context) {
+function handleSplunkFile(context) {
 
     if(diagnosticCollection === undefined) {
         diagnosticCollection = vscode.languages.createDiagnosticCollection('splunk');
     }
 
     let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
+
+    // Any snippets for this file?
+    let snippetFilePath = path.join(context.extensionPath, "snippets", currentDocument);
+    if(fs.existsSync(snippetFilePath) && !snippets.hasOwnProperty(currentDocument)) {
+        context.subscriptions.push(provideSnippetCompletionItems(snippetFilePath));
+        // Cache snippets for this file so we do not regenerate them.
+        snippets[currentDocument] = snippetFilePath;
+    }
+
+
+    // If this file is globalConfig.json, return as there is not spec file for it.
+    if(currentDocument.toLowerCase() == "globalconfig.json") { 
+        return; 
+    }
     let specFilePath = getSpecFilePath(context.extensionPath, currentDocument);
 
     if(specConfigs.hasOwnProperty(currentDocument)) {
@@ -255,7 +268,7 @@ function getSpecFilePath(basePath, filename) {
 
     // Special case spec files
     let specialSpecFiles = ["eventgen.conf.spec", "default.meta.spec", "local.meta.spec"]
-    if(specialSpecFiles.indexOf(specFileName)) {
+    if(specialSpecFiles.indexOf(specFileName) > -1) {
         if (specFileName == "local.meta.spec") { specFileName = "default.meta.spec" }
         return checkSpecFilePath(path.join(basePath, "spec_files", specFileName))
     }
@@ -280,7 +293,7 @@ function checkSpecFilePath(specFilePath) {
 function provideStanzaCompletionItems(specConfig) {
 
     // Get the currently open document
-    let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath)
+    let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
 
     let stanzaCompletions = vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
 
@@ -296,9 +309,9 @@ function provideStanzaCompletionItems(specConfig) {
                 return
             }
 
-            let completions = []
+            let completions = [];
 
-             // Create completion items for stanzas - you can create a stanza anywhere
+            // Create completion items for stanzas - you can create a stanza anywhere
             specConfig["stanzas"].forEach(stanza => {
                 let stanzaSnippet = stanza.stanzaName
                 let stanzaCompletionItem = new vscode.CompletionItem(stanzaSnippet);
@@ -317,7 +330,7 @@ function provideStanzaCompletionItems(specConfig) {
                 stanzaCompletionItem.insertText = new vscode.SnippetString(stanzaSnippet);
                 stanzaCompletionItem.documentation = new vscode.MarkdownString(stanza.docString);
                 stanzaCompletionItem.kind = vscode.CompletionItemKind.Class;
-                completions.push(stanzaCompletionItem)
+                completions.push(stanzaCompletionItem);
             });
 
             return completions
@@ -330,7 +343,7 @@ function provideStanzaCompletionItems(specConfig) {
 function provideSettingCompletionItems(specConfig, trimWhitespace) {
 
     // Get the currently open document
-    let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath)
+    let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
     vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
 
         provideCompletionItems(document, position, token, context) {
@@ -339,8 +352,8 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
                 return
             }
 
-            let completions = []
-            let parentStanza = getParentStanza(document, position.line)
+            let completions = [];
+            let parentStanza = getParentStanza(document, position.line);
 
             if(parentStanza) {
                 // Get settings for the current stanza
@@ -382,17 +395,38 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
                         settingSnippet = settingSnippet.replace(/\[|{/, '${1|')
                         settingSnippet = settingSnippet.replace(/]|}/, '|}')
                     }
-
                     settingCompletionItem.insertText = new vscode.SnippetString(settingSnippet);
                     settingCompletionItem.documentation = new vscode.MarkdownString(setting.docString);
                     settingCompletionItem.kind = vscode.CompletionItemKind.Value;
                     completions.push(settingCompletionItem)
                 });
             }
-
             // return all completion items as array
+            return completions;
+        }
+    });
+}
+
+function provideSnippetCompletionItems(snippetPath) {
+
+    // Get the currently open document
+    let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
+    vscode.languages.registerCompletionItemProvider({ pattern: `**/${currentDocument}`}, {
+
+        provideCompletionItems(document, position, token, context) {
+
+            let completions = [];
+            let snippets = JSON.parse(fs.readFileSync(snippetPath));
+            for (let i in snippets) {
+                let snippet = snippets[i];
+                let snippetCompletionItem = new vscode.CompletionItem(snippet.prefix);
+                let snippetString = snippet.body.join("\n");
+                snippetCompletionItem.insertText = new vscode.SnippetString(snippetString);
+                snippetCompletionItem.documentation = new vscode.MarkdownString(snippet.description);
+                snippetCompletionItem.kind = vscode.CompletionItemKind.Snippet;
+                completions.push(snippetCompletionItem);
+            }
             return completions
-        
         }
     });
 }
@@ -415,7 +449,7 @@ function getDiagnostics(specConfig, document) {
     let diagnostics = []
 
     // Make sure stanzas are valid
-    let docStanzas = getDocumentItems(document, STANZA_REGEX)
+    let docStanzas = getDocumentItems(document, splunkSpec.STANZA_REGEX)
     docStanzas.forEach(stanza => {
         if(!splunkSpec.isStanzaValid(specConfig, stanza.text)) {
             let range = new vscode.Range(new vscode.Position(stanza.line, 0), new vscode.Position(stanza.line, stanza.text.length))
@@ -426,7 +460,7 @@ function getDiagnostics(specConfig, document) {
     });
 
     // Make sure settings are valid
-    let docSettings = getDocumentItems(document, SETTING_REGEX)
+    let docSettings = getDocumentItems(document, splunkSpec.SETTING_REGEX)
     docSettings.forEach(setting => {
         let parentStanza = getParentStanza(document, setting.line)
         if(!splunkSpec.isSettingValid(specConfig, parentStanza, setting.text)) {
