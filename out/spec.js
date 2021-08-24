@@ -16,19 +16,17 @@ const SECTION_REGEX = /^.*?(?=\n\[|$)/s
 
 const COMMENT_REGEX = /^#/
 const BLANK_LINE_REGEX = /^\s*\n/gm
-
 const DEFAULT_STANZA_REGEX = /^# Use the \[(default)\] stanza/
-
 const STANZA_REGEX = /^\[(?<stanza>|[^\]].*?)\]/
+exports.STANZA_REGEX = STANZA_REGEX
 const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(=|:|::|::...|_|\/))[\<|\w|\/]/   // matches things like [author=<name>], [tcp:<port>], [tcp:123], [source::...a...], [tcp://<remote server>:<port>], [tcp://123], [views/<view_name>]
 const STANZA_FREEFORM_REGEX = /^\[\<(?<stanza>.*?)\>\]/           // matches things like [<spec>] or [<custom_alert_action>]
 const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>|[^\<\>\:\/]+)\]/      // matches things like [tcp] or [SSL] (does not allow <, >, :, or /)
-
 //const SETTING_REGEX = /^(?<setting>\w.*?)\s*=\s*(?<value>[^\r\n]+)/
 const SETTING_REGEX = /^(?<setting>((\w)|\<name\>|\<tag\d\>).*?)\s*=\s*(?<value>[^\r\n]+)/
+exports.SETTING_REGEX = SETTING_REGEX
 const SETTING_PREFIX_REGEX = /^(?<prefix>[^-\.].*?)\<.*?\>/
 const SETTING_FREEFORM_REGEX = /^\<(?<setting>.*?)\>/
-
 const modularSpecFiles = ["inputs.conf.spec", "alert_actions.conf.spec", "indexes.conf.spec"];
 const lineTypes = {
     DEFAULT_STANZA: 'defaultStanza',
@@ -38,7 +36,6 @@ const lineTypes = {
     COMMENT: 'comment',
     UNKNOWN: 'unknown'
 }
-
 const stanzaTypes = {
     ABSOLUTE: 'absolute',
     PREFIX: 'prefix',
