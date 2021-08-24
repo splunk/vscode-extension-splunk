@@ -306,7 +306,8 @@ capability.<post|delete|get|put> = <string>
 * The handler is exposed via its "uniqueName".
 * NOTE: Splunkd does not honor capability checks under this stanza.
   Define capability checks on endpoints under [admin:*] stanzas instead.
-  handlertype = <string>
+
+handlertype = <string>
 * The script type.
 * Currently the only valid value is "python".
 
