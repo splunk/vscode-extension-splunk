@@ -12,6 +12,7 @@ const splunkCustomCommand = require('./customCommand.js');
 const globalConfigPreview = require('./globalConfigPreview')
 const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
+const { transpileModule } = require("typescript");
 //const { AsyncLocalStorage } = require("async_hooks");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
 const DROPDOWN_PLACEHOLDER_REGEX = /(\[|{)\w+(\|\w+)+(]|})/g
@@ -195,7 +196,7 @@ function activate(context) {
     ], new splunkFoldingRangeProvider.confFoldingRangeProvider()));
 
     // If vscode was opened with an active Splunk file, handle it.
-    if(vscode.window.activeTextEditor && (vscode.window.activeTextEditor.document.languageId === 'splunk' || vscode.window.activeTextEditor.document.fileName.endsWith("globalConfig.json"))) {
+    if(vscode.window.activeTextEditor && isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
         handleSplunkFile(context);
     }
 
@@ -209,12 +210,22 @@ function activate(context) {
 
     // Set up listener for active editor changing
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
-        if (vscode.window.activeTextEditor && (vscode.window.activeTextEditor.document.languageId === 'splunk' || vscode.window.activeTextEditor.document.fileName.endsWith("globalConfig.json"))) {
+        if (vscode.window.activeTextEditor && isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
             handleSplunkFile(context);
         }
     }));
 }
 exports.activate = activate;
+
+function isSplunkFile(fileName) {
+    let splunkFileExtensions = [".conf", "default.meta", "local.meta", "globalconfig.json"];
+    for (let i=0; i < splunkFileExtensions.length; i++) {
+        if(fileName.toLowerCase().endsWith(splunkFileExtensions[i])) {
+            return true;
+        }
+    }
+    return false;
+}
 
 function handleSplunkFile(context) {
 
@@ -366,9 +377,14 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
                     let settingSnippet = trimWhitespace ? `${setting.name}=${setting.value}` : `${setting.name} = ${setting.value}`
                     let settingCompletionItem = new vscode.CompletionItem(settingSnippet);
 
-                    // Convert <bool> to ${1|true,false|}
-                    if(settingSnippet.indexOf("<boolean>")) {
+                    // Convert <boolean> to ${1|true,false|}
+                    if(settingSnippet.indexOf("<boolean>") > -1) {
                         settingSnippet = settingSnippet.replace("<boolean>", "${1|true,false|}")
+                    }
+
+                    // Convert true | false to ${1|true,false|}
+                    if(settingSnippet.indexOf("true | false") > -1) {
+                        settingSnippet = settingSnippet.replace("true | false", "${1|true,false|}")
                     }
 
                     // Convert <foo> <bar> type things to placeholders
@@ -384,7 +400,7 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
                     }
 
                     // Convert <enabled|disabled> to ${1|enabled,disabled|}
-                    if(settingSnippet.indexOf("${2:<enabled|disabled>}")) {
+                    if(settingSnippet.indexOf("${2:<enabled|disabled>}") > -1) {
                         settingSnippet = settingSnippet.replace("${2:<enabled|disabled>}", "${2|enabled,disabled|}")
                     }
 

@@ -30,7 +30,10 @@
             {
                 "id": "splunk",
                 "extensions": [
-                    ".conf",
+                    ".conf"
+                ],
+                "filenamePatterns": [
+                    "*.conf",
                     "default.meta",
                     "local.meta"
                 ],
@@ -38,6 +41,9 @@
                     "Splunk .conf files",
                     "Splunk",
                     "Splunk config files"
+                ],
+                "mimetypes": [
+                    "text/x-code-output"
                 ],
                 "configuration": "./splunk-language-configuration.json"
             }
