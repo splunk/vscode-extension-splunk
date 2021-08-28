@@ -1,9 +1,6 @@
 "use strict";
-exports.parse = parse
-exports.getStanzaSettings = getStanzaSettings
-exports.isStanzaValid = isStanzaValid
-exports.isSettingValid = isSettingValid
-
+const path = require("path");
+const fs = require("fs");
 const PREAMBLE_REGEX = /^.*?((GLOBAL\sSETTINGS)|(Global\sstanza[^\[]*))/s
 // Start the match at the beginning of the string ^
 // Lazily match anything .*?
@@ -19,18 +16,18 @@ const SECTION_REGEX = /^.*?(?=\n\[|$)/s
 
 const COMMENT_REGEX = /^#/
 const BLANK_LINE_REGEX = /^\s*\n/gm
-
-const DEFAULT_STANZA_REGEX = /^# Use the \[default\] stanza/
-
-const STANZA_REGEX = /^\[(?<stanza>[^\]].*?)\]/
-const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(=|:|::|::...|_))[\<|\w|\/]/   // matches things like [author=<name>], [tcp:<port>], [tcp:123], [source::...a...], [tcp://<remote server>:<port>], or [tcp://123]
+const DEFAULT_STANZA_REGEX = /^# Use the \[(default)\] stanza/
+const STANZA_REGEX = /^\[(?<stanza>|[^\]].*?)\]/
+exports.STANZA_REGEX = STANZA_REGEX
+const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(=|:|::|::...|_|\/))[\<|\w|\/]/   // matches things like [author=<name>], [tcp:<port>], [tcp:123], [source::...a...], [tcp://<remote server>:<port>], [tcp://123], [views/<view_name>]
 const STANZA_FREEFORM_REGEX = /^\[\<(?<stanza>.*?)\>\]/           // matches things like [<spec>] or [<custom_alert_action>]
-const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>[^\<\>\:\/]+)\]/      // matches things like [tcp] or [SSL] (does not allow <, >, :, or /)
-
+const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>|[^\<\>\:\/]+)\]/      // matches things like [tcp] or [SSL] (does not allow <, >, :, or /)
 //const SETTING_REGEX = /^(?<setting>\w.*?)\s*=\s*(?<value>[^\r\n]+)/
-const SETTING_REGEX = /^(?<setting>((\w)|\<name\>).*?)\s*=\s*(?<value>[^\r\n]+)/
+const SETTING_REGEX = /^(?<setting>((\w)|\<name\>|\<tag\d\>).*?)\s*=\s*(?<value>[^\r\n]+)/
+exports.SETTING_REGEX = SETTING_REGEX
 const SETTING_PREFIX_REGEX = /^(?<prefix>[^-\.].*?)\<.*?\>/
-
+const SETTING_FREEFORM_REGEX = /^\<(?<setting>.*?)\>/
+const modularSpecFiles = ["inputs.conf.spec", "alert_actions.conf.spec", "indexes.conf.spec"];
 const lineTypes = {
     DEFAULT_STANZA: 'defaultStanza',
     STANZA: 'stanza',
@@ -39,7 +36,6 @@ const lineTypes = {
     COMMENT: 'comment',
     UNKNOWN: 'unknown'
 }
-
 const stanzaTypes = {
     ABSOLUTE: 'absolute',
     PREFIX: 'prefix',
@@ -47,16 +43,51 @@ const stanzaTypes = {
     UNKNOWN: 'unknown'
 }
 
-function parse (str, name) {
-    // Create a spec object from the passed in string
-    /*
-    {
-        specName: string,
-        allowsFreeformStanzas: [true,false],
-        stanzas: []
-    }
-    */
+/**
+ * Given a spec file path, return a configuration of stanzas, settings, and document strings
+ * @param  {String} specFilePath    The path to the spec file
+ * @return {Object}                 An object representing the spec file stanzas, settings, and documentation
+                                    {
+                                        specName: string,
+                                        allowsFreeformStanzas: [true,false],
+                                        stanzas: []
+                                    }
+ */
+ function getSpecConfig(specFilePath) {
 
+    let specFileName = path.parse(specFilePath).base;
+
+    let specFileContent = fs.readFileSync(specFilePath, "utf-8");
+    let specConfig = parseSpecConfig(specFileContent, specFileName);
+
+    // Special case for inputs.conf.spec
+    if(specConfig["specName"] == "inputs.conf.spec") {
+
+        // The inputs.conf.spec file shipped from Splunk does not include the disabled setting (even though that is a valid setting).
+        // See https://github.com/splunk/vscode-extension-splunk/issues/18
+        // Until this is fixed in the inputs.conf.spec file, we will add it here.
+        for (var i=0; i < specConfig["stanzas"].length; i++) {
+            if (specConfig["stanzas"][i]["stanzaName"] == "default") {
+                let specialDisalbedSetting = {
+                    "name": "disabled",
+                    "value": "<boolean>",
+                    "docString": '* Toggles your input entry off and on.\n* Set to "true" to disable an input.\n* Default: false'
+                }
+                specConfig["stanzas"][i]["settings"].push(specialDisalbedSetting)
+                break;
+            }
+        }
+    }
+
+    // Modular .spec files allow freeform stanzas, but this is not denoted in the static .spec file.
+    // So, override the freeform setting on these.
+    if(modularSpecFiles.includes(specFileName)) {
+        specConfig["allowsFreeformStanzas"] = true;
+    }
+    return specConfig
+}
+
+function parseSpecConfig (str, name) {
     let specConfig = {}
     specConfig = {"specName": name}
     specConfig["allowsFreeformStanzas"] = false
@@ -87,7 +118,7 @@ function parse (str, name) {
         let stanza = createStanza(section)
 
         // Some spec files can create empty default stanzas if the spec file explicitlly defines [default] or [global]
-        // limits.conf.spec does this with [default]for example.
+        // limits.conf.spec does this with [default] for example.
         // serverclass.conf does this with [global] for example.
         // In these cases, a default stanza can be produced with no settings.
 
@@ -106,12 +137,11 @@ function parse (str, name) {
         str = str.replace(BLANK_LINE_REGEX, "")
 
     }
-
     return specConfig
 }
 
+// Create a stanza object from the passed in string
 function createStanza (str) {
-    // Create a stanza object from the passed in string
     /*
     {
         stanzaName: string,
@@ -374,6 +404,16 @@ function isValueValid(specValue, settingValue) {
             if (!booleans.includes(settingValue.toLowerCase())) isValid = false;
             break
         }
+        case "<enabled|disabled>": {
+            let settings = ["enabled", "disabled"]
+            if (!settings.includes(settingValue.toLowerCase())) isValid = false;
+            break
+        }
+        case "<system|none>": {
+            let settings = ["system", "none"]
+            if (!settings.includes(settingValue.toLowerCase())) isValid = false;
+            break
+        }
         case "<0 or positive integer>":
         case "<unsigned integer>":
         case "<positive integer>":
@@ -417,7 +457,7 @@ function isSettingValid(specConfig, stanzaName, settingString) {
     let settingValue = setting.groups["value"]
 
     // Get settings for this stanza
-    let stanzaSettings = getStanzaSettings(specConfig, stanzaName)
+    let stanzaSettings =    getStanzaSettings(specConfig, stanzaName)
 
     stanzaSettings.forEach(specSetting => {
 
@@ -437,8 +477,22 @@ function isSettingValid(specConfig, stanzaName, settingString) {
             if(settingName.startsWith(specSettingPrefix)) {
                 isValid = true
             }
+
+        } else if(SETTING_FREEFORM_REGEX.test(specSetting["name"])) {
+
+            // There is still a chance this is a valid setting.
+            // Some settings are freeform settings.
+            // For example <tag1>
+            // If a setting is in this form, anything goes.
+
+            isValid = isValueValid(specSetting["value"], settingValue);
         }
     });
 
     return isValid
 }
+
+exports.getSpecConfig = getSpecConfig;
+exports.getStanzaSettings = getStanzaSettings
+exports.isStanzaValid = isStanzaValid
+exports.isSettingValid = isSettingValid

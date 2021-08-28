@@ -13,3 +13,5 @@ Icon?
 *.bak
 *.pyc
 package-lock.json
+conf_diff.py
+*.vsix
