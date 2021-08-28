@@ -302,6 +302,8 @@
         "vscode-test": "^1.3.2"
     },
     "scripts": {
+        "lint": "eslint .",
+		"pretest": "npm run lint",
         "test": "mocha"
     }
 }
