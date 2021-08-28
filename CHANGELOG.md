@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.2.7]
+## [0.2.8]
 - Added spec files for Splunk 8.1 and 8.2
 - Slight code refactor to support unit testing.  Also, Mocha unit tests were added.
 - Fixed issue where settings containing curly braces (`{}`) did not render choices.  Issue [#40](https://github.com/splunk/vscode-extension-splunk/issues/40)
