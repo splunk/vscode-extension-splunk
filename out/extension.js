@@ -382,7 +382,7 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
                         settingSnippet = settingSnippet.replace("<boolean>", "${1|true,false|}")
                     }
 
-                    // Convert true | false to ${1|true,false|}
+                    // Convert 'true | false' to ${1|true,false|}
                     if(settingSnippet.indexOf("true | false") > -1) {
                         settingSnippet = settingSnippet.replace("true | false", "${1|true,false|}")
                     }
