@@ -287,7 +287,7 @@
     "icon": "images/icon.png",
     "extensionDependencies": [],
     "dependencies": {
-        "axios": "^0.21.1",
+        "axios": "^0.21.2",
         "typescript": "^4.2.2"
     },
     "devDependencies": {
