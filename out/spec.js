@@ -273,16 +273,17 @@ function getStanzaSettingsByStanzaName(specConfig, stanzaName) {
 }
 
 function getStanzaSettingsbyFreeform(specConfig) {
-    // Get the freeform stanza settings.
-    // Spec files should only define one freeform stanza, so return the first one
+    // Get freeform stanza settings.
+
+    let freeFormStanzas = []
 
     for (var i=0; i < specConfig["stanzas"].length; i++) {
         if (specConfig["stanzas"][i]["stanzaType"] == stanzaTypes.FREEFORM) {
-            return [...specConfig["stanzas"][i].settings]
+            freeFormStanzas.push(...specConfig["stanzas"][i].settings)
         }
     }
 
-    return []
+    return freeFormStanzas
 }
 
 function getStanzaType(stanza) {
