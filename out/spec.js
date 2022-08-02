@@ -380,7 +380,7 @@ function getStanzaSettings(specConfig, stanzaName) {
 function isStanzaValid(specConfig, stanzaName) {
 
     // If the spec allows freeform stanzas, then they are all valid
-    if(specConfig["allowsFreeformStanzas"]) {
+    if(specConfig["allowsFreeformStanzas"] || (specConfig["specName"].endsWith(".conf.spec") && stanzaName == "[default]")) {
         return true
     }
 
