@@ -23,7 +23,7 @@ const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(=|:|::|::...|_|\/))[\<|\w|\/]
 const STANZA_FREEFORM_REGEX = /^\[\<(?<stanza>.*?)\>\]/           // matches things like [<spec>] or [<custom_alert_action>]
 const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>|[^\<\>\:\/]+)\]/      // matches things like [tcp] or [SSL] (does not allow <, >, :, or /)
 //const SETTING_REGEX = /^(?<setting>\w.*?)\s*=\s*(?<value>[^\r\n]+)/
-const SETTING_REGEX = /^(?<setting>((\w)|\<name\>|\<tag\d\>).*?)\s*=\s*(?<value>[^\r\n]+)/
+const SETTING_REGEX = /^(?<setting>((\w)|\<name\>|\<tag\d\>|\<.+\>).*?)\s*=\s*(?<value>[^\r\n]+)/
 exports.SETTING_REGEX = SETTING_REGEX
 const SETTING_PREFIX_REGEX = /^(?<prefix>[^-\.].*?)\<.*?\>/
 const SETTING_FREEFORM_REGEX = /^\<(?<setting>.*?)\>/
