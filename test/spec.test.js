@@ -26,6 +26,22 @@ describe('authorize.conf', () => {
 	});
 });
 
+describe('authentication.conf', () => {
+	let specFileName = "authentication.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+
+	it('setting "clientCert = my_valid_string" should be valid for stanza [saml]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[saml]", "clientCert = my_valid_string"), true);
+	});
+	it('setting "entityId = my_valid_string" should be valid for stanza [saml]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[saml]", "entityId = my_valid_string"), true);
+	});
+	it('setting "user1 = admin::user1::user1@email.com" should be valid for stanza [userToRoleMap_SAML]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[userToRoleMap_SAML]", "user1 = admin::user1::user1@email.com"), true);
+	});
+});
+
 describe('distsearch.conf', () => {
 	let specFileName = "distsearch.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
@@ -33,6 +49,10 @@ describe('distsearch.conf', () => {
 
 	it('stanza "[replicationBlacklist]" should be valid', () => {
 		assert.equal(splunkSpec.isStanzaValid(specConfig, "[replicationBlacklist]"), true);
+	});
+
+	it('stanza "[default]" should be valid', () => {
+		assert.equal(splunkSpec.isStanzaValid(specConfig, "[default]"), true);
 	});
 });
 
@@ -81,6 +101,14 @@ describe('inputs.conf', () => {
 
 	it('setting "interval = 600" should be valid', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[script://./bin/lsof.sh]", "interval = 600"), true);
+	});
+
+	it('setting python.version = python4 should be invalid', () => {
+		assert.notEqual(splunkSpec.isSettingValid(specConfig, "[my_modular_input]", "python.version = python4"), true);
+	});
+
+	it('setting python.version = python3 should be valid', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[my_modular_input]", "python.version = python3"), true);
 	});
 
 });

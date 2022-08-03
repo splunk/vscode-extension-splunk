@@ -487,7 +487,7 @@ function isSettingValid(specConfig, stanzaName, settingString) {
         // Look for this exact setting in the specConfig
         if(specSetting["name"] == settingName) {
             // The setting name is valid, is the setting value valid also?
-            isValid = isValueValid(specSetting["value"], settingValue);
+            isValid = isValueValid(specSetting["value"], settingValue)
 
         } else if (SETTING_PREFIX_REGEX.test(specSetting["name"])) {
 
@@ -508,7 +508,7 @@ function isSettingValid(specConfig, stanzaName, settingString) {
             // For example <tag1>
             // If a setting is in this form, anything goes.
 
-            isValid = isValueValid(specSetting["value"], settingValue);
+            isValid = isValueValid(specSetting["value"], settingValue)
         }
     });
 
