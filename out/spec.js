@@ -18,16 +18,16 @@ const COMMENT_REGEX = /^#/
 const BLANK_LINE_REGEX = /^\s*\n/gm
 const DEFAULT_STANZA_REGEX = /^# Use the \[(default)\] stanza/
 const STANZA_REGEX = /^\[(?<stanza>|[^\]].*?)\]/
-exports.STANZA_REGEX = STANZA_REGEX
 const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(=|:|::|::...|_|\/))[\<|\w|\/]/   // matches things like [author=<name>], [tcp:<port>], [tcp:123], [source::...a...], [tcp://<remote server>:<port>], [tcp://123], [views/<view_name>]
 const STANZA_FREEFORM_REGEX = /^\[\<(?<stanza>.*?)\>\]/           // matches things like [<spec>] or [<custom_alert_action>]
 const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>|[^\<\>\:\/]+)\]/      // matches things like [tcp] or [SSL] (does not allow <, >, :, or /)
 //const SETTING_REGEX = /^(?<setting>\w.*?)\s*=\s*(?<value>[^\r\n]+)/
 const SETTING_REGEX = /^(?<setting>((\w)|\<name\>|\<tag\d\>|\<.+\>).*?)\s*=\s*(?<value>[^\r\n]+)/
-exports.SETTING_REGEX = SETTING_REGEX
 const SETTING_PREFIX_REGEX = /^(?<prefix>[^-\.].*?)\<.*?\>/
 const SETTING_FREEFORM_REGEX = /^\<(?<setting>.*?)\>/
 const modularSpecFiles = ["inputs.conf.spec", "alert_actions.conf.spec", "indexes.conf.spec"];
+const DROPDOWN_PLACEHOLDER_REGEX = /(\[|{)\w+(\|\w+)+(]|})/g
+
 const lineTypes = {
     DEFAULT_STANZA: 'defaultStanza',
     STANZA: 'stanza',
@@ -283,6 +283,19 @@ function getStanzaSettingsbyFreeform(specConfig) {
         }
     }
 
+    // Special case for inputs.conf
+    // Inputs.conf can have modular inputs with all kinds of settings.
+    // Add python.version setting here.  See https://github.com/splunk/vscode-extension-splunk/issues/50
+    // TODO: add settings from README/inputs.conf.spec in a future release.  See issue https://github.com/splunk/vscode-extension-splunk/issues/59
+    if(specConfig.specName == "inputs.conf.spec") {
+        let specialPythonSeting = {
+            "name": "python.version",
+            "value": "{default|python|python2|python3}",
+            "docString": "* For Python scripts only, selects which Python version to use.\n* Set to either \"default\" or \"python\" to use the system-wide default Python\n  version.\n* Optional.\n* Default: Not set; uses the system-wide Python version."
+        }
+        freeFormStanzas.push(specialPythonSeting)
+    }
+    
     return freeFormStanzas
 }
 
@@ -399,6 +412,7 @@ function isValueValid(specValue, settingValue) {
 
     let isValid = true
 
+    // Look for known types
     switch(specValue) {
         case "<boolean>": {
             let booleans = ["true", "false", "1", "0"]
@@ -441,7 +455,15 @@ function isValueValid(specValue, settingValue) {
         }
     }
 
-    return isValid;
+    // Look for multiple choice types
+    if(DROPDOWN_PLACEHOLDER_REGEX.test(specValue)) {
+        // Remove square brackets and curly braces
+        let possibleValues = specValue.replace(/[\[\{\}\]]/g, '')
+        let settings = possibleValues.split('|')
+        if (!settings.includes(settingValue.toLowerCase())) isValid = false;
+    }
+
+return isValid;
 }
 
 function isSettingValid(specConfig, stanzaName, settingString) {
@@ -458,7 +480,7 @@ function isSettingValid(specConfig, stanzaName, settingString) {
     let settingValue = setting.groups["value"]
 
     // Get settings for this stanza
-    let stanzaSettings =    getStanzaSettings(specConfig, stanzaName)
+    let stanzaSettings = getStanzaSettings(specConfig, stanzaName)
 
     stanzaSettings.forEach(specSetting => {
 
@@ -493,7 +515,10 @@ function isSettingValid(specConfig, stanzaName, settingString) {
     return isValid
 }
 
-exports.getSpecConfig = getSpecConfig;
+exports.SETTING_REGEX = SETTING_REGEX
+exports.DROPDOWN_PLACEHOLDER_REGEX = DROPDOWN_PLACEHOLDER_REGEX
+exports.STANZA_REGEX = STANZA_REGEX
+exports.getSpecConfig = getSpecConfig
 exports.getStanzaSettings = getStanzaSettings
 exports.isStanzaValid = isStanzaValid
 exports.isSettingValid = isSettingValid

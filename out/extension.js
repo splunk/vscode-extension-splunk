@@ -15,7 +15,6 @@ const splunkSpec = require("./spec.js");
 const { transpileModule } = require("typescript");
 //const { AsyncLocalStorage } = require("async_hooks");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
-const DROPDOWN_PLACEHOLDER_REGEX = /(\[|{)\w+(\|\w+)+(]|})/g
 let specConfigs = {};
 let timeout = undefined;
 let diagnosticCollection = undefined;
@@ -243,8 +242,7 @@ function handleSplunkFile(context) {
         snippets[currentDocument] = snippetFilePath;
     }
 
-
-    // If this file is globalConfig.json, return as there is not spec file for it.
+    // If this file is globalConfig.json, return as there is not a spec file for it.
     if(currentDocument.toLowerCase() == "globalconfig.json") { 
         return; 
     }
@@ -406,7 +404,7 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
 
                     // Convert [foo|bar|baz] or {foo|bar|baz} values to a dropdown placeholder
                     // ${1|foo,bar,baz|}
-                    if(DROPDOWN_PLACEHOLDER_REGEX.test(settingSnippet)) {
+                    if(splunkSpec.DROPDOWN_PLACEHOLDER_REGEX.test(settingSnippet)) {
                         settingSnippet = settingSnippet.replace(/\|/g, ',')
                         settingSnippet = settingSnippet.replace(/\[|{/, '${1|')
                         settingSnippet = settingSnippet.replace(/]|}/, '|}')
