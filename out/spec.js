@@ -25,7 +25,7 @@ const STANZA_ABSOLUTE_REGEX = /^\[(?<stanza>|[^\<\>\:\/]+)\]/      // matches th
 const SETTING_REGEX = /^(?<setting>((\w)|\<name\>|\<tag\d\>|\<.+\>).*?)\s*=\s*(?<value>[^\r\n]+)/
 const SETTING_PREFIX_REGEX = /^(?<prefix>[^-\.].*?)\<.*?\>/
 const SETTING_FREEFORM_REGEX = /^\<(?<setting>.*?)\>/
-const modularSpecFiles = ["inputs.conf.spec", "alert_actions.conf.spec", "indexes.conf.spec"];
+const modularSpecFiles = ["inputs.conf.spec", "alert_actions.conf.spec", "indexes.conf.spec", "searchbnf.conf.spec"];
 const DROPDOWN_PLACEHOLDER_REGEX = /(\[|{)\w+(\|\w+)+(]|})/g
 
 const lineTypes = {
@@ -136,6 +136,12 @@ function parseSpecConfig (str, name) {
         str = str.replace(section, "")
         str = str.replace(BLANK_LINE_REGEX, "")
 
+    }
+
+    // Special case: searchbnf.conf.spec has a postfix stanza that is commented out.  Add it here.
+    if(name == "searchbnf.conf.spec") {
+        specConfig.stanzas[0].stanzaName = "<command-name>-command"
+        specConfig.stanzas[0].stanzaType = stanzaTypes.FREEFORM
     }
     return specConfig
 }

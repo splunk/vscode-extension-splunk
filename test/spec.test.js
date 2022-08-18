@@ -113,6 +113,16 @@ describe('inputs.conf', () => {
 
 });
 
+describe('searchbnf.conf', () => {
+	let specFileName = "searchbnf.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+
+	it('setting "syntax = mything" should be valid for stanza [mything-command]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[mything-command]", "syntax = mything"), true);
+	});
+});
+
 describe('serverclass.conf', () => {
 	let specFileName = "serverclass.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
