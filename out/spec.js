@@ -8,6 +8,8 @@ const PREAMBLE_REGEX = /^.*?((GLOBAL\sSETTINGS)|(Global\sstanza[^\[]*))/s
 // OR match Global stanza until a [ is encountered (refer to serverclass.conf.spec for an example of this case)
 // Enable multiline /s
 
+const VERSION_REGEX = /^#\s+Version\s+(?<version>.+)$/m
+
 const SECTION_REGEX = /^.*?(?=\n\[|$)/s
 // Start the match at the beginning of the string ^
 // Lazily match anything .*?
@@ -74,7 +76,17 @@ const stanzaTypes = {
                     "docString": '* Toggles your input entry off and on.\n* Set to "true" to disable an input.\n* Default: false'
                 }
                 specConfig["stanzas"][i]["settings"].push(specialDisalbedSetting)
-                break;
+            }
+
+            // Spec versions less than 9 do not define the interval parameter for WinPrintMon stanzas
+            // See https://github.com/splunk/vscode-extension-splunk/issues/53
+            if(specConfig["specVersion"] < 9 && specConfig["stanzas"][i]["stanzaName"] == "WinPrintMon://<name>") {
+                let specialIntervalSetting = {
+                    "name": "interval",
+                    "value": "<integer>",
+                    "docString": '* The interval, in seconds, between when the input runs to gather\n  Windows host information and generate events.\n* See \'interval\' in the Scripted input section for more information.'
+                }
+                specConfig["stanzas"][i]["settings"].push(specialIntervalSetting)
             }
         }
     }
@@ -90,8 +102,17 @@ const stanzaTypes = {
 function parseSpecConfig (str, name) {
     let specConfig = {}
     specConfig = {"specName": name}
+    specConfig["specVersion"] = -1
     specConfig["allowsFreeformStanzas"] = false
     specConfig["stanzas"] = []
+
+    // Get the spec file version
+    if (VERSION_REGEX.test(str)) {
+        let versionLine = str.match(VERSION_REGEX)
+        if (versionLine.groups) {
+            specConfig["specVersion"] = parseInt(versionLine.groups['version'])
+        }
+    }
 
     // Spec files have a preable stating what the file does.  
     // We do not want this in the returned config, so strip it out with a regex.
@@ -143,6 +164,7 @@ function parseSpecConfig (str, name) {
         specConfig.stanzas[0].stanzaName = "<command-name>-command"
         specConfig.stanzas[0].stanzaType = stanzaTypes.FREEFORM
     }
+    
     return specConfig
 }
 

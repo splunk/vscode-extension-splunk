@@ -4,7 +4,7 @@ const path = require('path');
 const { isRegularExpressionLiteral } = require('typescript');
 const specFolderLocation = './spec_files';
 const splunkSpec = require("../out/spec.js");
-const specFileVersion = "8.2";
+const specFileVersion = "9.0";
 
 describe('app.conf', () => {
 	let specFileName = "app.conf.spec";
@@ -109,6 +109,10 @@ describe('inputs.conf', () => {
 
 	it('setting python.version = python3 should be valid', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[my_modular_input]", "python.version = python3"), true);
+	});
+
+	it('setting "interval = 60" should be valid for stanza [WinPrintMon://name]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[WinPrintMon://name]", "interval = 60"), true);
 	});
 
 });
