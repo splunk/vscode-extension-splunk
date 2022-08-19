@@ -165,6 +165,10 @@ function parseSpecConfig (str, name) {
         specConfig.stanzas[0].stanzaType = stanzaTypes.FREEFORM
     }
     
+    // Special case for authorize.conf
+    if (name == "authorize.conf.spec") {
+        specConfig = handleAuthorizeSpec(specConfig)
+    }
     return specConfig
 }
 
@@ -269,6 +273,41 @@ function createStanza (str) {
         stanza["settings"].push(stanzaSetting)
     }
     return stanza
+}
+
+function handleAuthorizeSpec(specConfig) {
+    
+    let capabilities = []
+
+    // Loop backwards so we don't mess up indexes
+    for(var i = specConfig.stanzas.length -1; i>-0; i--) {
+        if (specConfig.stanzas[i].stanzaName.startsWith("capability::")) {
+            
+            if (specConfig.stanzas[i].stanzaName == "capability::<capability>") {
+                // Remove the literal "[capability::<capability>]"" stanza from the config as you should not edit this.
+                specConfig.stanzas.splice(i,1)
+            } else {
+                // Add all [capability::capability_name] stanzas as capability settings to the [role_<roleName>] stanza.
+                let capability = {}
+                capability["name"] = specConfig.stanzas[i].stanzaName.replace("capability::","")
+                capability["docString"] = specConfig.stanzas[i].docString
+                capability["value"] = "enabled"
+                capabilities.push(capability)
+                specConfig.stanzas.splice(i,1)
+            }
+           
+        }  
+    }
+    if (capabilities.length > 0) {
+        for (var i = 0; i < specConfig.stanzas.length; i++) {
+            if (specConfig.stanzas[i].stanzaName == "role_<roleName>") {
+                // Add the capabilities to this stanza
+                specConfig.stanzas[i].settings = specConfig.stanzas[i].settings.concat(capabilities)
+                break
+            }
+        }
+    }
+    return specConfig
 }
 
 function getStanzaSettingsByPrefix(specConfig, stanza, pattern) {
