@@ -55,11 +55,21 @@ const stanzaTypes = {
                                         stanzas: []
                                     }
  */
- function getSpecConfig(specFilePath) {
+ function getSpecConfig(extensionPath, specFilePath) {
 
     let specFileName = path.parse(specFilePath).base;
-
     let specFileContent = fs.readFileSync(specFilePath, "utf-8");
+
+    // Special case for tags.conf.spec
+    // Append CIM tag options
+    // See https://github.com/splunk/vscode-extension-splunk/issues/25
+    if(specFileName == "tags.conf.spec") {
+        let tagCIMpath = path.join(extensionPath, "spec_files", "tags.conf.cim.spec")
+        let cimFileContent = fs.readFileSync(tagCIMpath, "utf-8");
+        specFileContent = specFileContent + cimFileContent
+    }
+
+
     let specConfig = parseSpecConfig(specFileContent, specFileName);
 
     // Special case for inputs.conf.spec

@@ -251,7 +251,7 @@ function handleSplunkFile(context) {
     if(specConfigs.hasOwnProperty(currentDocument)) {
         specConfig = specConfigs[currentDocument];
     } else {
-        specConfig = splunkSpec.getSpecConfig(specFilePath);
+        specConfig = splunkSpec.getSpecConfig(context.extensionPath, specFilePath);
 
         // Register Stanza completion items for this spec
         context.subscriptions.push(provideStanzaCompletionItems(specConfig));
@@ -398,6 +398,9 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
                     }
 
                     // Convert <enabled|disabled> to ${1|enabled,disabled|}
+                    if(settingSnippet.indexOf("${1:<enabled|disabled>}") > -1) {
+                        settingSnippet = settingSnippet.replace("${1:<enabled|disabled>}", "${1|enabled,disabled|}")
+                    }
                     if(settingSnippet.indexOf("${2:<enabled|disabled>}") > -1) {
                         settingSnippet = settingSnippet.replace("${2:<enabled|disabled>}", "${2|enabled,disabled|}")
                     }
