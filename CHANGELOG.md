@@ -1,5 +1,14 @@
 # Change Log
 
+## [0.2.9]
+- Added spec files for Splunk 9.0
+- Added CIM tags to auto complete and linting when editing tags.conf.  Issue [#25](https://github.com/splunk/vscode-extension-splunk/issues/25)
+- Fixed issue where free form stanza settings appeared invalid.  Issue [#60](https://github.com/splunk/vscode-extension-splunk/issues/60)
+- Fixed issue that marked some `[default]` stanzas as invalid.  Issue [#62](https://github.com/splunk/vscode-extension-splunk/issues/62)
+- Fixed issue that marked python.version settings invalid for modular inputs in inputs.conf.  Issue [#50](https://github.com/splunk/vscode-extension-splunk/issues/50)
+- Fixed issues with searchbnf.conf files.  Issue [#49](https://github.com/splunk/vscode-extension-splunk/issues/49)
+- Added version to spec config object so that special version comparisons and fixes can be implemented.  See issue [#53](https://github.com/splunk/vscode-extension-splunk/issues/53)
+
 ## [0.2.8]
 - Added spec files for Splunk 8.1 and 8.2
 - Slight code refactor to support unit testing.  Also, Mocha unit tests were added.

@@ -4,7 +4,7 @@ const path = require('path');
 const { isRegularExpressionLiteral } = require('typescript');
 const specFolderLocation = './spec_files';
 const splunkSpec = require("../out/spec.js");
-const specFileVersion = "8.2";
+const specFileVersion = "9.0";
 
 describe('app.conf', () => {
 	let specFileName = "app.conf.spec";
@@ -26,6 +26,22 @@ describe('authorize.conf', () => {
 	});
 });
 
+describe('authentication.conf', () => {
+	let specFileName = "authentication.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+
+	it('setting "clientCert = my_valid_string" should be valid for stanza [saml]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[saml]", "clientCert = my_valid_string"), true);
+	});
+	it('setting "entityId = my_valid_string" should be valid for stanza [saml]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[saml]", "entityId = my_valid_string"), true);
+	});
+	it('setting "user1 = admin::user1::user1@email.com" should be valid for stanza [userToRoleMap_SAML]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[userToRoleMap_SAML]", "user1 = admin::user1::user1@email.com"), true);
+	});
+});
+
 describe('distsearch.conf', () => {
 	let specFileName = "distsearch.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
@@ -33,6 +49,10 @@ describe('distsearch.conf', () => {
 
 	it('stanza "[replicationBlacklist]" should be valid', () => {
 		assert.equal(splunkSpec.isStanzaValid(specConfig, "[replicationBlacklist]"), true);
+	});
+
+	it('stanza "[default]" should be valid', () => {
+		assert.equal(splunkSpec.isStanzaValid(specConfig, "[default]"), true);
 	});
 });
 
@@ -83,6 +103,28 @@ describe('inputs.conf', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[script://./bin/lsof.sh]", "interval = 600"), true);
 	});
 
+	it('setting python.version = python4 should be invalid', () => {
+		assert.notEqual(splunkSpec.isSettingValid(specConfig, "[my_modular_input]", "python.version = python4"), true);
+	});
+
+	it('setting python.version = python3 should be valid', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[my_modular_input]", "python.version = python3"), true);
+	});
+
+	it('setting "interval = 60" should be valid for stanza [WinPrintMon://name]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[WinPrintMon://name]", "interval = 60"), true);
+	});
+
+});
+
+describe('searchbnf.conf', () => {
+	let specFileName = "searchbnf.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+
+	it('setting "syntax = mything" should be valid for stanza [mything-command]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[mything-command]", "syntax = mything"), true);
+	});
 });
 
 describe('serverclass.conf', () => {
