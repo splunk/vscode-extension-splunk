@@ -4,12 +4,13 @@ const path = require('path');
 const { isRegularExpressionLiteral } = require('typescript');
 const specFolderLocation = './spec_files';
 const splunkSpec = require("../out/spec.js");
+const extensionPath = path.resolve(__dirname, '../');
 const specFileVersion = "9.0";
 
 describe('app.conf', () => {
 	let specFileName = "app.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
 	it('stanza "[author=authorname]" should be valid', () => {
 		assert.equal(splunkSpec.isStanzaValid(specConfig, "[author=authorname]"), true);
@@ -19,7 +20,7 @@ describe('app.conf', () => {
 describe('authorize.conf', () => {
 	let specFileName = "authorize.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
 	it('stanza "[role_org_custom]" should be valid', () => {
 		assert.equal(splunkSpec.isStanzaValid(specConfig, "[role_org_custom]"), true);
@@ -29,7 +30,7 @@ describe('authorize.conf', () => {
 describe('authentication.conf', () => {
 	let specFileName = "authentication.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
 	it('setting "clientCert = my_valid_string" should be valid for stanza [saml]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[saml]", "clientCert = my_valid_string"), true);
@@ -45,7 +46,7 @@ describe('authentication.conf', () => {
 describe('distsearch.conf', () => {
 	let specFileName = "distsearch.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
 	it('stanza "[replicationBlacklist]" should be valid', () => {
 		assert.equal(splunkSpec.isStanzaValid(specConfig, "[replicationBlacklist]"), true);
@@ -59,7 +60,7 @@ describe('distsearch.conf', () => {
 describe('indexes.conf', () => {
 	let specFileName = "indexes.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
 	it('setting "repFactor = auto" should be valid for stanza [default]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[default]", "repFactor = auto"), true);
@@ -89,7 +90,7 @@ describe('indexes.conf', () => {
 describe('inputs.conf', () => {
 	let specFileName = "inputs.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
 	it('stanza "[script:///opt/splunk/etc/apps/ta-myscript/script.sh]" should be valid', () => {
 		assert.equal(splunkSpec.isStanzaValid(specConfig, "[script:///opt/splunk/etc/apps/ta-myscript/script.sh]"), true);
@@ -120,7 +121,7 @@ describe('inputs.conf', () => {
 describe('searchbnf.conf', () => {
 	let specFileName = "searchbnf.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
 	it('setting "syntax = mything" should be valid for stanza [mything-command]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[mything-command]", "syntax = mything"), true);
@@ -130,7 +131,7 @@ describe('searchbnf.conf', () => {
 describe('serverclass.conf', () => {
 	let specFileName = "serverclass.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
 	it('setting "targetRepositoryLocation = path" should be valid for stanza [serverClass:serverClassName]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[serverClass:serverClassName]", "targetRepositoryLocation = path"), true);
@@ -140,7 +141,7 @@ describe('serverclass.conf', () => {
 describe('tags.conf', () => {
 	let specFileName = "tags.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
 	it('stanza "[eventtype=eventtype]" should be valid', () => {
 		assert.equal(splunkSpec.isStanzaValid(specConfig, "[eventtype=eventtype]"), true);
@@ -154,7 +155,7 @@ describe('tags.conf', () => {
 describe('ui-tour.conf', () => {
 	let specFileName = "ui-tour.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(specFilePath);
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
 	it('stanza "[tour_name]" should be valid', () => {
 		assert.equal(splunkSpec.isStanzaValid(specConfig, "[tour_name]"), true);
