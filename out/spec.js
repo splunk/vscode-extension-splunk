@@ -207,7 +207,7 @@ function createStanza (str) {
     }
     let stanzaSetting = {}
     let lines = str.split(/[\r\n]+/g)
-    let defaultStanzaCreated = false
+    //let defaultStanzaCreated = false
 
 
     lines.forEach(function (line) {
@@ -238,7 +238,7 @@ function createStanza (str) {
                 stanza["stanzaName"] = "default"
                 stanza["docString"] = ""
                 stanza["stanzaType"] = stanzaTypes.ABSOLUTE
-                defaultStanzaCreated = true
+                // defaultStanzaCreated = true
                 break
             }
             case lineTypes.STANZA: {
@@ -459,8 +459,6 @@ function getStanzaSettings(specConfig, stanzaName) {
                 }
             }
             return settings
-            
-            break
         }
     }
 
