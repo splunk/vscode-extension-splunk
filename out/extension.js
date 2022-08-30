@@ -12,7 +12,7 @@ const splunkCustomCommand = require('./customCommand.js');
 const globalConfigPreview = require('./globalConfigPreview')
 const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
-const { transpileModule } = require("typescript");
+//const { transpileModule } = require("typescript");
 //const { AsyncLocalStorage } = require("async_hooks");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
 let specConfigs = {};
@@ -208,7 +208,7 @@ function activate(context) {
     }));
 
     // Set up listener for active editor changing
-    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
+    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor( () => {
         if (vscode.window.activeTextEditor && isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
             handleSplunkFile(context);
         }
@@ -287,7 +287,7 @@ function getSpecFilePath(basePath, filename) {
         // No path was configured in settings, so create a path to the built-in spec files
         return checkSpecFilePath(path.join(basePath, "spec_files", settingsSpecFileVersion, specFileName))
     } else {
-        return checkSpecFilePath(path.join(specFilePath, specFileName))
+        return checkSpecFilePath(path.join(settingsSpecFilePath, specFileName))
     }
 }
 
@@ -304,9 +304,9 @@ function provideStanzaCompletionItems(specConfig) {
     // Get the currently open document
     let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
 
-    let stanzaCompletions = vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
+    vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
 
-        provideCompletionItems(document, position, token, context) {
+        provideCompletionItems(document, position) {
 
             if((position.character != 1) || (!document.lineAt(position.line).text.startsWith('['))) {
                 // We are not typing a stanza, so return.
@@ -355,7 +355,7 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
     let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
     vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
 
-        provideCompletionItems(document, position, token, context) {
+        provideCompletionItems(document, position) {
             if((position.character > 1) || (!specConfig)) {
                 // No completion for you!
                 return
@@ -430,7 +430,7 @@ function provideSnippetCompletionItems(snippetPath) {
     let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
     vscode.languages.registerCompletionItemProvider({ pattern: `**/${currentDocument}`}, {
 
-        provideCompletionItems(document, position, token, context) {
+        provideCompletionItems() {
 
             let completions = [];
             let snippets = JSON.parse(fs.readFileSync(snippetPath));
