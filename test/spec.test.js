@@ -1,7 +1,6 @@
 //const { strictEqual } = require('assert');
 const { assert } = require('chai');
 const path = require('path');
-const { isRegularExpressionLiteral } = require('typescript');
 const specFolderLocation = './spec_files';
 const splunkSpec = require("../out/spec.js");
 const extensionPath = path.resolve(__dirname, '../');
