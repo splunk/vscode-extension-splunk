@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 
 class confFoldingRangeProvider {
-    provideFoldingRanges(document, foldingContext, token) {
+    provideFoldingRanges(document) {
         const result = [];
 
         const sectionRegex = /^\s*\[([^\]]+)\]/;
