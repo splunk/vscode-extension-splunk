@@ -24,7 +24,7 @@ class SplunkReportProvider {
     getTreeItem(element) {
         return element;
     }
-    getChildren(element) {
+    getChildren() {
         let savedSearchProvider = new splunkSavedSearchProvider.SavedSearchProvider();
         let search = encodeURIComponent("embed.enabled=1");
         return Promise.resolve(savedSearchProvider.getSavedSearches(search));
