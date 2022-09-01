@@ -10,14 +10,14 @@ const PREAMBLE_REGEX = /^.*?((GLOBAL\sSETTINGS)|(Global\sstanza[^\[]*))/s
 
 const VERSION_REGEX = /^#\s+Version\s+(?<version>.+)$/m
 
-const SECTION_REGEX = /^.*?(?=\n\[|$)/s
+const SECTION_REGEX = /^.*?(?=[\r\n]\[|$)/s
 // Start the match at the beginning of the string ^
 // Lazily match anything .*?
 // Positive lookahead to match until a newline followed by a [ or the end of the string $
 // Enable multiline /s
 
 const COMMENT_REGEX = /^#/
-const BLANK_LINE_REGEX = /^\s*\n/gm
+const BLANK_LINE_REGEX = /^\s*[\r\n]/gm
 const DEFAULT_STANZA_REGEX = /^# Use the \[(default)\] stanza/
 const STANZA_REGEX = /^\[(?<stanza>|[^\]].*?)\]/
 const STANZA_PREFIX_REGEX = /^\[(?<prefix>[^\]].*?(=|:|::|::...|_|\/))[\<|\w|\/]/   // matches things like [author=<name>], [tcp:<port>], [tcp:123], [source::...a...], [tcp://<remote server>:<port>], [tcp://123], [views/<view_name>]
@@ -68,7 +68,6 @@ const stanzaTypes = {
         let cimFileContent = fs.readFileSync(tagCIMpath, "utf-8");
         specFileContent = specFileContent + cimFileContent
     }
-
 
     let specConfig = parseSpecConfig(specFileContent, specFileName);
 
