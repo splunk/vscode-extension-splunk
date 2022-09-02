@@ -4,12 +4,14 @@ const vscode = require("vscode");
 const splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunkRestUrl');
 const splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
 const outputMode = vscode.workspace.getConfiguration().get('splunk.search.searchOutputMode');
+const enableCertificateVerification = vscode.workspace.getConfiguration().get('splunk.commands.enableCertificateVerification');
 const https = require("https");
-const agent = new https.Agent({  
-    rejectUnauthorized: false
-});
 const axios = require("axios");
+
 axios.defaults.headers.common["Authorization"] = `Bearer ${splunkToken}`;
+const agent = new https.Agent({  
+    rejectUnauthorized: enableCertificateVerification
+});
 
 class SearchProvider {
     constructor() {}
