@@ -2,7 +2,6 @@
 const fs = require("fs");
 const path = require("path");
 const vscode = require("vscode");
-const cp = require("child_process");
 
 function createCommand(commandName, commandDestination, context) {
 

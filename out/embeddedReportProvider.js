@@ -3,12 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 const splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
 const splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunkRestUrl');
+const enableCertificateVerification = vscode.workspace.getConfiguration().get('splunk.commands.enableCertificateVerification');
 const https = require("https");
-const agent = new https.Agent({  
-    rejectUnauthorized: false
-});
 const axios = require("axios");
+
 axios.defaults.headers.common["Authorization"] = `Bearer ${splunkToken}`;
+const agent = new https.Agent({
+    rejectUnauthorized: enableCertificateVerification
+});
 
 const splunkSavedSearchProvider = require("./searchProvider.js");
 
@@ -24,7 +26,7 @@ class SplunkReportProvider {
     getTreeItem(element) {
         return element;
     }
-    getChildren(element) {
+    getChildren() {
         let savedSearchProvider = new splunkSavedSearchProvider.SavedSearchProvider();
         let search = encodeURIComponent("embed.enabled=1");
         return Promise.resolve(savedSearchProvider.getSavedSearches(search));

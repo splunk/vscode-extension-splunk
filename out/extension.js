@@ -12,10 +12,9 @@ const splunkCustomCommand = require('./customCommand.js');
 const globalConfigPreview = require('./globalConfigPreview')
 const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
-const { transpileModule } = require("typescript");
+//const { transpileModule } = require("typescript");
 //const { AsyncLocalStorage } = require("async_hooks");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
-const DROPDOWN_PLACEHOLDER_REGEX = /(\[|{)\w+(\|\w+)+(]|})/g
 let specConfigs = {};
 let timeout = undefined;
 let diagnosticCollection = undefined;
@@ -209,7 +208,7 @@ function activate(context) {
     }));
 
     // Set up listener for active editor changing
-    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
+    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor( () => {
         if (vscode.window.activeTextEditor && isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
             handleSplunkFile(context);
         }
@@ -243,8 +242,7 @@ function handleSplunkFile(context) {
         snippets[currentDocument] = snippetFilePath;
     }
 
-
-    // If this file is globalConfig.json, return as there is not spec file for it.
+    // If this file is globalConfig.json, return as there is not a spec file for it.
     if(currentDocument.toLowerCase() == "globalconfig.json") { 
         return; 
     }
@@ -253,7 +251,7 @@ function handleSplunkFile(context) {
     if(specConfigs.hasOwnProperty(currentDocument)) {
         specConfig = specConfigs[currentDocument];
     } else {
-        specConfig = splunkSpec.getSpecConfig(specFilePath);
+        specConfig = splunkSpec.getSpecConfig(context.extensionPath, specFilePath);
 
         // Register Stanza completion items for this spec
         context.subscriptions.push(provideStanzaCompletionItems(specConfig));
@@ -289,7 +287,7 @@ function getSpecFilePath(basePath, filename) {
         // No path was configured in settings, so create a path to the built-in spec files
         return checkSpecFilePath(path.join(basePath, "spec_files", settingsSpecFileVersion, specFileName))
     } else {
-        return checkSpecFilePath(path.join(specFilePath, specFileName))
+        return checkSpecFilePath(path.join(settingsSpecFilePath, specFileName))
     }
 }
 
@@ -306,9 +304,9 @@ function provideStanzaCompletionItems(specConfig) {
     // Get the currently open document
     let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
 
-    let stanzaCompletions = vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
+    vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
 
-        provideCompletionItems(document, position, token, context) {
+        provideCompletionItems(document, position) {
 
             if((position.character != 1) || (!document.lineAt(position.line).text.startsWith('['))) {
                 // We are not typing a stanza, so return.
@@ -357,7 +355,7 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
     let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
     vscode.languages.registerCompletionItemProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
 
-        provideCompletionItems(document, position, token, context) {
+        provideCompletionItems(document, position) {
             if((position.character > 1) || (!specConfig)) {
                 // No completion for you!
                 return
@@ -400,13 +398,16 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
                     }
 
                     // Convert <enabled|disabled> to ${1|enabled,disabled|}
+                    if(settingSnippet.indexOf("${1:<enabled|disabled>}") > -1) {
+                        settingSnippet = settingSnippet.replace("${1:<enabled|disabled>}", "${1|enabled,disabled|}")
+                    }
                     if(settingSnippet.indexOf("${2:<enabled|disabled>}") > -1) {
                         settingSnippet = settingSnippet.replace("${2:<enabled|disabled>}", "${2|enabled,disabled|}")
                     }
 
                     // Convert [foo|bar|baz] or {foo|bar|baz} values to a dropdown placeholder
                     // ${1|foo,bar,baz|}
-                    if(DROPDOWN_PLACEHOLDER_REGEX.test(settingSnippet)) {
+                    if(splunkSpec.DROPDOWN_PLACEHOLDER_REGEX.test(settingSnippet)) {
                         settingSnippet = settingSnippet.replace(/\|/g, ',')
                         settingSnippet = settingSnippet.replace(/\[|{/, '${1|')
                         settingSnippet = settingSnippet.replace(/]|}/, '|}')
@@ -429,7 +430,7 @@ function provideSnippetCompletionItems(snippetPath) {
     let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
     vscode.languages.registerCompletionItemProvider({ pattern: `**/${currentDocument}`}, {
 
-        provideCompletionItems(document, position, token, context) {
+        provideCompletionItems() {
 
             let completions = [];
             let snippets = JSON.parse(fs.readFileSync(snippetPath));

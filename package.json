@@ -1,6 +1,6 @@
 {
     "name": "splunk",
-    "version": "0.2.8",
+    "version": "0.2.9",
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.52.0"
@@ -64,58 +64,60 @@
         "configuration": {
             "title": "Splunk",
             "properties": {
-                "splunk.enableSplunkExplorer": {
-                    "type": "boolean",
-                    "description": "Enables the Splunk Explorer in the activity bar.",
-                    "default": true
-                },
-                "splunk.reports.viewRefreshInterval": {
-                    "type": "integer",
-                    "scope": "resource",
-                    "default": 300,
-                    "description": "Specify an interval, in seconds, to refresh embedded reports."
-                },
-                "splunk.reports.SplunkSearchHead": {
-                    "type": "string",
-                    "scope": "resource",
-                    "default": "http://localhost:8000",
-                    "description": "Specify the Search Head URL used to display reports."
-                },
-                "splunk.spec.FilePath": {
-                    "type": "string",
-                    "scope": "resource",
-                    "default": "",
-                    "description": "Specify an absolute path to the Splunk spec files. For example, if Splunk is installed locally, $SPLUNK_HOME/etc/system/README/ can be used where $SPLUNK_HOME is set to the path where Splunk is installed.\nNote: leave this setting blank to use built-in or custom spec files."
-                },
                 "splunk.spec.FileVersion": {
                     "type": "string",
                     "enum": [
                         "7.3",
                         "8.0",
                         "8.1",
-                        "8.2"
+                        "8.2",
+                        "9.0"
                     ],
+                    "order": 0,
                     "scope": "resource",
-                    "default": "8.2",
+                    "default": "9.0",
                     "description": "Specifies the version of spec files to use.\nNote: this setting is ignored if you specify a Spec File Path."
                 },
-                "splunk.spec.trimEqualSignWhitespace": {
-                    "type": "boolean",
+                "splunk.spec.FilePath": {
+                    "type": "string",
                     "scope": "resource",
-                    "default": false,
-                    "description": "When auto-completing settings, trim whitespace around the '=' sign. For example, key = value will become key=value.\nNote: changing this setting requires a restart of Visual Studio Code."
+                    "default": "",
+                    "order": 1,
+                    "description": "Specify an absolute path to the Splunk spec files. For example, if Splunk is installed locally, $SPLUNK_HOME/etc/system/README/ can be used where $SPLUNK_HOME is set to the path where Splunk is installed.\nNote: leave this setting blank to use built-in spec files."
+                },
+                "splunk.enableSplunkExplorer": {
+                    "type": "boolean",
+                    "description": "Enables the Splunk Explorer in the activity bar.",
+                    "default": true,
+                    "order": 2
                 },
                 "splunk.commands.splunkRestUrl": {
                     "type": "string",
                     "scope": "resource",
                     "default": "https://localhost:8089",
-                    "description": "Specify the URL for the Splunk REST API"
+                    "description": "Specify the URL for the Splunk REST API",
+                    "order": 3
+                },
+                "splunk.commands.enableCertificateVerification": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": false,
+                    "description": "Enable SSL certificate verification for Splunk",
+                    "order": 4
                 },
                 "splunk.commands.token": {
                     "type": "string",
                     "scope": "resource",
                     "default": "",
+                    "order": 5,
                     "description": "Splunk Enterprise token used for authentication. Refer to the Splunk documentation for more information about tokens at https://docs.splunk.com/Documentation/Splunk/latest/Security/UseAuthTokens"
+                },
+                "splunk.reports.SplunkSearchHead": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "http://localhost:8000",
+                    "order": 6,
+                    "description": "Specify the Search Head URL used to display reports."
                 },
                 "splunk.search.searchOutputMode": {
                     "type": "string",
@@ -126,7 +128,22 @@
                     ],
                     "scope": "resource",
                     "default": "csv",
+                    "order": 7,
                     "description": "Controls how Splunk search results are rendered"
+                },
+                "splunk.reports.viewRefreshInterval": {
+                    "type": "integer",
+                    "scope": "resource",
+                    "default": 300,
+                    "order": 8,
+                    "description": "Specify an interval, in seconds, to refresh embedded reports."
+                },
+                "splunk.spec.trimEqualSignWhitespace": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": false,
+                    "order": 9,
+                    "description": "When auto-completing settings, trim whitespace around the '=' sign. For example, key = value will become key=value.\nNote: changing this setting requires a restart of Visual Studio Code."
                 }
             }
         },
@@ -287,18 +304,17 @@
     "icon": "images/icon.png",
     "extensionDependencies": [],
     "dependencies": {
-        "axios": "^0.21.1",
+        "axios": ">=0.27.2",
         "typescript": "^4.2.2"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
-        "@types/mocha": "^5.2.7",
+        "chai": "^4.3.6",
+        "mocha": "^10.0.0",
         "@types/node": "^12.12.0",
         "@types/vscode": "^1.52.0",
-        "eslint": "^6.6.0",
+        "eslint": "^8.21.0",
         "glob": "^7.1.5",
-        "mocha": "^6.2.2",
-        "chai": "^4.2.0",
         "typescript": "^4.2.2",
         "vscode-test": "^1.3.2"
     },
