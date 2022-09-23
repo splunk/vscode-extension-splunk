@@ -1,9 +1,9 @@
 {
     "name": "splunk",
-    "version": "0.2.4",
+    "version": "0.2.9",
     "publisher": "Splunk",
     "engines": {
-        "vscode": "^1.40.0"
+        "vscode": "^1.52.0"
     },
     "license": "MIT",
     "displayName": "Splunk Extension",
@@ -32,10 +32,18 @@
                 "extensions": [
                     ".conf"
                 ],
+                "filenamePatterns": [
+                    "*.conf",
+                    "default.meta",
+                    "local.meta"
+                ],
                 "aliases": [
                     "Splunk .conf files",
                     "Splunk",
                     "Splunk config files"
+                ],
+                "mimetypes": [
+                    "text/x-code-output"
                 ],
                 "configuration": "./splunk-language-configuration.json"
             }
@@ -47,59 +55,69 @@
                 "path": "./syntaxes/splunk.tmLanguage.json"
             }
         ],
+        "jsonValidation": [
+            {
+                "fileMatch": "globalConfig.json",
+                "url": "https://raw.githubusercontent.com/splunk/addonfactory-ucc-base-ui/main/src/main/webapp/schema/schema.json"
+            }
+        ],
         "configuration": {
             "title": "Splunk",
             "properties": {
-                "splunk.enableSplunkExplorer": {
-                    "type": "boolean",
-                    "description": "Enables the Splunk Explorer in the activity bar.",
-                    "default": true
-                },
-                "splunk.reports.viewRefreshInterval": {
-                    "type": "integer",
-                    "scope": "resource",
-                    "default": 300,
-                    "description": "Specify an interval, in seconds, to refresh embedded reports."
-                },
-                "splunk.reports.SplunkSearchHead": {
+                "splunk.spec.FileVersion": {
                     "type": "string",
+                    "enum": [
+                        "7.3",
+                        "8.0",
+                        "8.1",
+                        "8.2",
+                        "9.0"
+                    ],
+                    "order": 0,
                     "scope": "resource",
-                    "default": "http://localhost:8000",
-                    "description": "Specify the Search Head URL used to display reports."
+                    "default": "9.0",
+                    "description": "Specifies the version of spec files to use.\nNote: this setting is ignored if you specify a Spec File Path."
                 },
                 "splunk.spec.FilePath": {
                     "type": "string",
                     "scope": "resource",
                     "default": "",
-                    "description": "Specify an absolute path to the Splunk spec files.  For example, if Splunk is installed locally, $SPLUNK_HOME/etc/system/README/ can be used where $SPLUNK_HOME is set to the path where Splunk is installed.\nNote: leave this setting blank to use built-in or custom spec files."
+                    "order": 1,
+                    "description": "Specify an absolute path to the Splunk spec files. For example, if Splunk is installed locally, $SPLUNK_HOME/etc/system/README/ can be used where $SPLUNK_HOME is set to the path where Splunk is installed.\nNote: leave this setting blank to use built-in spec files."
                 },
-                "splunk.spec.FileVersion": {
-                    "type": "string",
-                    "enum": [
-                        "7.3",
-                        "8.0"
-                    ],
-                    "scope": "resource",
-                    "default": "8.0",
-                    "description": "Specifies the version of spec files to use.\nNote: this setting is ignored if you specify a Spec File Path."
-                },
-                "splunk.spec.trimEqualSignWhitespace": {
+                "splunk.enableSplunkExplorer": {
                     "type": "boolean",
-                    "scope": "resource",
-                    "default": false,
-                    "description": "When auto-completing settings, trim whitespace around the '=' sign. For example, key = value will become key=value.\nNote: changing this setting requires a restart of Visual Studio Code."
+                    "description": "Enables the Splunk Explorer in the activity bar.",
+                    "default": true,
+                    "order": 2
                 },
                 "splunk.commands.splunkRestUrl": {
                     "type": "string",
                     "scope": "resource",
                     "default": "https://localhost:8089",
-                    "description": "Specify the URL for the Splunk REST API"
+                    "description": "Specify the URL for the Splunk REST API",
+                    "order": 3
+                },
+                "splunk.commands.enableCertificateVerification": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": false,
+                    "description": "Enable SSL certificate verification for Splunk",
+                    "order": 4
                 },
                 "splunk.commands.token": {
                     "type": "string",
                     "scope": "resource",
                     "default": "",
+                    "order": 5,
                     "description": "Splunk Enterprise token used for authentication. Refer to the Splunk documentation for more information about tokens at https://docs.splunk.com/Documentation/Splunk/latest/Security/UseAuthTokens"
+                },
+                "splunk.reports.SplunkSearchHead": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "http://localhost:8000",
+                    "order": 6,
+                    "description": "Specify the Search Head URL used to display reports."
                 },
                 "splunk.search.searchOutputMode": {
                     "type": "string",
@@ -110,7 +128,22 @@
                     ],
                     "scope": "resource",
                     "default": "csv",
+                    "order": 7,
                     "description": "Controls how Splunk search results are rendered"
+                },
+                "splunk.reports.viewRefreshInterval": {
+                    "type": "integer",
+                    "scope": "resource",
+                    "default": 300,
+                    "order": 8,
+                    "description": "Specify an interval, in seconds, to refresh embedded reports."
+                },
+                "splunk.spec.trimEqualSignWhitespace": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": false,
+                    "order": 9,
+                    "description": "When auto-completing settings, trim whitespace around the '=' sign. For example, key = value will become key=value.\nNote: changing this setting requires a restart of Visual Studio Code."
                 }
             }
         },
@@ -142,6 +175,10 @@
                 {
                     "command": "splunk.embeddedReport.show",
                     "when": "false"
+                },
+                {
+                    "command": "splunk.previewGlobalConfig",
+                    "when": "resourceFilename == globalConfig.json"
                 }
             ],
             "view/title": [
@@ -166,6 +203,19 @@
                     "command": "splunk.embeddedReport.show",
                     "when": "view == embeddedReports",
                     "group": "inline"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "splunk.previewGlobalConfig",
+                    "when": "resourceFilename == globalConfig.json"
+                }
+            ],
+            "editor/title": [
+                {
+                    "command": "splunk.previewGlobalConfig",
+                    "when": "resourceFilename == globalConfig.json",
+                    "group": "navigation"
                 }
             ]
         },
@@ -223,6 +273,12 @@
                 "command": "splunk.new.resthandler",
                 "title": "New Custom REST Handler",
                 "category": "Splunk"
+            },
+            {
+                "command": "splunk.previewGlobalConfig",
+                "title": "Preview globalConfig.json",
+                "category": "Splunk",
+                "enablement": "resourceFilename == globalConfig.json"
             }
         ]
     },
@@ -236,29 +292,35 @@
         "onCommand:splunk.new.command",
         "onCommand:splunk.new.resthandler",
         "onCommand:splunk.embeddedReport.show",
+        "onCommand:splunk.previewGlobalConfig",
         "onView:savedSearches",
-        "onView:embeddedReports"
+        "onView:embeddedReports",
+        "workspaceContains:**/globalConfig.json"
     ],
     "repository": {
         "url": "https://github.com/splunk/vscode-extension",
         "type": "git"
     },
     "icon": "images/icon.png",
-    "extensionDependencies": [
-        "ms-python.python"
-    ],
+    "extensionDependencies": [],
     "dependencies": {
-        "request": "^2.88.0"
+        "axios": ">=0.27.2",
+        "typescript": "^4.2.2"
     },
     "devDependencies": {
-        "@types/mocha": "^2.2.42",
-        "@types/node": "^7.0.43",
-        "eslint": "^4.11.0",
-        "request": "^2.88.0",
-        "typescript": "^2.6.1",
-        "vscode": "^1.1.36"
+        "@types/glob": "^7.1.1",
+        "chai": "^4.3.6",
+        "mocha": "^10.0.0",
+        "@types/node": "^12.12.0",
+        "@types/vscode": "^1.52.0",
+        "eslint": "^8.21.0",
+        "glob": "^7.1.5",
+        "typescript": "^4.2.2",
+        "vscode-test": "^1.3.2"
     },
     "scripts": {
-        "postinstall": "node ./node_modules/vscode/bin/install"
+        "lint": "eslint .",
+        "pretest": "npm run lint",
+        "test": "mocha"
     }
 }

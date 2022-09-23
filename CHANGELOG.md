@@ -1,5 +1,36 @@
 # Change Log
 
+## [0.2.9]
+- Added spec files for Splunk 9.0
+- Added CIM tags to auto complete and linting when editing tags.conf.  Issue [#25](https://github.com/splunk/vscode-extension-splunk/issues/25)
+- Fixed issue where free form stanza settings appeared invalid.  Issue [#60](https://github.com/splunk/vscode-extension-splunk/issues/60)
+- Fixed issue that marked some `[default]` stanzas as invalid.  Issue [#62](https://github.com/splunk/vscode-extension-splunk/issues/62)
+- Fixed issue that marked python.version settings invalid for modular inputs in inputs.conf.  Issue [#50](https://github.com/splunk/vscode-extension-splunk/issues/50)
+- Fixed issues with searchbnf.conf files.  Issue [#49](https://github.com/splunk/vscode-extension-splunk/issues/49)
+- Added version to spec config object so that special version comparisons and fixes can be implemented.  See issue [#53](https://github.com/splunk/vscode-extension-splunk/issues/53)
+- Added option to enable certificate verification.  See issue [#63](https://github.com/splunk/vscode-extension-splunk/issues/63)
+
+## [0.2.8]
+- Added spec files for Splunk 8.1 and 8.2
+- Slight code refactor to support unit testing.  Also, Mocha unit tests were added.
+- Fixed issue where settings containing curly braces (`{}`) did not render choices.  Issue [#40](https://github.com/splunk/vscode-extension-splunk/issues/40)
+- Fixed syntax highlighting issue for settings that contain a comma (`,`).  Issue [#42](https://github.com/splunk/vscode-extension-splunk/issues/42)
+- Added support for `eventgen.conf` files. Issue [#27](https://github.com/splunk/vscode-extension-splunk/issues/27)
+- Replaced [request](https://www.npmjs.com/package/request) package with [axios](https://www.npmjs.com/package/axios) since request has been deprecated.
+- Added dynamic snippets. Issue [#20](https://github.com/splunk/vscode-extension-splunk/issues/20)
+- Added snippets for globalConfig.json files.
+
+## [0.2.6]
+- Fixed an issue where setting names contained `<name>`.  Issue [#33](https://github.com/splunk/vscode-extension-splunk/issues/33)
+- Fixed an issue reading serverclass.conf.spec.  Issue [#35](https://github.com/splunk/vscode-extension-splunk/issues/35)
+- Fixed a Windows path issue when creating custom search commands, custom REST handlers, and modular visualizations.  Issue [#36](https://github.com/splunk/vscode-extension-splunk/issues/36)
+- Added functionality to preview the UI that [ucc-gen](https://github.com/splunk/addonfactory-ucc-generator) creates from `globalConfig.json`.  To use this functionality, create a `globalConfig.json` file ([reference](https://github.com/splunk/addonfactory-ucc-generator/blob/main/tests/data/globalConfig.json)), then right-click and choose Preview globalConfig.json.
+
+![Preview globalConfig.json](https://raw.githubusercontent.com/wiki/splunk/vscode-extension-splunk/images/previewGlobalConfig.png)
+
+## [0.2.5]
+- An update to Visual Studio Code changed how Diagnostics are initialized which broke linting. Version 0.2.5 addresses this issue.
+
 ## [0.2.4]
 - Fixed an issue when running ad-hoc searches from the command palette.
 - Fixed an issue displaying invalid interval for `script:/// stanzas`.  Issue [#21](https://github.com/splunk/vscode-extension-splunk/issues/21)

@@ -5,7 +5,7 @@ The Visual Studio Code Extension for Splunk helps developers create, test, and d
 
 ## Working with .conf files
 
-![Splunk Extension Demo](https://raw.githubusercontent.com/splunk/vscode-extension-splunk/master/images/demo1.gif)
+![Splunk Extension Demo](https://raw.githubusercontent.com/wiki/splunk/vscode-extension-splunk/images/demo1.gif)
 
 * Syntax highlighting for .conf files
 * IntelliSense for stanzas and parameters

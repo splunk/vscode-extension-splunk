@@ -8,7 +8,7 @@ function createModViz(vizName, vizDestination, context) {
 
     // copy from source to dest folder
     let modVizSource = path.join(context.extensionPath, "resources", "projects", "modViz");
-    let modVizDest = path.join(vizDestination[0].path, vizName);
+    let modVizDest = path.join(vizDestination[0].fsPath, vizName);
 
     if(fs.existsSync(modVizDest)) {
         vscode.window.showWarningMessage(`Path for visualization already exists and will not be created. ${modVizDest}`)
@@ -20,18 +20,18 @@ function createModViz(vizName, vizDestination, context) {
     // rename appserver/static/visualizations/(standin) directory to the new viz name
     try {
         fs.renameSync(
-            path.join(vizDestination[0].path, vizName, "appserver", "static", "visualizations", "standin"),
-            path.join(vizDestination[0].path, vizName, "appserver", "static", "visualizations", vizName)
+            path.join(vizDestination[0].fsPath, vizName, "appserver", "static", "visualizations", "standin"),
+            path.join(vizDestination[0].fsPath, vizName, "appserver", "static", "visualizations", vizName)
         );
     } catch (err) {
         vscode.window.showErrorMessage(err.message);
         return
     }
 
-    let package_json = path.join(vizDestination[0].path, vizName, "appserver", "static", "visualizations", vizName, "package.json");
-    let visualizations_conf = path.join(vizDestination[0].path, vizName, "default", "visualizations.conf");
-    let default_meta = path.join(vizDestination[0].path, vizName, "metadata", "default.meta");
-    let app_conf = path.join(vizDestination[0].path, vizName, "default", "app.conf");
+    let package_json = path.join(vizDestination[0].fsPath, vizName, "appserver", "static", "visualizations", vizName, "package.json");
+    let visualizations_conf = path.join(vizDestination[0].fsPath, vizName, "default", "visualizations.conf");
+    let default_meta = path.join(vizDestination[0].fsPath, vizName, "metadata", "default.meta");
+    let app_conf = path.join(vizDestination[0].fsPath, vizName, "default", "app.conf");
 
     try {
         // modify package.json "name": "standin"
@@ -53,7 +53,7 @@ export = system`
 
         // run npm install
         cp.exec('npm install', {
-            cwd: path.join(vizDestination[0].path, vizName, "appserver", "static", "visualizations", vizName)
+            cwd: path.join(vizDestination[0].fsPath, vizName, "appserver", "static", "visualizations", vizName)
         });
 
     } catch (err) {

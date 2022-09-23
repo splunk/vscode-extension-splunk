@@ -2,13 +2,12 @@
 const fs = require("fs");
 const path = require("path");
 const vscode = require("vscode");
-const cp = require("child_process");
 
 function createCommand(commandName, commandDestination, context) {
 
     // copy from source to dest folder
     let commandSource = path.join(context.extensionPath, "resources", "projects", "searchcommands_template");
-    let commandDest = path.join(commandDestination[0].path, commandName);
+    let commandDest = path.join(commandDestination[0].fsPath, commandName);
 
     if(fs.existsSync(commandDest)) {
         vscode.window.showWarningMessage(`Path for command already exists and will not be created. ${commandDest}`)
@@ -17,7 +16,7 @@ function createCommand(commandName, commandDestination, context) {
 
     copyDirectoryRecursiveSync(commandSource, commandDest);
 
-    let app_conf = path.join(commandDestination[0].path, commandName, "default", "app.conf");
+    let app_conf = path.join(commandDestination[0].fsPath, commandName, "default", "app.conf");
 
     try {
 

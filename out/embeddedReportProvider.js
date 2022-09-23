@@ -1,8 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
-const request = require("request");
-const splunkSavedSearchProvider = require("./savedSearchProvider.js");
+const splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
+const splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunkRestUrl');
+const enableCertificateVerification = vscode.workspace.getConfiguration().get('splunk.commands.enableCertificateVerification');
+const https = require("https");
+const axios = require("axios");
+
+axios.defaults.headers.common["Authorization"] = `Bearer ${splunkToken}`;
+const agent = new https.Agent({
+    rejectUnauthorized: enableCertificateVerification
+});
+
+const splunkSavedSearchProvider = require("./searchProvider.js");
 
 class SplunkReportProvider {
     constructor() {
@@ -16,7 +26,7 @@ class SplunkReportProvider {
     getTreeItem(element) {
         return element;
     }
-    getChildren(element) {
+    getChildren() {
         let savedSearchProvider = new splunkSavedSearchProvider.SavedSearchProvider();
         let search = encodeURIComponent("embed.enabled=1");
         return Promise.resolve(savedSearchProvider.getSavedSearches(search));
@@ -27,38 +37,24 @@ exports.SplunkReportProvider = SplunkReportProvider;
 
 
 async function getSavedSearchEmbedToken(searchLink) {
-
-    let splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunkRestUrl');
-    let splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
+    
     if ((!splunkUrl) || (!splunkToken)) {
         return [new vscode.TreeItem("Splunk URL and Token required. Check extension settings.")];
     }
-    
-    let embedToken = new Promise(function(resolve, reject){
-        request(
-            {
-                method: "GET",
-                uri: `${splunkUrl}${searchLink}?output_mode=json&f=embed*`,
-                strictSSL: false,
-                headers : {
-                    "Authorization": `Bearer ${splunkToken}`
-                },
-            },
-            function (error, response, body) {
-                if(error) {
-                    vscode.window.showErrorMessage(error.message);
-                    reject(Error("Could not get saved search. Check extension settings."))
-                } else {
-                    let search = JSON.parse(body)["entry"][0];
-                    if((search) && (search["content"].hasOwnProperty("embed.token"))) {
-                        resolve(search["content"]["embed.token"]);
-                    }
-                }
-            }
-        );
-    })
 
-    return await(embedToken);
+    let embedToken = null;
+   
+    await axios.get(`${splunkUrl}${searchLink}?output_mode=json&f=embed*`, {httpsAgent: agent})
+        .then(response => {
+            let search = response.data.entry[0];
+            if((search) && (search["content"].hasOwnProperty("embed.token"))) {
+                embedToken = search["content"]["embed.token"]
+            }
+        })
+        .catch(error => {
+            vscode.window.showErrorMessage(`Could not get saved search. Check extension settings. ${error.message}`);
+        })
+    return(embedToken);
 }
 
 async function getWebviewContent(search) {
@@ -77,5 +73,3 @@ async function getWebviewContent(search) {
 }
 
 exports.getWebviewContent = getWebviewContent
-
-//# sourceMappingURL=embeddedReportProvider.js.map

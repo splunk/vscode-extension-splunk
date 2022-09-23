@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/slim-select/1.27.0/slimselect.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slim-select/1.27.0/slimselect.min.js"></script>
+    <title>Config Preview</title>
+    <style>
+        .mx-n1 {
+            margin-left: -0.75rem;
+            margin-right: -0.75rem;
+        }
+    </style>
+</head>
+
+<body style="font-size: 0.7rem;" x-data="data()" x-init="listen()"
+    @update-slim-select.window="$nextTick(() => { initMultiSelect() });">
+    <main class="container mx-auto my-2 shadow rounded">
+        <nav class="navbar navbar-expand-lg bg-success shadow mx-n1">
+            <div class="container" id="main-nav">
+                <template x-for="page in pages" :key="page">
+                    <a :class="activePage===page ? styles.mainNav.active : styles.mainNav.inActive" href="#"
+                        x-text="page" @click="updatePage(page)"></a>
+                </template>
+            </div>
+        </nav>
+        <nav class="navbar navbar-expand-lg bg-light mx-n1 px-5 p-1 mb-2 shadow-sm" x-show="activePage==='Inputs' ">
+            <select id="form-select" aria-label="Form Selection">
+            </select>
+        </nav>
+        <template x-if="activePage!== 'Inputs' ">
+            <div class="mb-2 mx-n1 shadow-sm">
+                <nav class="navbar navbar-expand-lg bg-light">
+                    <div class="container">
+                        <template x-for="tab in tabs">
+                            <a :class="activeForm===tab.name ? styles.subNav.active : styles.subNav.inActive" href="#" x-text="tab.title || tab.label" @click="updateEntities(tab.name||tab.label)"></a>
+                        </template>
+                    </div>
+                </nav>
+            </div>
+        </template>
+        <div class="p-5">
+            <div id="form-container">
+                <form>
+                    <template x-for="entity in entities">
+                        <div class="mb-3">
+                            <template x-if="entity.type === 'text' ">
+                                <div>
+                                    <label class="form-label" x-text="entity.label" :for="entity.field"></label>
+                                    <input type="text" :id="entity.field" class="form-control form-control-sm">
+                                </div>
+                            </template>
+                            <template x-if="entity.type === 'checkbox' ">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="exampleCheck1"
+                                        value="entity.field">
+                                    <label class="form-check-label" for="exampleCheck1" x-text="entity.label"></label>
+                                </div>
+                            </template>
+                            <template x-if="entity.type === 'radio' ">
+                                <div>
+                                    <p x-text="entity.label"></p>
+                                    <template x-for="option in entity.options.items">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" :name="entity.field"
+                                                :id="option.value" :value="option.value">
+                                            <label class="form-check-label" :for="option.value" x-text="option.label">
+                                            </label>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="entity.type === 'singleSelect' ">
+                                <div>
+                                    <p x-text="entity.label"></p>
+                                    <template x-if="entity.options && !entity.options.endpointUrl">
+                                        <select :id="entity.field" :aria-label="entity.label">
+                                            <template x-for="opt in entity.singleOptions" :key="opt.value">
+                                                <option :value="opt.value" x-text="opt.label"></option>
+                                            </template>
+                                            <template x-for="group in entity.optionGroups">
+                                                <optgroup :label="group.label">
+                                                    <template x-for="opt in group.options">
+                                                        <option x-text="opt.label" :value="opt.value"></option>
+                                                    </template>
+                                                </optgroup>
+                                            </template>
+                                        </select>
+                                    </template>
+                                    <template x-if="entity.options.endpointUrl">
+                                        <select :id="entity.field" :aria-label="entity.label">
+                                            <option x-text="'Options will populate from ' + entity.options.endpointUrl"
+                                                :value="entity.options.endpointUrl"></option>
+                                        </select>
+                                    </template>
+                                </div>
+                            </template>
+                            <template x-if="entity.type === 'multipleSelect'">
+                                <div>
+                                    <p x-text="entity.label"></p>
+                                    <select multiple :id="entity.field" aria-label="entity.label">
+                                        <template x-if="entity.options && entity.options.items">
+                                            <template x-for="option in entity.options.items">
+                                                <option :value="option.value" x-text="option.label"></option>
+                                            </template>
+                                        </template>
+                                    </select>
+                                </div>
+                            </template>
+                            <template x-if="entity.type === 'helpLink' && entity.options && entity.options.text">
+                                <div>
+                                    <a x-text="entity.options.text" :href="entity.options.link || '#'"></a>
+                                </div>
+                            </template>
+                            <template x-if="entity.help">
+                                <span class="help-block text-secondary" x-text="entity.help"></span>
+                            </template>
+                        </div>
+                    </template>
+                </form>
+            </div>
+        </div>
+    </main>
+    <script>
+        const unwrap = data => JSON.parse(JSON.stringify(data))
+
+        function data() {
+            return {
+                globalConfig: {},
+                activePage: '',
+                activeForm: '',
+                pages: [],
+                entities: [],
+                slimSelects: [],
+                tabs: [],
+                formSelect: null,
+                listen() {
+                    window.addEventListener('message', event => {
+                        const message = event.data;
+                        if (message.action === "config-data") {
+                            this.globalConfig = message.data
+                            this.pages = []
+                            if(this.globalConfig.pages?.inputs?.services) {
+                                this.pages.push('Inputs')
+                            }
+                            if(this.globalConfig.pages?.configuration?.tabs) {
+                                this.pages.push('Configuration')
+                            }
+                            if (this.globalConfig.alerts?.length > 0) {
+                                this.pages.push("Alerts");
+                            }
+                            this.updatePage(this.activePage)
+                        }
+                    })
+                    return () => {
+                        // initialize the dropdown for the forms in the page
+                        this.formSelect = new SlimSelect({
+                            select: "#form-select",
+                            showSearch: false,
+                            onChange: ({ value }) => {
+                                this.updateEntities(value)
+                            }
+                        })
+                    }
+                },
+                updateEntities(newForm) {
+                    // destroying all old slim-selects as they will be removed from the DOM.
+                    this.slimSelects.forEach(s => s?.destroy())
+                    this.slimSelects = []
+                    this.activeForm = newForm
+                    // choose the first tab as default if none selected
+                    if(this.tabs.length > 0 && !this.activeForm) {
+                        const t = this.tabs[0]
+                        this.activeForm = t.name || t.label
+                    }
+                    let form;
+                    if (this.activePage === 'Configuration') {
+                        form = this.globalConfig.pages.configuration.tabs.find(t => t.name === this.activeForm);
+                    } else if (this.activePage === 'Inputs') {
+                        form = this.globalConfig.pages.inputs.services.find(t => t.name === this.activeForm);
+                    } else if (this.activePage === 'Alerts') {
+                        form = this.globalConfig.alerts.find(alert => alert.name === this.activeForm);
+                    }
+                    if (form) {
+                        this.entities = form.entity.map(entity => {
+                            // normalizing single and optiongroups here because alpine.js 
+                            // doesn't support x-if inside x-fors that will allow matching both of these in the template
+                            if (entity.type === 'singleSelect') {
+                                const singleOptions = []
+                                const optionGroups = []
+                                const addOpt = (opt) => {
+                                    if (opt.value) {
+                                        singleOptions.push(opt)
+                                    } else if (opt.children) {
+                                        optionGroups.push({
+                                            label: opt.label,
+                                            options: opt.children
+                                        })
+                                    }
+                                }
+                                entity.options?.autoCompleteFields?.forEach(addOpt)
+                                entity.options?.items?.forEach(addOpt)
+                                return { ...entity, optionGroups, singleOptions }
+                            } else {
+                                return entity
+                            }
+                            // don't render fields with options.display set as false
+                        }).filter((e) => !e.options || e.options.display !== false)
+                    } else {
+                        this.entities = []
+                    }
+                    //using a custom event to trigger initializing slim-selects. 
+                    // required to ensure <select> nodes are added to DOM *before* trying to initialize.
+                    window.dispatchEvent(new CustomEvent('update-slim-select'));
+                },
+                updatePage(page) {
+                    let renderForm = this.activeForm
+                    if (this.activePage !== page) {
+                        // if navigating to a new page, reset the activeform
+                        renderForm = ''
+                    }
+                    this.activePage = page;
+                    // choose first page as selected if none seleceted
+                    if(this.pages.length > 0 && !this.activePage) {
+                        this.activePage = this.pages[0]
+                    }
+                    if (this.activePage === 'Configuration') {
+                        this.tabs = this.globalConfig.pages.configuration?.tabs || []
+                    } else if (this.activePage === 'Inputs') {
+                        this.tabs = this.globalConfig.pages.inputs?.services || []
+                    } else if (this.activePage === 'Alerts') {
+                        this.tabs = this.globalConfig.alerts || []
+                    }
+                    this.formSelect?.setData(this.tabs.map(t => ({ text: t.title || t.label, value: t.name || t.label })))
+                    this.updateEntities(renderForm);
+                },
+                initMultiSelect() {
+                    this.entities.forEach((entity) => {
+                        if (entity.type === 'singleSelect' || entity.type === 'multipleSelect') {
+                            try {
+                                const s = new SlimSelect({
+                                    select: `#${entity.field}`,
+                                    showSearch: false,
+                                })
+                                this.slimSelects.push(s)
+                            } catch (e) {
+                                // NOOP
+                            }
+                        }
+                    })
+                },
+                styles: {
+                    mainNav: {
+                        inActive: 'nav-link text-white',
+                        active: 'nav-link text-dark bg-light rounded'
+                    },
+                    subNav: {
+                        inActive: 'nav-link text-dark',
+                        active: 'nav-link text-white bg-dark rounded'
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
