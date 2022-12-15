@@ -20,13 +20,11 @@ class SearchProvider {
         if (!splunkUrl) {
             let m = "A URL for the Splunk REST API is required. Please check your settings."
             vscode.window.showErrorMessage(m);
-            throw Error(m)
         }
 
         if(!splunkToken) {
             let m = "A Splunk autorization token is required. Please check your settings."
             vscode.window.showErrorMessage(m);
-            throw Error(m)
         }
 
         let searchResults = "No results";
@@ -99,13 +97,11 @@ class SavedSearchProvider {
         if (!splunkUrl) {
             let m = "The URL specified for the Splunk REST API is incorrect. Please check your settings."
             vscode.window.showErrorMessage(m);
-            throw Error(m)
         }
 
         if(!splunkToken) {
             let m = "A Splunk autorization token is required. Please check your settings."
             vscode.window.showErrorMessage(m);
-            throw Error(m)
         }
 
         let searchResults = "No results";
