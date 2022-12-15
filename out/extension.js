@@ -12,6 +12,8 @@ const splunkCustomCommand = require('./customCommand.js');
 const globalConfigPreview = require('./globalConfigPreview')
 const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
+const reload = require("./commands/reload.js");
+
 //const { transpileModule } = require("typescript");
 //const { AsyncLocalStorage } = require("async_hooks");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
@@ -188,6 +190,10 @@ function activate(context) {
         }
 
     }));
+
+    // Register Utility Commands
+
+    context.subscriptions.push(vscode.commands.registerCommand('splunk.fullDebugRefresh', async () => {reload.fullDebugRefresh(splunkOutputChannel)}))
 
     // Set up stanza folding
     context.subscriptions.push(vscode.languages.registerFoldingRangeProvider([
