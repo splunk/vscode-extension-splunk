@@ -18,7 +18,7 @@ class SearchProvider {
 
     async runSearch(search) {
         if (!splunkUrl) {
-            let m = "The URL specified for the Splunk REST API is incorrect. Please check your settings."
+            let m = "A URL for the Splunk REST API is required. Please check your settings."
             vscode.window.showErrorMessage(m);
             throw Error(m)
         }
