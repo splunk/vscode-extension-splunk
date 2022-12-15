@@ -53,12 +53,7 @@ async function fullDebugRefresh(splunkOutputChannel) {
         /* Reload all handlers */
         const results = await Promise.allSettled(reloadRequests);
         vscode.window.showInformationMessage(`Performed _reload on ${results.length} EAI handlers`);
-    } catch (error) {
-        vscode.window.showErrorMessage(
-            `Could not enumerate handlers to refresh. ${error.message}`
-        );
-        return
-    }
+    
     /* Log results to Output */
     splunkOutputChannel.appendLine(
         results
@@ -73,6 +68,13 @@ async function fullDebugRefresh(splunkOutputChannel) {
     );
 
     splunkOutputChannel.show();
+    } 
+    catch (error) {
+        vscode.window.showErrorMessage(
+            `Could not enumerate handlers to refresh. ${error.message}`
+        );
+        return
+    }
 }
 
 exports.fullDebugRefresh = fullDebugRefresh;
