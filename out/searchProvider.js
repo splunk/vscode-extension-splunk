@@ -84,7 +84,12 @@ class SavedSearchProvider {
                 });
             })
             .catch(error => {
-                vscode.window.showErrorMessage(`Could not enumerate saved searches. ${error.message}`);
+                if (error.code = 'ECONNREFUSED' ) {
+                    let m = 
+                    vscode.window.showErrorMessage(`Could not connect to Splunk server. Please check extension settings. ${error.message}`);
+                } else {
+                    vscode.window.showErrorMessage(`Could not enumerate saved searches. ${error.message}`);
+                }
             })
         return(savedSearchArray);
     }
