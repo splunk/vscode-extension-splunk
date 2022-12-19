@@ -279,6 +279,11 @@
                 "title": "Preview globalConfig.json",
                 "category": "Splunk",
                 "enablement": "resourceFilename == globalConfig.json"
+            },
+            {
+                "command": "splunk.fullDebugRefresh",
+                "title": "Trigger Full Debug Refresh",
+                "category": "Splunk"
             }
         ]
     },
