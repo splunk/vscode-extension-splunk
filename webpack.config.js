@@ -3,6 +3,7 @@
 'use strict';
 
 const path = require('path');
+const webpack = require('webpack');
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -46,4 +47,59 @@ const extensionConfig = {
   },
 };
 
-module.exports = [ extensionConfig ];
+const rendererConfig = {
+  entry: {
+    visualization: "./out/notebooks/renderer/visualization.jsx"
+  },
+  output: {
+    path: path.resolve(__dirname, "dist"),
+    filename: "[name].js",
+    libraryTarget: 'module'
+    },
+  resolve: {
+    // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
+    extensions: ['.ts', '.js', '.jsx','css'],
+    alias: {
+        process: "process/browser"
+    }
+  },
+  experiments: {
+		outputModule: true,
+	},
+  plugins: [
+    // fix "process is not defined" error:
+    // (do "npm install process" before running the build)
+    new webpack.ProvidePlugin({
+      process: 'process/browser',
+    }),
+  ],
+  module: {
+    rules: [
+      {
+        test: /\.css$/i,
+        use: ["style-loader", "css-loader"],
+      },
+      {
+        test: /\.ts$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'ts-loader'
+          }
+        ]
+      },
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+      {
+        test: /\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: { loader: 'babel-loader' }
+    }
+    ]
+  }
+}
+
+module.exports = [ extensionConfig, rendererConfig ];
