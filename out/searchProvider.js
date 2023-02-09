@@ -18,15 +18,13 @@ class SearchProvider {
 
     async runSearch(search) {
         if (!splunkUrl) {
-            let m = "The URL specified for the Splunk REST API is incorrect. Please check your settings."
+            let m = "A URL for the Splunk REST API is required. Please check your settings."
             vscode.window.showErrorMessage(m);
-            throw Error(m)
         }
 
         if(!splunkToken) {
             let m = "A Splunk autorization token is required. Please check your settings."
             vscode.window.showErrorMessage(m);
-            throw Error(m)
         }
 
         let searchResults = "No results";
@@ -84,7 +82,12 @@ class SavedSearchProvider {
                 });
             })
             .catch(error => {
-                vscode.window.showErrorMessage(`Could not enumerate saved searches. ${error.message}`);
+                if (error.code = 'ECONNREFUSED' ) {
+                    let m = 
+                    vscode.window.showErrorMessage(`Could not connect to Splunk server. Please check extension settings. ${error.message}`);
+                } else {
+                    vscode.window.showErrorMessage(`Could not enumerate saved searches. ${error.message}`);
+                }
             })
         return(savedSearchArray);
     }
@@ -94,13 +97,11 @@ class SavedSearchProvider {
         if (!splunkUrl) {
             let m = "The URL specified for the Splunk REST API is incorrect. Please check your settings."
             vscode.window.showErrorMessage(m);
-            throw Error(m)
         }
 
         if(!splunkToken) {
             let m = "A Splunk autorization token is required. Please check your settings."
             vscode.window.showErrorMessage(m);
-            throw Error(m)
         }
 
         let searchResults = "No results";
