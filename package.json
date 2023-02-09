@@ -3,7 +3,7 @@
     "version": "0.2.10",
     "publisher": "Splunk",
     "engines": {
-        "vscode": "^1.52.0"
+        "vscode": "^1.72.0"
     },
     "license": "MIT",
     "displayName": "Splunk Extension",
@@ -46,6 +46,22 @@
                     "text/x-code-output"
                 ],
                 "configuration": "./splunk-language-configuration.json"
+            },
+            {
+                "id": "splunk_search",
+                "aliases": [
+                    "SPL"
+                ],
+                "configuration": "./spl-language-configuration.json",
+                "extensions": [
+                    ".splunk-spl"
+                ]
+            },
+            {
+                "id": "splunk-spl-meta",
+                "aliases": [
+                    "SPL-META"
+                ]
             }
         ],
         "grammars": [
@@ -284,6 +300,48 @@
                 "command": "splunk.fullDebugRefresh",
                 "title": "Trigger Full Debug Refresh",
                 "category": "Splunk"
+            },
+            {
+                "command": "splunk.notebooks.addVisualizationPreference",
+                "title": "Add Visualization Preference"
+            },
+            {
+                "command": "splunk.notebooks.openJobInspector",
+                "title": "Open Job Inspector"
+            },
+            {
+                "command": "splunk.notebooks.openSearchLog",
+                "title": "Open Search Log"
+            },
+            {
+                "command": "splunk.notebooks.copyJobIdToClipboard",
+                "title": "Copy Job ID to Clipboard"
+            },
+            {
+                "command": "splunk.notebooks.copyDetection",
+                "title": "Copy Detection"
+            }
+        ],
+        "notebooks": [
+            {
+                "id": "splunk-notebook",
+                "type": "splunk-notebook",
+                "displayName": "Splunk Notebook",
+                "selector": [
+                    {
+                        "filenamePattern": "*.splnb"
+                    }
+                ]
+            }
+        ],
+        "notebookRenderer": [
+            {
+                "id": "splunk-visualization-renderer",
+                "displayName": "Splunk Visualization Renderer",
+                "mimeTypes": [
+                    "application/splunk/events"
+                ],
+                "entrypoint": "./dist/visualization.js"
             }
         ]
     },
@@ -309,18 +367,31 @@
     "icon": "images/icon.png",
     "extensionDependencies": [],
     "dependencies": {
+        "@babel/preset-env": "^7.20.2",
+        "@babel/preset-react": "^7.18.6",
+        "@splunk/react-ui": "^4.14.0",
+        "@splunk/splunk-utils": "^2.2.3",
+        "@splunk/visualization-context": "^25.3.0",
+        "@splunk/visualizations": "^25.3.0",
+        "@types/vscode-notebook-renderer": "^1.72.0",
         "axios": ">=0.27.2",
+        "babel-loader": "^9.1.0",
+        "react": "^16",
+        "react-dom": "^16.14.0",
+        "splunk-sdk": "^1.12.1",
+        "styled-components": "5",
         "ts-loader": "^9.4.2",
         "typescript": "^4.2.2"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
         "@types/node": "^12.12.0",
-        "@types/vscode": "^1.52.0",
+        "@types/vscode": "^1.72.0",
         "chai": "^4.3.6",
         "eslint": "^8.21.0",
         "glob": "^7.1.5",
         "mocha": "^10.0.0",
+        "process": "^0.11.10",
         "typescript": "^4.2.2",
         "vscode-test": "^1.3.2",
         "webpack": "^5.75.0",
