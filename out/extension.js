@@ -15,9 +15,10 @@ const splunkSpec = require("./spec.js");
 const reload = require("./commands/reload.js");
 
 const notebookSerializers = require('./notebooks/serializers');
-const notebookControllers = require('./notebooks/controller');
+const notebookController = require('./notebooks/controller');
+const notebookSpl2Controller = require('./notebooks/spl2/controller');
 const notebookCommands = require('./notebooks/commands');
-const notebookProviders = require('./notebooks/provider');
+const notebookProvider = require('./notebooks/provider');
 
 //const { transpileModule } = require("typescript");
 //const { AsyncLocalStorage } = require("async_hooks");
@@ -227,10 +228,14 @@ function activate(context) {
 
     // Notebook
     context.subscriptions.push(vscode.workspace.registerNotebookSerializer('splunk-notebook', new notebookSerializers.SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
-	let controller = new notebookControllers.SplunkController()
-    context.subscriptions.push(controller)
-    context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('splunk-notebook', new notebookProviders.CellResultCountStatusBarProvider(splunkOutputChannel)));
-    notebookCommands.registerNotebookCommands(controller, splunkOutputChannel, context)
+	context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new notebookSerializers.SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
+    const controller = new notebookController.SplunkController();
+    context.subscriptions.push(controller);
+    const spl2Controller = new notebookSpl2Controller.Spl2Controller();
+    context.subscriptions.push(spl2Controller);
+    context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('splunk-notebook', new notebookProvider.CellResultCountStatusBarProvider(splunkOutputChannel)));
+    context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('spl2-notebook', new notebookProvider.CellResultCountStatusBarProvider(splunkOutputChannel)));
+    notebookCommands.registerNotebookCommands(controller, splunkOutputChannel, context);
 }
 exports.activate = activate;
 

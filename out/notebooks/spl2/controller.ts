@@ -7,36 +7,21 @@ import {
     getSearchJob,
     getSearchJobResults,
     wait,
-} from './splunk';
-import { splunkMessagesToOutputItems } from './utils';
+} from '../splunk';
+import { splunkMessagesToOutputItems } from '../utils';
 
-export class SplunkController {
-    readonly controllerId = 'splunk-notebook-controller';
-    readonly notebookType = 'splunk-notebook';
-    readonly label = 'SPL Note';
-    readonly supportedLanguages = ['markdown', 'splunk_search', 'splunk-spl-meta'];
+// TODO: refactor to inherit/compose with SplunkController for DRYness
+export class Spl2Controller {
+    readonly controllerId = 'spl2-notebook-controller';
+    readonly notebookType = 'spl2-notebook';
+    readonly label = 'SPL2 Note';
+    readonly supportedLanguages = ['splunk_spl2'];
 
     private readonly _controller: vscode.NotebookController;
     private _executionOrder = 0;
     private _interrupted = false;
     private _tokens = {};
     private _lastjob = undefined;
-
-    readonly _spl_meta_help = `
-    SPL-META Manual
-
-    To set a token:
-    <tokenname> = <tokenvalue>
-
-    To display all tokens:
-    token
-
-    To reset token state:
-    reset_tokens
-
-    Special tokens:
-    _lastjob: Contains the search id (sid) of the last query
-    `;
 
     constructor() {
         this._controller = vscode.notebooks.createNotebookController(
@@ -65,9 +50,7 @@ export class SplunkController {
         _controller: vscode.NotebookController
     ): void {
         for (let cell of cells) {
-            if (cell.document.languageId == 'splunk-spl-meta') {
-                this._doMetaExecution(cell);
-            } else {
+            if (cell.document.languageId == 'splunk_spl2') {
                 this._doExecution(cell);
             }
         }
@@ -75,49 +58,6 @@ export class SplunkController {
 
     async interruptHandler(notebook: vscode.NotebookDocument): Promise<void> {
         console.log('interrupt handler called');
-    }
-
-    private async _doMetaExecution(cell: vscode.NotebookCell): Promise<void> {
-        let lines = cell.document.getText().split('\n');
-        const execution = this._controller.createNotebookCellExecution(cell);
-        execution.start(Date.now());
-
-        let outputItems: vscode.NotebookCellOutputItem[] = [];
-
-        for (const line of lines) {
-            if (line === 'tokens') {
-            } else if (line == 'reset_tokens') {
-                this._tokens = {};
-                this._tokens['_lastjob'] = this._lastjob;
-            } else if (line.includes('=')) {
-                let tokenizedLine = line.split('=');
-
-                if (tokenizedLine.length !== 2) {
-                    execution.replaceOutput([
-                        new vscode.NotebookCellOutput([
-                            vscode.NotebookCellOutputItem.text(
-                                'Could not parse token assignment' + '\n' + this._spl_meta_help
-                            ),
-                        ]),
-                    ]);
-                    execution.end(false, Date.now());
-                }
-                this._tokens[tokenizedLine[0].trim()] = tokenizedLine[1].trim();
-            } else {
-                execution.replaceOutput([
-                    new vscode.NotebookCellOutput([
-                        vscode.NotebookCellOutputItem.text(
-                            'Could not parse instructions' + '\n' + this._spl_meta_help
-                        ),
-                    ]),
-                ]);
-                execution.end(false, Date.now());
-            }
-        }
-        outputItems.push(vscode.NotebookCellOutputItem.json(this._tokens));
-
-        execution.replaceOutput([new vscode.NotebookCellOutput(outputItems)]);
-        execution.end(true, Date.now());
     }
 
     private async _doExecution(cell: vscode.NotebookCell): Promise<void> {

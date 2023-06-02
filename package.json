@@ -58,6 +58,16 @@
                 ]
             },
             {
+                "id": "splunk_spl2",
+                "aliases": [
+                    "SPL2"
+                ],
+                "configuration": "./spl2-language-configuration.json",
+                "extensions": [
+                    ".spl2"
+                ]
+            },
+            {
                 "id": "splunk-spl-meta",
                 "aliases": [
                     "SPL-META"
@@ -69,6 +79,11 @@
                 "language": "splunk",
                 "scopeName": "source.splunk",
                 "path": "./syntaxes/splunk.tmLanguage.json"
+            },
+            {
+                "language": "splunk_spl2",
+                "scopeName": "source.spl2",
+                "path": "./syntaxes/spl2.tmGrammar.json"
             }
         ],
         "jsonValidation": [
@@ -330,6 +345,16 @@
                 "selector": [
                     {
                         "filenamePattern": "*.splnb"
+                    }
+                ]
+            },
+            {
+                "id": "spl2-notebook",
+                "type": "spl2-notebook",
+                "displayName": "SPL2 Notebook",
+                "selector": [
+                    {
+                        "filenamePattern": "*.spl2nb"
                     }
                 ]
             }
