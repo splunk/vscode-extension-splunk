@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import {
     cancelSearchJob,
-    createSearchJob,
+    dispatchSpl2Module,
     getClient,
     getSearchJob,
     getSearchJobResults,
@@ -20,14 +20,12 @@ export class Spl2Controller {
     private readonly _controller: vscode.NotebookController;
     private _executionOrder = 0;
     private _interrupted = false;
-    private _tokens = {};
-    private _lastjob = undefined;
 
     constructor() {
         this._controller = vscode.notebooks.createNotebookController(
             this.controllerId,
             this.notebookType,
-            this.label
+            this.label,
         );
 
         this._controller.supportedLanguages = this.supportedLanguages;
@@ -67,42 +65,15 @@ export class Spl2Controller {
         execution.executionOrder = ++this._executionOrder;
         execution.start(Date.now());
 
-        let query = cell.document.getText().trim().replace(/^\s+|\s+$/g, '');
-
-        const service = getClient()
+        const spl2Module = cell.document.getText().trim();
+        const service = getClient();
     
-        let jobs = service.jobs();
-
         let activeThemeKind = vscode.window.activeColorTheme.kind;
         let backgroundColor = new vscode.ThemeColor('notebook.editorBackground');
 
-        const tokenRegex = /\$([a-zA-Z0-9_.|]*?)\$/g;
-
-        var controller = this;
-
-        const replacer = function (match, p1, p2, p3, offset, string) {
-            console.log(match, offset, string);
-
-            const tokenName = match.replaceAll('$', '');
-            console.log('token name', tokenName);
-            if (tokenName in controller._tokens) {
-                console.log(tokenName);
-                return controller._tokens[tokenName];
-            }
-            return match;
-        };
-
-        const newQuery = query.replace(tokenRegex, replacer);
-
-        query = newQuery;
-
-        if (!query.startsWith('|')) {
-            query = 'search ' + query;
-        }
-
         let job;
         try {
-            job = await createSearchJob(jobs, query, { output_mode: 'json_cols', 'status_buckets': 300 });
+            job = await dispatchSpl2Module(service, spl2Module);
         } catch (failedResponse) {
             const messages = failedResponse.data.messages;
             const messageItems = splunkMessagesToOutputItems(messages);
@@ -111,10 +82,6 @@ export class Spl2Controller {
             execution.end(false, Date.now());
             return;
         }
-
-        let sid = job['sid'];
-        this._lastjob = sid;
-        this._tokens['_lastjob'] = this._lastjob;
 
         execution.replaceOutput([new vscode.NotebookCellOutput([], { job: job.properties() })]);
 
