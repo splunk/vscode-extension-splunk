@@ -355,6 +355,9 @@
                 "selector": [
                     {
                         "filenamePattern": "*.spl2nb"
+                    },
+                    {
+                        "filenamePattern": "modules.json"
                     }
                 ]
             }
