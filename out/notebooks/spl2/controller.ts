@@ -7,7 +7,6 @@ import {
 import { SplunkController } from '../controller';
 import { splunkMessagesToOutputItems } from '../utils';
 
-// TODO: refactor to inherit/compose with SplunkController for DRYness
 export class Spl2Controller extends SplunkController {
     constructor() {
         super('spl2-notebook-controller', 'spl2-notebook', 'SPL2 Note', ['splunk_spl2']);
