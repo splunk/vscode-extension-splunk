@@ -212,7 +212,8 @@ export class SplunkController {
             if (job.properties().isDone == true) {
                 jobComplete = true;
                 continue;
-            } 
+            }
+            execution.replaceOutput([new vscode.NotebookCellOutput([], { job: job.properties() })]);
             wait(1000);
         }        
 

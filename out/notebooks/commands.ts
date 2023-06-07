@@ -3,9 +3,9 @@ import { SplunkController } from './controller';
 import { VIZ_TYPES } from './visualizations';
 import { getClient, getJobSearchLog, getSearchJobBySid } from './splunk';
 
-export async function registerNotebookCommands(controller: SplunkController, outputChannel: vscode.OutputChannel, context: vscode.ExtensionContext) {
+export async function registerNotebookCommands(controllers: SplunkController[], outputChannel: vscode.OutputChannel, context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('splunk.notebooks.addVisualizationPreference', (cell) => { 
-		addVisualizationPreference(controller, cell)
+		controllers.forEach((controller) => addVisualizationPreference(controller, cell));
 	}))
 
 	context.subscriptions.push(vscode.commands.registerCommand('splunk.notebooks.openJobInspector', (sid) => { 

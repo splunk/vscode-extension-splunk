@@ -14,11 +14,11 @@ const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
 const reload = require("./commands/reload.js");
 
-const notebookSerializers = require('./notebooks/serializers');
-const notebookController = require('./notebooks/controller');
-const notebookSpl2Controller = require('./notebooks/spl2/controller');
+const { SplunkNotebookSerializer } = require('./notebooks/serializers');
+const { SplunkController } = require('./notebooks/controller');
+const { Spl2Controller } = require('./notebooks/spl2/controller');
 const notebookCommands = require('./notebooks/commands');
-const notebookProvider = require('./notebooks/provider');
+const { CellResultCountStatusBarProvider } = require('./notebooks/provider');
 
 //const { transpileModule } = require("typescript");
 //const { AsyncLocalStorage } = require("async_hooks");
@@ -227,15 +227,15 @@ function activate(context) {
     }));
 
     // Notebook
-    context.subscriptions.push(vscode.workspace.registerNotebookSerializer('splunk-notebook', new notebookSerializers.SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
-	context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new notebookSerializers.SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
-    const controller = new notebookController.SplunkController();
+    context.subscriptions.push(vscode.workspace.registerNotebookSerializer('splunk-notebook', new SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
+	context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
+    const controller = new SplunkController();
     context.subscriptions.push(controller);
-    const spl2Controller = new notebookSpl2Controller.Spl2Controller();
+    const spl2Controller = new Spl2Controller();
     context.subscriptions.push(spl2Controller);
-    context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('splunk-notebook', new notebookProvider.CellResultCountStatusBarProvider(splunkOutputChannel)));
-    context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('spl2-notebook', new notebookProvider.CellResultCountStatusBarProvider(splunkOutputChannel)));
-    notebookCommands.registerNotebookCommands(controller, splunkOutputChannel, context);
+    context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('splunk-notebook', new CellResultCountStatusBarProvider(splunkOutputChannel)));
+    context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('spl2-notebook', new CellResultCountStatusBarProvider(splunkOutputChannel)));
+    notebookCommands.registerNotebookCommands([controller, spl2Controller], splunkOutputChannel, context);
 }
 exports.activate = activate;
 

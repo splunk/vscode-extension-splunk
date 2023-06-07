@@ -15,7 +15,7 @@ export class CellResultCountStatusBarProvider implements vscode.NotebookCellStat
 
         const items: vscode.NotebookCellStatusBarItem[] = [];
 
-        if (cell.document.languageId !== "splunk_search") {
+        if (cell.document.languageId !== "splunk_search" && cell.document.languageId !== "splunk_spl2") {
             return items
         }
 

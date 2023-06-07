@@ -34,15 +34,18 @@ export class Spl2Controller extends SplunkController {
         let job;
         try {
             job = await dispatchSpl2Module(service, spl2Module);
+            await super._finishExecution(job, cell, execution);
         } catch (failedResponse) {
-            const messages = failedResponse.data.messages;
-            const messageItems = splunkMessagesToOutputItems(messages);
+            let outputItems: vscode.NotebookCellOutputItem[] = [];
+            if (!failedResponse.data || !failedResponse.data.messages) {
+                outputItems = [vscode.NotebookCellOutputItem.error(failedResponse)];
+            } else {
+                const messages = failedResponse.data.messages;
+                outputItems = splunkMessagesToOutputItems(messages);
+            }
 
-            execution.replaceOutput([new vscode.NotebookCellOutput(messageItems)]);
+            execution.replaceOutput([new vscode.NotebookCellOutput(outputItems)]);
             execution.end(false, Date.now());
-            return;
         }
-
-        await super._finishExecution(job, cell, execution);
     }
 }
