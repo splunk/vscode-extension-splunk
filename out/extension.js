@@ -17,6 +17,8 @@ const reload = require("./commands/reload.js");
 const { SplunkNotebookSerializer } = require('./notebooks/serializers');
 const { SplunkController } = require('./notebooks/controller');
 const { Spl2Controller } = require('./notebooks/spl2/controller');
+const { getMissingSpl2Requirements, getLatestSpl2Release } = require('./notebooks/spl2/installer');
+const { startSpl2ClientAndServer } = require('./notebooks/spl2/initializer');
 const notebookCommands = require('./notebooks/commands');
 const { CellResultCountStatusBarProvider } = require('./notebooks/provider');
 
@@ -64,7 +66,7 @@ function getDocumentItems(document, PATTERN) {
     return items
 }
 
-function activate(context) {
+async function activate(context) {
 
     let splunkOutputChannel = vscode.window.createOutputChannel("Splunk");
 
@@ -207,8 +209,12 @@ function activate(context) {
     ], new splunkFoldingRangeProvider.confFoldingRangeProvider()));
 
     // If vscode was opened with an active Splunk file, handle it.
-    if(vscode.window.activeTextEditor && isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
-        handleSplunkFile(context);
+    if(vscode.window.activeTextEditor) {
+        if (isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
+            handleSplunkFile(context);
+        } else if (vscode.window.activeTextEditor.document.languageId == 'splunk_spl2') {
+            await handleSpl2File(context);
+        }
     }
 
     // Set up listener for text document changes
@@ -220,9 +226,14 @@ function activate(context) {
     }));
 
     // Set up listener for active editor changing
-    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor( () => {
-        if (vscode.window.activeTextEditor && isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
+    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor( async () => {
+        if (!vscode.window.activeTextEditor) {
+            return;
+        }
+        if (isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
             handleSplunkFile(context);
+        } else if (vscode.window.activeTextEditor.document.languageId == 'splunk_spl2') {
+            await handleSpl2File(context);
         }
     }));
 
@@ -289,6 +300,16 @@ function handleSplunkFile(context) {
 
     // Cache specConfig
     specConfigs[currentDocument] = specConfig
+}
+
+async function handleSpl2File(context) {
+    try {
+        await getMissingSpl2Requirements(context);
+        await getLatestSpl2Release(context);
+        await startSpl2ClientAndServer(context);
+    } catch (err) {
+        vscode.window.showErrorMessage(`Issue setting up SPL2 environment: ${err}`);
+    }
 }
 
 function getSpecFilePath(basePath, filename) {
