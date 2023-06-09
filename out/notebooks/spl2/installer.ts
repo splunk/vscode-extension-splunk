@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { pipeline } from 'stream';
 import * as tar from 'tar-fs';
+import * as unzipper from 'unzipper';
 import * as util from 'util';
 import { ExtensionContext, StatusBarItem, workspace } from 'vscode';
 import * as zlib from 'zlib';
@@ -44,32 +45,33 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         // If java hasn't been set up, check $JAVA_HOME before downloading a JDK
         if (!javaLoc && process.env.JAVA_HOME) {
             let javaHomeBin = path.join(process.env.JAVA_HOME, 'bin', 'java');
+            if (process.platform === 'win32') {
+                javaHomeBin = `${javaHomeBin}.exe`;
+            }
             if (isJavaVersionCompatible(javaHomeBin)) {
                 javaLoc = javaHomeBin;
                 workspace.getConfiguration().update(configKeyJavaPath, javaHomeBin);
             }
         }
-        // Setup local storage directory for downloads and installs
-        makeLocalStorage(context);
-        
-        // We still don't have Java installed, do it now
-        if (!javaLoc || true) {
-            const jdkDir = path.join(context.globalStorageUri.fsPath, "spl2", "jdk");
-            javaLoc = await installJDK(jdkDir, progressBar);
-        }
 
         // Check workspace for current installed LSP version
         let lspVersion = workspace.getConfiguration().get(configKeyLspVersion);
+
+        // Setup local storage directory for downloads and installs
+        makeLocalStorage(context);
+        
+        const localJdkDir = path.join(context.globalStorageUri.fsPath, "spl2", "jdk");
         if (!lspVersion) {
             // If we haven't set up a Language Server version prompt use to accept terms
             // and also install java if needed
-
             const lspUrl = workspace.getConfiguration().get(configKeyLspUrl);
 
+            javaLoc = await installJDK(localJdkDir, progressBar);
+            workspace.getConfiguration().update(configKeyJavaPath, javaLoc);
         } else if (!javaLoc) {
             // If only java is needed simply install this in the background, no terms are needed
-
-            // TODO install java
+            javaLoc = await installJDK(localJdkDir, progressBar);
+            workspace.getConfiguration().update(configKeyJavaPath, javaLoc);
         }
         // Check to see LSP version exists on disk
         // If LSP but no Java prompt for install
@@ -169,35 +171,49 @@ async function installJDK(installDir: string, progressBar: StatusBarItem): Promi
     
     // Download to installDir
     const downloadedArchive = path.join(installDir, filename);
-    await downloadWithProgress(url, downloadedArchive, progressBar);
+    let compressedSize = 0;
+    try {
+        compressedSize = await downloadWithProgress(url, downloadedArchive, progressBar, 'Downloading JDK');
+    } catch (err) {
+        throw new Error(`Error downloading JDK: ${err}`);
+    }
 
     // Extract JDK and return path to java executable
-    let outPath;
-    if (ext === 'zip') {
+    let binJarPath;
 
-    } else { // tar.gz
-        const pipe = util.promisify(pipeline);
-        try {
-            await pipe(
-                fs.createReadStream(downloadedArchive),
-                zlib.createGunzip(),
-                tar.extract(installDir, {
-                    map: (header) => {
-                        if (header.name.endsWith(path.join("bin", "java"))) {
-                            outPath = path.join(installDir, header.name);
-                        }
-                        return header;
-                    }
-                })
-            );
-        } catch (err) {
-            throw new Error(`Error extracting JDK: ${err}`);
+    progressBar.show();
+    try {
+        if (ext === 'zip') {
+            binJarPath = await extractZipWithProgress(downloadedArchive, installDir, compressedSize, progressBar, 'Unzipping JDK');
+        } else { // tar.gz
+            binJarPath = await extractTgzWithProgress(downloadedArchive, installDir, compressedSize, progressBar, 'Extracting JDK');
         }
-        return outPath;
+    } catch (err) {
+        throw new Error(`Error extracting JDK: ${err}`);
+    } finally {
+        progressBar.hide();
     }
+    if (!binJarPath) {
+        throw new Error(`Error finding path to java executable within extracted JDK`);
+    }
+    return binJarPath;
 }
 
-async function downloadWithProgress(url: string, destinationPath: string, progressBar: StatusBarItem): Promise<void> {
+/**
+ * Helper function to download a file, updating a progress bar while downloading, and returning
+ * a Promise containing the total size of the download.
+ * @param url URL of artifact to download
+ * @param destinationPath Local path to download to
+ * @param progressBar To update download progress
+ * @param progressBarText Text describing what's being downloaded to precede download %
+ * @returns 
+ */
+async function downloadWithProgress(
+    url: string,
+    destinationPath: string,
+    progressBar: StatusBarItem,
+    progressBarText: string,
+): Promise<number> {
     const fileWriter = fs.createWriteStream(destinationPath);
 
     return new Promise(async (resolve, reject) => {
@@ -215,7 +231,7 @@ async function downloadWithProgress(url: string, destinationPath: string, progre
             totalDownloaded += chunk.length;
             let pct = Math.floor(totalDownloaded * 100 / totalSize);
             if (pct === nextUpdate) {
-                progressBar.text = `Downloading JDK ${pct}%`;
+                progressBar.text = `${progressBarText} ${pct}%`;
                 nextUpdate++;
             }
         });
@@ -227,11 +243,81 @@ async function downloadWithProgress(url: string, destinationPath: string, progre
         fileWriter.on('close', () => {
             if (!error) {
                 progressBar.hide();
-                resolve();
+                resolve(totalSize);
             }
         });
         data.pipe(fileWriter);
     });
+}
+
+async function extractZipWithProgress(
+    zipfilePath:string,
+    extractPath: string,
+    compressedSize: number,
+    progressBar: StatusBarItem,
+    progressBarText: string,
+): Promise<string> {
+    // Create read and unzip streams and listen for individual entry to find bin\java.exe
+    let binJavaPath;
+    let readCompressedSize = 0;
+    let nextUpdate = 1;
+
+    const pipe = util.promisify(pipeline);
+    const readStream = fs.createReadStream(zipfilePath);
+    const unzipStream = unzipper.Extract({ path: extractPath });
+    unzipStream._writable.on('entry', entry => {
+        if (entry.path.endsWith(path.join('bin', 'java.exe'))) {
+            binJavaPath = path.join(extractPath, entry.path);
+        }
+        readCompressedSize += entry.vars.compressedSize;
+        let pct = Math.floor(readCompressedSize * 100 / compressedSize);
+        if (pct === nextUpdate) {
+            progressBar.text = `${progressBarText} ${pct}%`;
+            nextUpdate++;
+        }
+        entry.autodrain();
+    });
+    await pipe(
+        readStream,
+        unzipStream,
+    );
+    return binJavaPath;
+}
+
+async function extractTgzWithProgress(
+        tgzPath:string,
+        extractPath: string,
+        compressedSize: number,
+        progressBar: StatusBarItem,
+        progressBarText: string,
+    ): Promise<string> {
+    // Create read and unzip streams and listen for individual entry to find bin\java.exe
+    let binJavaPath;
+    let readCompressedSize = 0;
+    let nextUpdate = 1;
+
+    const pipe = util.promisify(pipeline);
+    
+    await pipe(
+        fs.createReadStream(tgzPath).on('data', (chunk) => {
+            readCompressedSize += chunk.length;
+            let pct = Math.floor(readCompressedSize * 100 / compressedSize);
+            if (pct === nextUpdate) {
+                progressBar.text = `${progressBarText} ${pct}%`;
+                nextUpdate++;
+            }
+        }),
+        zlib.createGunzip(),
+        tar.extract(extractPath, {
+            map: (header) => {
+                if (header.name.endsWith(path.join('bin', 'java'))) {
+                    binJavaPath = path.join(extractPath, header.name);
+                }
+                return header;
+            }
+        }),
+    );
+    return binJavaPath;
 }
 
 /**
