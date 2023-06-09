@@ -199,8 +199,12 @@ async function activate(context) {
 
     }));
 
-    // Register Utility Commands
+    // Setup progress bar for install
+    const progressBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    context.subscriptions.push(progressBar);
+    progressBar.hide();
 
+    // Register Utility Commands
     context.subscriptions.push(vscode.commands.registerCommand('splunk.fullDebugRefresh', async () => {reload.fullDebugRefresh(splunkOutputChannel)}))
 
     // Set up stanza folding
@@ -213,7 +217,7 @@ async function activate(context) {
         if (isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
             handleSplunkFile(context);
         } else if (vscode.window.activeTextEditor.document.languageId == 'splunk_spl2') {
-            await handleSpl2File(context);
+            await handleSpl2File(context, progressBar);
         }
     }
 
@@ -233,7 +237,7 @@ async function activate(context) {
         if (isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
             handleSplunkFile(context);
         } else if (vscode.window.activeTextEditor.document.languageId == 'splunk_spl2') {
-            await handleSpl2File(context);
+            await handleSpl2File(context, progressBar);
         }
     }));
 
@@ -302,10 +306,10 @@ function handleSplunkFile(context) {
     specConfigs[currentDocument] = specConfig
 }
 
-async function handleSpl2File(context) {
+async function handleSpl2File(context, progressBar) {
     try {
-        await getMissingSpl2Requirements(context);
-        await getLatestSpl2Release(context);
+        await getMissingSpl2Requirements(context, progressBar);
+        await getLatestSpl2Release(context, progressBar);
         await startSpl2ClientAndServer(context);
     } catch (err) {
         vscode.window.showErrorMessage(`Issue setting up SPL2 environment: ${err}`);

@@ -201,6 +201,13 @@
                     "default": "",
                     "order": 12,
                     "description": "[SPL2] Langauge Server Version"
+                },
+                "splunk.spl2.lsp.splunk.spl2.languageServerUrl": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "",
+                    "order": 13,
+                    "description": "[SPL2] Langauge Server Download URL"
                 }
             }
         },

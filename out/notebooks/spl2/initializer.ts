@@ -2,7 +2,7 @@ import { ExtensionContext, workspace } from 'vscode';
 import {
     configKeyAcceptedTerms,
     configKeyJavaPath,
-    configKeyLSPVersion,
+    configKeyLspVersion,
     TermsAcceptanceStatus
 } from './installer';
 
@@ -18,7 +18,7 @@ export async function startSpl2ClientAndServer(context: ExtensionContext): Promi
             return;
         }
         const javaPath = workspace.getConfiguration().get(configKeyJavaPath);
-        const lspVersion = workspace.getConfiguration().get(configKeyLSPVersion);
+        const lspVersion = workspace.getConfiguration().get(configKeyLspVersion);
         // TODO test for open port and start client and server
         reject('LSP initialization not implemented');
     });
