@@ -1,8 +1,12 @@
 import axios from 'axios';
-import * as child_process from "child_process";
-import * as fs from "fs";
-import * as path from "path";
+import * as child_process from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
+import { pipeline } from 'stream';
+import * as tar from 'tar-fs';
+import * as util from 'util';
 import { ExtensionContext, StatusBarItem, workspace } from 'vscode';
+import * as zlib from 'zlib';
 
 // Keys used to store/retrieve state related to this extension
 export const configKeyAcceptedTerms = 'splunk.spl2.acceptedTerms';
@@ -47,9 +51,11 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         }
         // Setup local storage directory for downloads and installs
         makeLocalStorage(context);
+        
+        // We still don't have Java installed, do it now
         if (!javaLoc) {
             const jdkDir = path.join(context.globalStorageUri.fsPath, "spl2", "jdk");
-            await installJDK(jdkDir, progressBar);
+            javaLoc = await installJDK(jdkDir, progressBar);
         }
 
         // Check workspace for current installed LSP version
@@ -126,7 +132,7 @@ function makeLocalStorage(context: ExtensionContext): void {
  * Helper function to install appropriate JDK to run the SPL2 Language Server
  * @param installDir Local directory file path to write JDK to
  */
-async function installJDK(installDir: string, progressBar: StatusBarItem): Promise<void> {
+async function installJDK(installDir: string, progressBar: StatusBarItem): Promise<string> {
     let arch = '';
     let os = '';
     let ext = 'tar.gz';
@@ -160,9 +166,39 @@ async function installJDK(installDir: string, progressBar: StatusBarItem): Promi
     
     const filename = `amazon-corretto-${minimumMajorJavaVersion}-${arch}-${os}-jdk.${ext}`;
     const url = `https://corretto.aws/downloads/latest/${filename}`;
+    
     // Download to installDir
     const downloadedArchive = path.join(installDir, filename);
-    const fileWriter = fs.createWriteStream(downloadedArchive);
+    await downloadWithProgress(url, downloadedArchive, progressBar);
+
+    // Extract
+    if (ext === 'zip') {
+
+    } else { // tar.gz
+        let outPath;
+        const pipe = util.promisify(pipeline);
+        try {
+            await pipe(
+                fs.createReadStream(downloadedArchive),
+                zlib.createGunzip(),
+                tar.extract(installDir, {
+                    map: (header) => {
+                        if (header.name.endsWith(path.join("bin", "java"))) {
+                            outPath = header.name;
+                        }
+                        return header;
+                    }
+                })
+            );
+        } catch (err) {
+            throw new Error(`Error extracting JDK: ${err}`);
+        }
+        return outPath;
+    }
+}
+
+async function downloadWithProgress(url: string, destinationPath: string, progressBar: StatusBarItem): Promise<void> {
+    const fileWriter = fs.createWriteStream(destinationPath);
 
     return new Promise(async (resolve, reject) => {
         const { data, headers } = await axios({
