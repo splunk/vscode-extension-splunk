@@ -53,7 +53,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         makeLocalStorage(context);
         
         // We still don't have Java installed, do it now
-        if (!javaLoc) {
+        if (!javaLoc || true) {
             const jdkDir = path.join(context.globalStorageUri.fsPath, "spl2", "jdk");
             javaLoc = await installJDK(jdkDir, progressBar);
         }
@@ -171,11 +171,11 @@ async function installJDK(installDir: string, progressBar: StatusBarItem): Promi
     const downloadedArchive = path.join(installDir, filename);
     await downloadWithProgress(url, downloadedArchive, progressBar);
 
-    // Extract
+    // Extract JDK and return path to java executable
+    let outPath;
     if (ext === 'zip') {
 
     } else { // tar.gz
-        let outPath;
         const pipe = util.promisify(pipeline);
         try {
             await pipe(
@@ -184,7 +184,7 @@ async function installJDK(installDir: string, progressBar: StatusBarItem): Promi
                 tar.extract(installDir, {
                     map: (header) => {
                         if (header.name.endsWith(path.join("bin", "java"))) {
-                            outPath = header.name;
+                            outPath = path.join(installDir, header.name);
                         }
                         return header;
                     }
