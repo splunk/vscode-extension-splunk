@@ -6,7 +6,7 @@ import { pipeline } from 'stream';
 import * as tar from 'tar-fs';
 import * as unzipper from 'unzipper';
 import * as util from 'util';
-import { ExtensionContext, StatusBarItem, workspace } from 'vscode';
+import { env, ExtensionContext, StatusBarItem, Uri, window, workspace } from 'vscode';
 import * as zlib from 'zlib';
 
 // Keys used to store/retrieve state related to this extension
@@ -19,9 +19,9 @@ export const configKeyLspUrl = 'splunk.spl2.languageServerUrl';
 const minimumMajorJavaVersion = 17;
 
 export enum TermsAcceptanceStatus {
-    DeclinedForever = "declined (forever)",
-    DeclinedOnce = "declined (once)",
-    Accepted = "accepted",
+    DeclinedForever = 'declined (forever)',
+    DeclinedOnce = 'declined (once)',
+    Accepted = 'accepted',
 }
 
 /**
@@ -60,27 +60,27 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         // Setup local storage directory for downloads and installs
         makeLocalStorage(context);
         
-        const localJdkDir = path.join(context.globalStorageUri.fsPath, "spl2", "jdk");
+        const localJdkDir = path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
         if (!lspVersion) {
             // If we haven't set up a Language Server version prompt use to accept terms
-            // and also install java if needed
+            // and also confirm install of java if needed
             const lspUrl = workspace.getConfiguration().get(configKeyLspUrl);
-
-            javaLoc = await installJDK(localJdkDir, progressBar);
-            workspace.getConfiguration().update(configKeyJavaPath, javaLoc);
+            const accepted = await promptToDownloadLsp(!javaLoc);
+            if (!accepted) {
+                return;
+            }
         } else if (!javaLoc) {
-            // If only java is needed simply install this in the background, no terms are needed
+            // Ask user to confirm download, cancel, or opt-out of SPL2 altogether
+            const accepted = await promptToDownloadJava();
+            if (!accepted) {
+                return;
+            }
+        }
+        // We already prompted the user to confirm this download, proceed
+        if (!javaLoc) {
             javaLoc = await installJDK(localJdkDir, progressBar);
             workspace.getConfiguration().update(configKeyJavaPath, javaLoc);
         }
-        // Check to see LSP version exists on disk
-        // If LSP but no Java prompt for install
-        // If no LSP and no Java ask to accept terms and install both
-        // Record acceptance or denying of terms
-        // If accept
-        //   a) download and unpack JDK and update workspace config with location
-        //   b) download and unpack LSP and update workspace config with installedLSPVersion
-        reject('getMissingSpl2Requirements not implemented');
     });
 }
 
@@ -88,7 +88,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
  * Helper function to run 'java -version' and parse the result to check if it
  * meets out minimum Java major version
  * @param javaLoc Location of java executable (e.g. value of $JAVA_HOME) 
- * @returns true if running `java -version` returns a `version "X.Y.Z"` where X
+ * @returns true if running `java -version` returns a `version 'X.Y.Z'` where X
  *          meets out minimum Java major version
  */
 function isJavaVersionCompatible(javaLoc: string): boolean {
@@ -113,20 +113,42 @@ function makeLocalStorage(context: ExtensionContext): void {
     // └── spl2
     //     ├── jdk
     //     └── lsp
-    if (!fs.existsSync(localSplunkArtifacts)) {
-        fs.mkdirSync(localSplunkArtifacts);
-    }
-    const spl2Artifacts = path.join(localSplunkArtifacts, "spl2");
-    if (!fs.existsSync(spl2Artifacts)) {
-        fs.mkdirSync(spl2Artifacts);
-    }
-    const jdkArtifacts = path.join(spl2Artifacts, "jdk");
-    if (!fs.existsSync(jdkArtifacts)) {
-        fs.mkdirSync(jdkArtifacts);
-    }
-    const lspArtifacts = path.join(spl2Artifacts, "lsp");
-    if (!fs.existsSync(lspArtifacts)) {
-        fs.mkdirSync(lspArtifacts);
+    const spl2Artifacts = path.join(localSplunkArtifacts, 'spl2');
+    const jdkArtifacts = path.join(spl2Artifacts, 'jdk');
+    const lspArtifacts = path.join(spl2Artifacts, 'lsp');
+    [localSplunkArtifacts, spl2Artifacts, jdkArtifacts, lspArtifacts].forEach((path) => {
+        if (!fs.existsSync(path)) {
+            fs.mkdirSync(path);
+        }
+    });
+}
+
+async function promptToDownloadJava(): Promise<boolean> {
+    const promptMessage = (
+        `For SPL2 support Java ${minimumMajorJavaVersion} or later is required.`
+    );
+    const downloadAndInstallChoice = 'Download and Install';
+    const turnOffSPL2Choice = 'Turn off SPL2 support';
+  
+    const popup = window.showInformationMessage(
+        promptMessage,
+        { modal: true },
+        downloadAndInstallChoice,
+        turnOffSPL2Choice,
+    );
+  
+    const userSelection = (await popup) || null;
+    switch(userSelection) {
+        case downloadAndInstallChoice:
+            return true;
+        case turnOffSPL2Choice:
+            console.log('User opted out of SPL2 Langauge Server download, SPL2 support disabled');
+            // Record preference so user is not asked again
+            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever);
+            return false;
+        default:
+            // Cancel
+            return false;
     }
 }
 
@@ -318,6 +340,47 @@ async function extractTgzWithProgress(
         }),
     );
     return binJavaPath;
+}
+
+async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
+    const promptMessage = (
+        'For SPL2 support with this extension a download of the SPL2 Language ' +
+        'Server subject to the Splunk General Terms ' +
+        (
+            alsoInstallJava ?
+                `and of Java ${minimumMajorJavaVersion} are required.` :
+                'is required.'
+        )
+    );
+    const agreeAndContinueChoice = 'Agree and Continue';
+    const viewTermsChoice = 'View Splunk General Terms';
+    const turnOffSPL2Choice = 'Turn off SPL2 support';
+
+    const popup = window.showInformationMessage(
+        promptMessage,
+        { modal: true },
+        agreeAndContinueChoice,
+        viewTermsChoice,
+        turnOffSPL2Choice,
+    );
+    
+    const userSelection = (await popup) || null;
+    switch(userSelection) {
+        case agreeAndContinueChoice:
+            return true;
+        case viewTermsChoice:
+            console.log('Viewing Splunk General Terms in browser...');
+            env.openExternal(Uri.parse('https://www.splunk.com/en_us/legal/splunk-general-terms.html'));
+            return await promptToDownloadLsp(alsoInstallJava);
+        case turnOffSPL2Choice:
+            console.log('User opted out of SPL2 Langauge Server download, SPL2 support disabled');
+            // Record preference so user is not asked again
+            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever);
+            return false;
+        default:
+            // Cancel
+            return false;
+    }
 }
 
 /**
