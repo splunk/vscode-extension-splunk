@@ -64,7 +64,6 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         // Setup local storage directory for downloads and installs
         makeLocalStorage(context);
         
-        const localJdkDir = path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
         let installedLatestLsp = false;
         if (!lspVersion) {
             // If we haven't set up a Language Server version prompt use to accept terms
@@ -75,7 +74,12 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
                 return;
             }
             try {
-                await getLatestSpl2Release(context, progressBar);
+                // Remove any existing LSP artifacts first
+                const localLspDir = path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
+                fs.rmdirSync(localLspDir, { recursive: true});
+                makeLocalStorage(context); // recreate directory
+            
+                // await getLatestSpl2Release(context, progressBar);
                 installedLatestLsp = true;
             } catch (err) {
                 reject(`Error retrieving latest SPL2 release, err: ${err}`);
@@ -89,6 +93,11 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         }
         // We already prompted the user to confirm this download, proceed
         if (!javaLoc) {
+            // Remove any old artifacts first
+            const localJdkDir = path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
+            fs.rmdirSync(localJdkDir, { recursive: true});
+            makeLocalStorage(context); // recreate directory
+
             javaLoc = await installJDK(localJdkDir, progressBar);
             workspace.getConfiguration().update(configKeyJavaPath, javaLoc);
         }
