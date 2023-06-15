@@ -308,8 +308,10 @@ function handleSplunkFile(context) {
 
 async function handleSpl2File(context, progressBar) {
     try {
-        await getMissingSpl2Requirements(context, progressBar);
-        await getLatestSpl2Release(context, progressBar);
+        const installedLatestLsp = await getMissingSpl2Requirements(context, progressBar);
+        if (!installedLatestLsp) {
+            await getLatestSpl2Release(context, progressBar);
+        }
         await startSpl2ClientAndServer(context);
     } catch (err) {
         vscode.window.showErrorMessage(`Issue setting up SPL2 environment: ${err}`);

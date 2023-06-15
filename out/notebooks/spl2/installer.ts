@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as child_process from 'child_process';
+import { XMLParser} from 'fast-xml-parser';
 import * as fs from 'fs';
 import * as path from 'path';
 import { pipeline } from 'stream';
@@ -15,6 +16,9 @@ export const configKeyJavaPath = 'splunk.spl2.javaPath';
 export const configKeyLspVersion = 'splunk.spl2.languageServerVersion';
 export const configKeyLspUrl = 'splunk.spl2.languageServerUrl';
 
+export const stateKeyLatestLspVersion = 'splunk.spl2.latestLspVersion';
+export const stateKeyLastLspCheck = 'splunk.spl2.lastLspCheck';
+
 // Minimum version of Java needed for SPL2 Language Server
 const minimumMajorJavaVersion = 17;
 
@@ -29,7 +33,7 @@ export enum TermsAcceptanceStatus {
  * accepting Splunk General terms. If compatible Java and Language Server is already installed
  * this will be a no-op.
  */
-export async function getMissingSpl2Requirements(context: ExtensionContext, progressBar: StatusBarItem): Promise<void> {
+export async function getMissingSpl2Requirements(context: ExtensionContext, progressBar: StatusBarItem): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
         // If the user has already opted-out for good then stop here
         const termsStatus: TermsAcceptanceStatus = workspace.getConfiguration().get(configKeyAcceptedTerms);
@@ -49,7 +53,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
                 javaHomeBin = `${javaHomeBin}.exe`;
             }
             if (isJavaVersionCompatible(javaHomeBin)) {
-                javaLoc = javaHomeBin;
+                // javaLoc = javaHomeBin; // TODO DONT CHECK THIS IN
                 workspace.getConfiguration().update(configKeyJavaPath, javaHomeBin);
             }
         }
@@ -61,6 +65,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         makeLocalStorage(context);
         
         const localJdkDir = path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
+        let installedLatestLsp = false;
         if (!lspVersion) {
             // If we haven't set up a Language Server version prompt use to accept terms
             // and also confirm install of java if needed
@@ -68,6 +73,12 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
             const accepted = await promptToDownloadLsp(!javaLoc);
             if (!accepted) {
                 return;
+            }
+            try {
+                await getLatestSpl2Release(context, progressBar);
+                installedLatestLsp = true;
+            } catch (err) {
+                reject(`Error retrieving latest SPL2 release, err: ${err}`);
             }
         } else if (!javaLoc) {
             // Ask user to confirm download, cancel, or opt-out of SPL2 altogether
@@ -81,6 +92,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
             javaLoc = await installJDK(localJdkDir, progressBar);
             workspace.getConfiguration().update(configKeyJavaPath, javaLoc);
         }
+        resolve(installedLatestLsp);
     });
 }
 
@@ -388,12 +400,31 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
  * upgrade if not, or automatically upgrade if user has that setting enabled.
  */
 export async function getLatestSpl2Release(context: ExtensionContext, progressBar: StatusBarItem): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+        const lspArtifactPath = path.join(context.globalStorageUri.fsPath, 'lsp');
+        
+        let lspVersion: string = context.globalState.get(stateKeyLatestLspVersion) || "";
+        const lastUpdateMs: number = context.globalState.get(stateKeyLastLspCheck) || 0;
+        // Check for new version of SPL2 Language Server if longer than 24 hours
+        if (Date.now() - lastUpdateMs > 24 * 60 * 60 * 1000) {
+            const metaPath = path.join(lspArtifactPath, 'maven-metadata.xml');
+            try {
+                await downloadWithProgress(
+                    'https://splunk.jfrog.io/splunk/maven-splunk-release/spl2/com/splunk/spl/spl-lang-server-sockets/maven-metadata.xml',
+                    metaPath,
+                    progressBar,
+                    'Checking for SPL2 updates',
+                );
+                const parser = new XMLParser();
+                const metadata = fs.readFileSync(metaPath);
+                const metaParsed = parser.parse(metadata);
+                lspVersion = metaParsed?.metadata?.versioning?.latest;
+            } catch (err) {
+                console.warn(`Error retrieving latest SPL2 version, err: ${err}`);
+            }
+            
+        }
         // TODO:
-        // Get lastChecked date from workspaceState
-        // if Date.now() - lastChecked > 1 day then
-        //   retrieve 
-        //   read metadata.versioning.latest value
         // if latest version > installed version then prompt for download
         // save update preference to workspace.getConfiguration
         // if yes then download and unpack and update workspaceState with installedLSPVersion 

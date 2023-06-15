@@ -437,6 +437,7 @@
         "@types/vscode-notebook-renderer": "^1.72.0",
         "axios": ">=0.27.2",
         "babel-loader": "^9.1.0",
+        "fast-xml-parser": "^4.2.4",
         "react": "^16",
         "react-dom": "^16.14.0",
         "splunk-sdk": "^1.12.1",
