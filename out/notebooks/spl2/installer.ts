@@ -14,7 +14,6 @@ import * as zlib from 'zlib';
 export const configKeyAcceptedTerms = 'splunk.spl2.acceptedTerms';
 export const configKeyJavaPath = 'splunk.spl2.javaPath';
 export const configKeyLspVersion = 'splunk.spl2.languageServerVersion';
-export const configKeyLspUrl = 'splunk.spl2.languageServerUrl';
 
 export const stateKeyLatestLspVersion = 'splunk.spl2.latestLspVersion';
 export const stateKeyLastLspCheck = 'splunk.spl2.lastLspCheck';
@@ -86,7 +85,6 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
             // If we haven't set up a Language Server version prompt use to accept terms
             // and also confirm install of java if needed
             try {
-                const lspUrl = workspace.getConfiguration().get(configKeyLspUrl);
                 const accepted = await promptToDownloadLsp(!javaLoc);
                 if (!accepted) {
                     return;
@@ -203,6 +201,8 @@ async function promptToDownloadJava(): Promise<boolean> {
     const userSelection = (await popup) || null;
     switch(userSelection) {
         case downloadAndInstallChoice:
+            // Record preference so user is not asked again
+            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
             return true;
         case turnOffSPL2Choice:
             console.log('User opted out of SPL2 Langauge Server download, SPL2 support disabled');
@@ -210,7 +210,7 @@ async function promptToDownloadJava(): Promise<boolean> {
             workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever, true);
             return false;
         default:
-            // Cancel
+            // Cancel, record no preference
             return false;
     }
 }
