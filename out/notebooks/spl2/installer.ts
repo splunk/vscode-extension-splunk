@@ -45,7 +45,12 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
             return;
         }
         // Check for compatible Java version installed already
-        let javaLoc = workspace.getConfiguration().get(configKeyJavaPath);
+        let javaLoc;
+        try {
+            javaLoc = workspace.getConfiguration().get(configKeyJavaPath);
+        } catch (err) {
+            reject(`Error retrieving configuration '${configKeyJavaPath}', err: ${err}`);
+        }
         // If java hasn't been set up, check $JAVA_HOME before downloading a JDK
         if (!javaLoc && process.env.JAVA_HOME) {
             let javaHomeBin = path.join(process.env.JAVA_HOME, 'bin', 'java');
@@ -54,13 +59,21 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
             }
             if (isJavaVersionCompatible(javaHomeBin)) {
                 javaLoc = javaHomeBin;
-                workspace.getConfiguration().update(configKeyJavaPath, javaHomeBin);
+                try {
+                    workspace.getConfiguration().update(configKeyJavaPath, javaHomeBin, true);
+                } catch (err) {
+                    reject(`Error updating configuration '${configKeyJavaPath}', err: ${err}`);
+                }
             }
         }
 
         // Check workspace for current installed LSP version
-        let lspVersion = workspace.getConfiguration().get(configKeyLspVersion);
-
+        let lspVersion;
+        try {
+            lspVersion = workspace.getConfiguration().get(configKeyLspVersion);
+        } catch (err) {
+            reject(`Error retrieving configuration '${configKeyLspVersion}', err: ${err}`);
+        }
         // Setup local storage directory for downloads and installs
         try {
             makeLocalStorage(context);
@@ -72,12 +85,12 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         if (!lspVersion) {
             // If we haven't set up a Language Server version prompt use to accept terms
             // and also confirm install of java if needed
-            const lspUrl = workspace.getConfiguration().get(configKeyLspUrl);
-            const accepted = await promptToDownloadLsp(!javaLoc);
-            if (!accepted) {
-                return;
-            }
             try {
+                const lspUrl = workspace.getConfiguration().get(configKeyLspUrl);
+                const accepted = await promptToDownloadLsp(!javaLoc);
+                if (!accepted) {
+                    return;
+                }
                 // Remove any existing LSP artifacts first
                 const localLspDir = getLocalLspDir(context);
                 fs.rmdirSync(localLspDir, { recursive: true });
@@ -90,9 +103,13 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
             }
         } else if (!javaLoc) {
             // Ask user to confirm download, cancel, or opt-out of SPL2 altogether
-            const accepted = await promptToDownloadJava();
-            if (!accepted) {
-                return;
+            try {
+                const accepted = await promptToDownloadJava();
+                if (!accepted) {
+                    return;
+                }
+            } catch (err) {
+                reject(`Error confirming JDK download, err: ${err}`);
             }
         }
         // We already prompted the user to confirm this download, proceed
@@ -104,7 +121,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
                 makeLocalStorage(context); // recreate directory
 
                 javaLoc = await installJDK(localJdkDir, progressBar);
-                workspace.getConfiguration().update(configKeyJavaPath, javaLoc);
+                workspace.getConfiguration().update(configKeyJavaPath, javaLoc, true);
             } catch (err) {
                 reject(`Error installing JDK for SPL2, err: ${err}`);
             }
@@ -190,7 +207,7 @@ async function promptToDownloadJava(): Promise<boolean> {
         case turnOffSPL2Choice:
             console.log('User opted out of SPL2 Langauge Server download, SPL2 support disabled');
             // Record preference so user is not asked again
-            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever);
+            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever, true);
             return false;
         default:
             // Cancel
@@ -295,7 +312,7 @@ async function downloadWithProgress(
                 delete headers.common['Accept'];
                 return data;
               },
-        })
+        });
         const totalSize = parseInt(headers['content-length']);
         let totalDownloaded = 0;
         let nextUpdate = 1;
@@ -427,7 +444,7 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
         case turnOffSPL2Choice:
             console.log('User opted out of SPL2 Langauge Server download, SPL2 support disabled');
             // Record preference so user is not asked again
-            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever);
+            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever, true);
             return false;
         default:
             // Cancel
@@ -443,7 +460,7 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
     return new Promise(async (resolve, reject) => {
         const lspArtifactPath = path.join(context.globalStorageUri.fsPath, 'lsp');
         // TODO: Remove this hardcoded version/update time and check for updates
-        let lspVersion: string = '2.0.361'; // context.globalState.get(stateKeyLatestLspVersion) || "";
+        let lspVersion: string = '2.0.362'; // context.globalState.get(stateKeyLatestLspVersion) || "";
         const lastUpdateMs: number = Date.now(); // context.globalState.get(stateKeyLastLspCheck) || 0;
         // Check for new version of SPL2 Language Server if longer than 24 hours
         if (Date.now() - lastUpdateMs > 24 * 60 * 60 * 1000) {
@@ -479,7 +496,11 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
             }
         }
         // Update this setting to indicate that this version is ready-to-use
-        workspace.getConfiguration().update(configKeyLspVersion, lspVersion);
+        try {
+            workspace.getConfiguration().update(configKeyLspVersion, lspVersion, true);
+        } catch (err) {
+            reject(`Error updating configuration '${configKeyLspVersion}', err: ${err}`);
+        }
         resolve();
     });
 }
