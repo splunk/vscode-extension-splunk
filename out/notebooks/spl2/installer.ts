@@ -201,8 +201,6 @@ async function promptToDownloadJava(): Promise<boolean> {
     const userSelection = (await popup) || null;
     switch(userSelection) {
         case downloadAndInstallChoice:
-            // Record preference so user is not asked again
-            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
             return true;
         case turnOffSPL2Choice:
             console.log('User opted out of SPL2 Langauge Server download, SPL2 support disabled');
@@ -436,6 +434,8 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
     const userSelection = (await popup) || null;
     switch(userSelection) {
         case agreeAndContinueChoice:
+            // Record preference so user is not asked again
+            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
             return true;
         case viewTermsChoice:
             console.log('Viewing Splunk General Terms in browser...');
