@@ -1,6 +1,6 @@
 {
     "name": "splunk",
-    "version": "0.2.10",
+    "version": "0.2.11-beta1",
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.72.0"
@@ -176,7 +176,7 @@
                     "order": 9,
                     "description": "When auto-completing settings, trim whitespace around the '=' sign. For example, key = value will become key=value.\nNote: changing this setting requires a restart of Visual Studio Code."
                 },
-                "splunk.spl2.lsp.splunk.spl2.acceptedTerms": {
+                "splunk.spl2.acceptedTerms": {
                     "type": "string",
                     "enum": [
                         "accepted",
@@ -188,21 +188,21 @@
                     "order": 10,
                     "description": "[SPL2] Accepted Splunk General Terms"
                 },
-                "splunk.spl2.lsp.splunk.spl2.javaPath": {
+                "splunk.spl2.javaPath": {
                     "type": "string",
                     "scope": "resource",
                     "default": "",
                     "order": 11,
                     "description": "[SPL2] Java Path"
                 },
-                "splunk.spl2.lsp.splunk.spl2.languageServerVersion": {
+                "splunk.spl2.languageServerVersion": {
                     "type": "string",
                     "scope": "resource",
                     "default": "",
                     "order": 12,
                     "description": "[SPL2] Langauge Server Version"
                 },
-                "splunk.spl2.lsp.splunk.spl2.languageServerUrl": {
+                "splunk.spl2.languageServerUrl": {
                     "type": "string",
                     "scope": "resource",
                     "default": "",
