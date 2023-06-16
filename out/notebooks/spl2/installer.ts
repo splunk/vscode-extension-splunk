@@ -53,7 +53,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
                 javaHomeBin = `${javaHomeBin}.exe`;
             }
             if (isJavaVersionCompatible(javaHomeBin)) {
-                // javaLoc = javaHomeBin;
+                javaLoc = javaHomeBin;
                 workspace.getConfiguration().update(configKeyJavaPath, javaHomeBin);
             }
         }
@@ -79,11 +79,11 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
             }
             try {
                 // Remove any existing LSP artifacts first
-                const localLspDir = path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
-                fs.rmdirSync(localLspDir, { recursive: true});
+                const localLspDir = getLocalLspDir(context);
+                fs.rmdirSync(localLspDir, { recursive: true });
                 makeLocalStorage(context); // recreate directory
             
-                // await getLatestSpl2Release(context, progressBar);
+                await getLatestSpl2Release(context, progressBar);
                 installedLatestLsp = true;
             } catch (err) {
                 reject(`Error retrieving latest SPL2 release, err: ${err}`);
@@ -100,7 +100,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
             // Remove any old artifacts first
             const localJdkDir = path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
             try {
-                fs.rmdirSync(localJdkDir, { recursive: true});
+                fs.rmdirSync(localJdkDir, { recursive: true });
                 makeLocalStorage(context); // recreate directory
 
                 javaLoc = await installJDK(localJdkDir, progressBar);
@@ -147,14 +147,26 @@ function makeLocalStorage(context: ExtensionContext): void {
     // └── spl2
     //     ├── jdk
     //     └── lsp
-    const spl2Artifacts = path.join(localSplunkArtifacts, 'spl2');
-    const jdkArtifacts = path.join(spl2Artifacts, 'jdk');
-    const lspArtifacts = path.join(spl2Artifacts, 'lsp');
+    const spl2Artifacts = getLocalSpl2Dir(context);
+    const jdkArtifacts = getLocalJdkDir(context);
+    const lspArtifacts = getLocalLspDir(context);
     [localSplunkArtifacts, spl2Artifacts, jdkArtifacts, lspArtifacts].forEach((path) => {
         if (!fs.existsSync(path)) {
             fs.mkdirSync(path);
         }
     });
+}
+
+function getLocalSpl2Dir(context: ExtensionContext): string {
+    return path.join(context.globalStorageUri.fsPath, 'spl2');
+}
+
+function getLocalJdkDir(context: ExtensionContext): string {
+    return path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
+}
+
+function getLocalLspDir(context: ExtensionContext): string {
+    return path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
 }
 
 async function promptToDownloadJava(): Promise<boolean> {
@@ -424,9 +436,9 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
 export async function getLatestSpl2Release(context: ExtensionContext, progressBar: StatusBarItem): Promise<void> {
     return new Promise(async (resolve, reject) => {
         const lspArtifactPath = path.join(context.globalStorageUri.fsPath, 'lsp');
-        
-        let lspVersion: string = context.globalState.get(stateKeyLatestLspVersion) || "";
-        const lastUpdateMs: number = context.globalState.get(stateKeyLastLspCheck) || 0;
+        // TODO: Remove this hardcoded version/update time and check for updates
+        let lspVersion: string = '2.0.361'; // context.globalState.get(stateKeyLatestLspVersion) || "";
+        const lastUpdateMs: number = Date.now(); // context.globalState.get(stateKeyLastLspCheck) || 0;
         // Check for new version of SPL2 Language Server if longer than 24 hours
         if (Date.now() - lastUpdateMs > 24 * 60 * 60 * 1000) {
             const metaPath = path.join(lspArtifactPath, 'maven-metadata.xml');
@@ -444,12 +456,24 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
             } catch (err) {
                 console.warn(`Error retrieving latest SPL2 version, err: ${err}`);
             }
-            
         }
-        // TODO:
-        // if latest version > installed version then prompt for download
-        // save update preference to workspace.getConfiguration
-        // if yes then download and unpack and update workspaceState with installedLSPVersion 
-        reject('getLatestSpl2Release not implemented');
+        const lspFilename = `spl-lang-server-sockets-${lspVersion}-all.jar`;
+        const localLspPath = path.join(getLocalLspDir(context), lspFilename);
+        // Check if local file exists before downloading
+        if (!fs.existsSync(localLspPath)) {
+            try {
+                await downloadWithProgress(
+                    `https://splunk.jfrog.io/splunk/maven-splunk/spl2/com/splunk/spl/spl-lang-server-sockets/${lspVersion}/${lspFilename}`,
+                    localLspPath,
+                    progressBar,
+                    'Downloading SPL2 Language Server',
+                );
+            } catch (err) {
+                reject(`Error downloading SPL2 Language Server, err: ${err}`);
+            }
+        }
+        // Update this setting to indicate that this version is ready-to-use
+        workspace.getConfiguration().update(configKeyLspVersion, lspVersion);
+        resolve();
     });
 }
