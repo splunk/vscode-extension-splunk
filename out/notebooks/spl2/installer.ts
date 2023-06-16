@@ -290,6 +290,7 @@ async function downloadWithProgress(
             method: 'GET',
             responseType: 'stream',
             transformRequest: (data, headers) => {
+                // Override defaults set elsewhere for splunkd communication
                 delete headers.common['Authorization'];
                 delete headers.common['Accept'];
                 return data;
