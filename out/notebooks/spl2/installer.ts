@@ -289,6 +289,11 @@ async function downloadWithProgress(
             url,
             method: 'GET',
             responseType: 'stream',
+            transformRequest: (data, headers) => {
+                delete headers.common['Authorization'];
+                delete headers.common['Accept'];
+                return data;
+              },
         })
         const totalSize = parseInt(headers['content-length']);
         let totalDownloaded = 0;
@@ -452,7 +457,7 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
                 const parser = new XMLParser();
                 const metadata = fs.readFileSync(metaPath);
                 const metaParsed = parser.parse(metadata);
-                lspVersion = metaParsed?.metadata?.versioning?.latest;
+                lspVersion = metaParsed?.metadata?.versioning?.release;
             } catch (err) {
                 console.warn(`Error retrieving latest SPL2 version, err: ${err}`);
             }
