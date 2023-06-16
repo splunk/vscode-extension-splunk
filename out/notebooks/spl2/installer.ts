@@ -53,7 +53,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
                 javaHomeBin = `${javaHomeBin}.exe`;
             }
             if (isJavaVersionCompatible(javaHomeBin)) {
-                // javaLoc = javaHomeBin; // TODO DONT CHECK THIS IN
+                // javaLoc = javaHomeBin;
                 workspace.getConfiguration().update(configKeyJavaPath, javaHomeBin);
             }
         }
@@ -62,7 +62,11 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         let lspVersion = workspace.getConfiguration().get(configKeyLspVersion);
 
         // Setup local storage directory for downloads and installs
-        makeLocalStorage(context);
+        try {
+            makeLocalStorage(context);
+        } catch (err) {
+            reject(`Error creating local artifact storage for SPL2, err: ${err}`);
+        }
         
         let installedLatestLsp = false;
         if (!lspVersion) {
@@ -95,11 +99,15 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         if (!javaLoc) {
             // Remove any old artifacts first
             const localJdkDir = path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
-            fs.rmdirSync(localJdkDir, { recursive: true});
-            makeLocalStorage(context); // recreate directory
+            try {
+                fs.rmdirSync(localJdkDir, { recursive: true});
+                makeLocalStorage(context); // recreate directory
 
-            javaLoc = await installJDK(localJdkDir, progressBar);
-            workspace.getConfiguration().update(configKeyJavaPath, javaLoc);
+                javaLoc = await installJDK(localJdkDir, progressBar);
+                workspace.getConfiguration().update(configKeyJavaPath, javaLoc);
+            } catch (err) {
+                reject(`Error installing JDK for SPL2, err: ${err}`);
+            }
         }
         resolve(installedLatestLsp);
     });
@@ -113,13 +121,18 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
  *          meets out minimum Java major version
  */
 function isJavaVersionCompatible(javaLoc: string): boolean {
-    const javaVerCmd = child_process.spawnSync(javaLoc, ['-version'], { encoding : 'utf8' });
-    if (!javaVerCmd || javaVerCmd.stdout) {
-        return false;
+    try {
+        const javaVerCmd = child_process.spawnSync(javaLoc, ['-version'], { encoding : 'utf8' });
+        if (!javaVerCmd || javaVerCmd.stdout) {
+            return false;
+        }
+        // java -version actually writes to stderr so check for a match there
+        const match = javaVerCmd.stderr.toString().match(/version \"([0-9]+)\.[0-9]+\.[0-9]\"/m);
+        return (match && match.length > 1 && (parseInt(match[1]) >= minimumMajorJavaVersion));
+    } catch (err) {
+        console.warn(`Error checking for java version via '${javaLoc} -version', err: ${err}`);
     }
-    // java -version actually writes to stderr so check for a match there
-    const match = javaVerCmd.stderr.toString().match(/version \"([0-9]+)\.[0-9]+\.[0-9]\"/m);
-    return (match && match.length > 1 && (parseInt(match[1]) >= minimumMajorJavaVersion));
+    return false;
 }
 
 /**
