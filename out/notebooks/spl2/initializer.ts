@@ -182,14 +182,16 @@ export class Spl2ClientServer {
         
             // Options to control the language client
             const clientOptions: LanguageClientOptions = {
-                documentSelector: [ 'spl' ],
-                initializationOptions: { profile: null }
+                documentSelector: [
+                    { language: 'splunk_spl2' },
+                ],
+                initializationOptions: { profile: null },
             };
         
             // Create the language client and start the client.
             this.client = new LanguageClient(
-                'spl',
-                'SPL Language Client',
+                'spl2_client',
+                'SPL2 Language Client',
                 serverOptions,
                 clientOptions
             );
