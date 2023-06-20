@@ -241,6 +241,7 @@ export class SplunkController {
                                     backgroundColor: backgroundColor,
                                     colorMode: activeThemeKind,
                                     cellMeta: cell.metadata,
+                                    languageId: cell?.document?.languageId,
                                 },
                             },
                             'application/splunk/events'
