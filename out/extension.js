@@ -30,6 +30,7 @@ let timeout = undefined;
 let diagnosticCollection = undefined;
 let specConfig = undefined;
 let snippets = {};
+let spl2Client = undefined;
 
 function getParentStanza(document, line) {
     // Start at the passed in line and go backwards
@@ -312,7 +313,10 @@ async function handleSpl2File(context, progressBar) {
         if (!installedLatestLsp) {
             await getLatestSpl2Release(context, progressBar);
         }
-        await startSpl2ClientAndServer(context);
+        if (spl2Client) {
+            spl2Client.deactivate();
+        }
+        spl2Client = await startSpl2ClientAndServer(context);
     } catch (err) {
         vscode.window.showErrorMessage(`Issue setting up SPL2 environment: ${err}`);
     }
@@ -541,5 +545,10 @@ function getDiagnostics(specConfig, document) {
     return diagnostics;
 }
 
-function deactivate() { }
+function deactivate() {
+    if (spl2Client) {
+        return spl2Client.deactivate();
+    }
+}
+
 exports.deactivate = deactivate;

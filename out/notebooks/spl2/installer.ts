@@ -73,6 +73,10 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
         } catch (err) {
             reject(`Error retrieving configuration '${configKeyLspVersion}', err: ${err}`);
         }
+        if (javaLoc && lspVersion) {
+            // Already set up, no need to continue
+            resolve(false);
+        }
         // Setup local storage directory for downloads and installs
         try {
             makeLocalStorage(context);
@@ -180,8 +184,12 @@ function getLocalJdkDir(context: ExtensionContext): string {
     return path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
 }
 
-function getLocalLspDir(context: ExtensionContext): string {
+export function getLocalLspDir(context: ExtensionContext): string {
     return path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
+}
+
+export function getLspFilename(lspVersion: string): string {
+    return `spl-lang-server-sockets-${lspVersion}-all.jar`;
 }
 
 async function promptToDownloadJava(): Promise<boolean> {
@@ -480,7 +488,7 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
                 console.warn(`Error retrieving latest SPL2 version, err: ${err}`);
             }
         }
-        const lspFilename = `spl-lang-server-sockets-${lspVersion}-all.jar`;
+        const lspFilename = getLspFilename(lspVersion);
         const localLspPath = path.join(getLocalLspDir(context), lspFilename);
         // Check if local file exists before downloading
         if (!fs.existsSync(localLspPath)) {

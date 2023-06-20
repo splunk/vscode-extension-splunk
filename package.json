@@ -438,7 +438,8 @@
         "tar-fs": "^2.1.1",
         "ts-loader": "^9.4.2",
         "typescript": "^4.2.2",
-        "unzipper": "^0.10.14"
+        "unzipper": "^0.10.14",
+        "vscode-languageclient": "^8.1.0"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
