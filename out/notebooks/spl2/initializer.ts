@@ -5,6 +5,7 @@ import {
     commands,
 	Disposable,
     ExtensionContext,
+    StatusBarItem,
     window,
     workspace,
 } from 'vscode';
@@ -50,7 +51,7 @@ interface LSPLog {
 	message: string,
 }
 
-export async function startSpl2ClientAndServer(context: ExtensionContext, portToAttempt: number, onClose: (nextPort: number) => void): Promise<Spl2ClientServer> {
+export async function startSpl2ClientAndServer(context: ExtensionContext, progressBar: StatusBarItem, portToAttempt: number, onClose: (nextPort: number) => void): Promise<Spl2ClientServer> {
     return new Promise(async (resolve, reject) => {
         try {
             // If the user has already opted-out for good then stop here
@@ -80,7 +81,7 @@ export async function startSpl2ClientAndServer(context: ExtensionContext, portTo
             }
             const lspPath = path.join(getLocalLspDir(context), getLspFilename(lspVersion));
             
-            const server = new Spl2ClientServer(context, javaPath, lspPath, portToAttempt, onClose);
+            const server = new Spl2ClientServer(context, progressBar, javaPath, lspPath, portToAttempt, onClose);
             await server.initialize();
             resolve(server);
         } catch (err) {
@@ -91,6 +92,7 @@ export async function startSpl2ClientAndServer(context: ExtensionContext, portTo
 
 export class Spl2ClientServer {
     context: ExtensionContext;
+    progressBar: StatusBarItem;
     javaPath: string;
     lspPath: string;
     retries: number;
@@ -103,8 +105,9 @@ export class Spl2ClientServer {
     serverProcess: child_process.ChildProcess;
     socket: Socket;
 
-    constructor(context:ExtensionContext, javaPath: string, lspPath: string, portToAttempt: number, onClose: (nextPort: number) => void) {
+    constructor(context: ExtensionContext, progressBar: StatusBarItem, javaPath: string, lspPath: string, portToAttempt: number, onClose: (nextPort: number) => void) {
         this.context = context;
+        this.progressBar = progressBar;
         this.javaPath = javaPath;
         this.lspPath = lspPath;
         this.retries = 0;
@@ -118,6 +121,8 @@ export class Spl2ClientServer {
     }
 
     async initialize(): Promise<void> {
+        this.progressBar.text = 'Starting SPL2 Language Server';
+        this.progressBar.show();
         return new Promise(async (resolve, reject) => {
             this.lspPort = await getNextAvailablePort(this.portToAttempt, 10)
                 .catch((err) => {
@@ -159,7 +164,13 @@ export class Spl2ClientServer {
                         // TODO: implement module resolution
                         return;
                     });
+                    this.progressBar.text = 'SPL2 Language Server Running';
+                } else if (event.newState === State.Starting) {
+                    this.progressBar.text = 'SPL2 Language Server Starting';
+                } else {
+                    this.progressBar.text = 'SPL2 Language Server Stopped';
                 }
+                this.progressBar.show();
             });
         
             // TODO: spl2/module and spl2/compile are not provided here,
@@ -221,6 +232,7 @@ export class Spl2ClientServer {
                             resolve({
                                 writer: this.socket,
                                 reader: this.socket,
+                                // detached: true,
                             });
                         });
     

@@ -310,7 +310,13 @@ function handleSplunkFile(context) {
 
 async function handleSpl2File(context, progressBar) {
     if (spl2Client) {
-        // TODO: Client and server are already running, try refreshing for case of new document
+        // Client and server are already running, try refreshing for case of new document
+        const range = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 1));
+        const text = vscode.window.activeTextEditor.document.getText(range) || " ";
+        vscode.window.activeTextEditor.edit((editBuilder) => {
+            // To refresh language server make a harmless edit by replacing the first character
+            editBuilder.replace(range, text);
+        });
         return;
     }
     try {
@@ -321,9 +327,9 @@ async function handleSpl2File(context, progressBar) {
         const onSpl2Restart = async (nextPort) => {
             await spl2Client.deactivate();
             spl2PortToAttempt = nextPort;
-            spl2Client = await startSpl2ClientAndServer(context, spl2PortToAttempt, onSpl2Restart);
+            spl2Client = await startSpl2ClientAndServer(context, progressBar, spl2PortToAttempt, onSpl2Restart);
         };
-        spl2Client = await startSpl2ClientAndServer(context, spl2PortToAttempt, onSpl2Restart);
+        spl2Client = await startSpl2ClientAndServer(context, progressBar, spl2PortToAttempt, onSpl2Restart);
     } catch (err) {
         vscode.window.showErrorMessage(`Issue setting up SPL2 environment: ${err}`);
     }
