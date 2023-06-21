@@ -5,6 +5,7 @@ import {
     commands,
 	Disposable,
     ExtensionContext,
+    window,
     workspace,
 } from 'vscode';
 import {
@@ -49,7 +50,7 @@ interface LSPLog {
 	message: string,
 }
 
-export async function startSpl2ClientAndServer(context: ExtensionContext): Promise<Spl2ClientServer> {
+export async function startSpl2ClientAndServer(context: ExtensionContext, portToAttempt: number, onClose: (nextPort: number) => void): Promise<Spl2ClientServer> {
     return new Promise(async (resolve, reject) => {
         try {
             // If the user has already opted-out for good then stop here
@@ -79,7 +80,7 @@ export async function startSpl2ClientAndServer(context: ExtensionContext): Promi
             }
             const lspPath = path.join(getLocalLspDir(context), getLspFilename(lspVersion));
             
-            const server = new Spl2ClientServer(context, javaPath, lspPath);
+            const server = new Spl2ClientServer(context, javaPath, lspPath, portToAttempt, onClose);
             await server.initialize();
             resolve(server);
         } catch (err) {
@@ -92,93 +93,42 @@ export class Spl2ClientServer {
     context: ExtensionContext;
     javaPath: string;
     lspPath: string;
+    retries: number;
+    restarting: boolean;
+    portToAttempt: number;
+    onClose: (nextPort: number) => void;
     // Set during initialize():
     lspPort: number;
     client: LanguageClient;
     serverProcess: child_process.ChildProcess;
+    socket: Socket;
 
-    constructor(context:ExtensionContext, javaPath: string, lspPath: string) {
+    constructor(context:ExtensionContext, javaPath: string, lspPath: string, portToAttempt: number, onClose: (nextPort: number) => void) {
         this.context = context;
         this.javaPath = javaPath;
         this.lspPath = lspPath;
+        this.retries = 0;
+        this.restarting = false;
         this.lspPort = -1;
         this.client = undefined;
         this.serverProcess = undefined;
+        this.socket = undefined;
+        this.portToAttempt = portToAttempt;
+        this.onClose = onClose;
     }
 
     async initialize(): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            // 59143 ~ SPLNK if you squint really hard :)
-            this.lspPort = await getNextAvailablePort(59143, 10)
+            this.lspPort = await getNextAvailablePort(this.portToAttempt, 10)
                 .catch((err) => {
-                    reject(`Unable to find available port for SPL2 language server`);
+                    reject(`Unable to find available port for SPL2 language server, err: ${err}`);
                 }) || -1;
             if (this.lspPort === -1) {
                 reject(`Unable to find available port for SPL2 language server`);
                 return;
             }
 
-            const serverOptions: ServerOptions = (): Promise<StreamInfo> => {
-                return new Promise((resolve, reject) => {
-                    const javaArgs: string[] = [
-                        '-Xmx2g',
-                        '-jar',
-                        this.lspPath,
-                        '--port',
-                        `${this.lspPort}`,
-                    ];
-                    this.serverProcess = child_process.spawn(this.javaPath, javaArgs);
-                    if (!this.serverProcess || !this.serverProcess.pid) {
-                        reject(`Launching server with ${this.javaPath} ${javaArgs.join(' ')} failed.`);
-                        return;
-                    } else {
-                        console.log(`SPL2 Language Server launched with pid: ${this.serverProcess.pid} and listening on port: ${this.lspPort}`);
-                    }
-                    this.serverProcess.stderr.on('data', stderr => {
-                        console.warn(`[SPL2 Server]: ${stderr}`);
-                    });
-                    this.serverProcess.stdout.on('data', stdout => {
-                        console.log(`[SPL2 Server]: ${stdout}`);
-                        const lspLog: LSPLog = JSON.parse(stdout);
-                        if (lspLog.message.includes('started listening on port')) {
-                            console.log('SPL2 Server is up, starting client...');
-                            // Ready for client
-                            const socket = new Socket();
-        
-                            socket.on('connect', () => {
-                                console.log('Client: connection established with server');
-                                const address:AddressInfo = socket.address() as AddressInfo;
-                                console.log(`Client is listening on port ${address.port}`);
-                                resolve({
-                                    writer: socket,
-                                    reader: socket,
-                                });
-                            });
-        
-                            socket.on('close', () => {
-                                setTimeout(() => {
-                                    // TODO: fail after X attempts rather than retrying indefinitely
-                                    console.log('Retrying connection');
-                                    commands.executeCommand('workbench.action.reloadWindow');
-                                }, 500);
-                            });
-        
-                            socket.on('error', (err) => {
-                                if (isNodeError(err) && err.code === 'ECONNRESET') {
-                                    // expected when server is killed
-                                    console.log('Server connection ended.');
-                                    return;
-                                }
-                                console.warn(`error between LSP client/server encountered -> ${err}`);
-                            });
-        
-                            socket.connect({
-                                port: this.lspPort,
-                            });
-                        }
-                    });
-                });
-            };
+            const serverOptions: ServerOptions = this.setupNewServer();
         
             // Options to control the language client
             const clientOptions: LanguageClientOptions = {
@@ -216,7 +166,7 @@ export class Spl2ClientServer {
             // though in the future the compile command can be implemented
             // to compile to SPL1 which can then be run on any Splunk deployment
 
-            this.context.subscriptions.push(new Disposable(() => this.killServer()));
+            // this.context.subscriptions.push(new Disposable(() => this.killServer()));
         
             // Start the client. This will also launch the server
             this.client.start();
@@ -224,8 +174,85 @@ export class Spl2ClientServer {
             resolve();
         });
     }
+    
+    setupNewServer(): ServerOptions {
+        return (): Promise<StreamInfo> => {
+            return new Promise((resolve, reject) => {
+                const javaArgs: string[] = [
+                    '-Xmx2g',
+                    '-jar',
+                    this.lspPath,
+                    '--port',
+                    `${this.lspPort}`,
+                ];
+                this.serverProcess = child_process.spawn(this.javaPath, javaArgs);
+                if (!this.serverProcess || !this.serverProcess.pid) {
+                    reject(`Launching server with ${this.javaPath} ${javaArgs.join(' ')} failed.`);
+                    return;
+                } else {
+                    console.log(`SPL2 Language Server launched with pid: ${this.serverProcess.pid} and listening on port: ${this.lspPort}`);
+                }
+                this.serverProcess.stderr.on('data', stderr => {
+                    console.warn(`[SPL2 Server]: ${stderr}`);
+                    if (stderr.includes('Cannot invoke "java.net.ServerSocket.close()"')) {
+                        if (this.restarting) {
+                            return;
+                        }
+                        // this indicates a socket issue, try next port
+                        console.warn('Connection lost, bumping port and retrying ...');
+                        this.onClose(this.lspPort + 1);
+                    }
+                });
+                this.serverProcess.stdout.on('data', stdout => {
+                    console.log(`[SPL2 Server]: ${stdout}`);
+                    const lspLog: LSPLog = JSON.parse(stdout);
+                    if (lspLog.message.includes('started listening on port')) {
+                        console.log('SPL2 Server is up, starting client...');
+                        // Ready for client
+                        this.socket = new Socket();
+    
+                        this.socket.on('connect', () => {
+                            console.log('Client: connection established with server');
+                            const address:AddressInfo = this.socket.address() as AddressInfo;
+                            console.log(`Client is listening on port ${address.port}`);
+                            // Reset retries after a successful connection
+                            this.retries = 0;
+                            this.restarting = false;
+                            resolve({
+                                writer: this.socket,
+                                reader: this.socket,
+                            });
+                        });
+    
+                        this.socket.on('close', () => {
+                            if (this.restarting) {
+                                return;
+                            }
+                            this.restarting = true;
+                            console.warn('Connection lost, bumping port and retrying ...');
+                            this.onClose(this.lspPort + 1);
+                        });
+    
+                        this.socket.on('error', (err) => {
+                            if (isNodeError(err) && err.code === 'ECONNRESET') {
+                                // expected when server is killed
+                                console.log('Server connection ended.');
+                                return;
+                            }
+                            console.warn(`error between LSP client/server encountered -> ${err}`);
+                        });
+    
+                        this.socket.connect({
+                            port: this.lspPort,
+                        });
+                    }
+                });
+            });
+        };
+    }
 
     killServer(): void {
+        console.log(`killServer() called`);
         if (this.serverProcess && this.serverProcess.pid) {
             console.log(`Terminating SPL2 Server pid ${this.serverProcess.pid} ...`);
             this.serverProcess.kill();
@@ -233,15 +260,33 @@ export class Spl2ClientServer {
         }
     }
   
-    deactivate(): Thenable<void> | undefined {
-        this.killServer();
-        if (!this.client) {
-            return undefined;
+    deactivate(): Promise<void> {
+        try {
+            this?.socket.destroy();
+            this.killServer();
+            if (this?.client?.isRunning()) {
+                return this?.client.stop();
+            }
+        } catch (err) {
+            console.warn(`Error deactivating SPL2 client/server, err: ${err}`);
         }
-        return this.client.stop();
+        return Promise.resolve();
     }
+
+    // async retryConnection() {
+    //     if (this.retries++ > 10) {
+    //         window.showErrorMessage(`Issue setting up SPL2 environment, maxRetries reached.`);
+    //         return;
+    //     }
+    //     console.log('Retrying connection');
+    //     window.activeNotebookEditor.notebook
+    //     // commands.executeCommand('workbench.action.reloadWindow');
+        
+    //     // await this.client.stop();
+    //     // this.client.start();
+    // }
 }
-  
+
 /**
  * Helper to retrieve a socket using the supplied port and incrementing up
  * to maxAttempts

@@ -31,6 +31,7 @@ let diagnosticCollection = undefined;
 let specConfig = undefined;
 let snippets = {};
 let spl2Client = undefined;
+let spl2PortToAttempt = 59143; // 59143 ~ SPLNK if you squint really hard :)
 
 function getParentStanza(document, line) {
     // Start at the passed in line and go backwards
@@ -308,15 +309,21 @@ function handleSplunkFile(context) {
 }
 
 async function handleSpl2File(context, progressBar) {
+    if (spl2Client) {
+        // TODO: Client and server are already running, try refreshing for case of new document
+        return;
+    }
     try {
         const installedLatestLsp = await getMissingSpl2Requirements(context, progressBar);
         if (!installedLatestLsp) {
             await getLatestSpl2Release(context, progressBar);
         }
-        if (spl2Client) {
-            spl2Client.deactivate();
-        }
-        spl2Client = await startSpl2ClientAndServer(context);
+        const onSpl2Restart = async (nextPort) => {
+            await spl2Client.deactivate();
+            spl2PortToAttempt = nextPort;
+            spl2Client = await startSpl2ClientAndServer(context, spl2PortToAttempt, onSpl2Restart);
+        };
+        spl2Client = await startSpl2ClientAndServer(context, spl2PortToAttempt, onSpl2Restart);
     } catch (err) {
         vscode.window.showErrorMessage(`Issue setting up SPL2 environment: ${err}`);
     }
@@ -545,9 +552,9 @@ function getDiagnostics(specConfig, document) {
     return diagnostics;
 }
 
-function deactivate() {
+async function deactivate() {
     if (spl2Client) {
-        return spl2Client.deactivate();
+        return await spl2Client.deactivate();
     }
 }
 
