@@ -2,11 +2,8 @@ import * as child_process from 'child_process';
 import { AddressInfo, Socket } from 'net';
 import * as path from 'path';
 import {
-    commands,
-	Disposable,
     ExtensionContext,
     StatusBarItem,
-    window,
     workspace,
 } from 'vscode';
 import {
@@ -177,8 +174,6 @@ export class Spl2ClientServer {
             // though in the future the compile command can be implemented
             // to compile to SPL1 which can then be run on any Splunk deployment
 
-            // this.context.subscriptions.push(new Disposable(() => this.killServer()));
-        
             // Start the client. This will also launch the server
             this.client.start();
 
