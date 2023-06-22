@@ -361,6 +361,10 @@
             {
                 "command": "splunk.notebooks.copyDetection",
                 "title": "Copy Detection"
+            },
+            {
+                "command": "splunk.restartSpl2LanguageServer",
+                "title": "Restart SPL2 Language Server"
             }
         ],
         "notebooks": [

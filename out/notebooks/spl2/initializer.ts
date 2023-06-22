@@ -284,19 +284,6 @@ export class Spl2ClientServer {
         }
         return Promise.resolve();
     }
-
-    // async retryConnection() {
-    //     if (this.retries++ > 10) {
-    //         window.showErrorMessage(`Issue setting up SPL2 environment, maxRetries reached.`);
-    //         return;
-    //     }
-    //     console.log('Retrying connection');
-    //     window.activeNotebookEditor.notebook
-    //     // commands.executeCommand('workbench.action.reloadWindow');
-        
-    //     // await this.client.stop();
-    //     // this.client.start();
-    // }
 }
 
 /**

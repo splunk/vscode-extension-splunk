@@ -215,6 +215,17 @@ async function activate(context) {
     ], new splunkFoldingRangeProvider.confFoldingRangeProvider()));
 
     // If vscode was opened with an active Splunk file, handle it.
+    vscode.commands.registerCommand('splunk.restartSpl2LanguageServer', async () => {
+        try {
+            if (spl2Client) {
+                await spl2Client.deactivate();
+            }
+            spl2Client = undefined;
+            await handleSpl2File(context, progressBar);
+        } catch (err) {
+            console.warn(`Error restarting SPL2 language server, err: ${err}`);
+        }
+    });
     if(vscode.window.activeTextEditor) {
         if (isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
             handleSplunkFile(context);
