@@ -32,7 +32,7 @@ export enum TermsAcceptanceStatus {
  * accepting Splunk General terms. If compatible Java and Language Server is already installed
  * this will be a no-op.
  */
-export async function getMissingSpl2Requirements(context: ExtensionContext, progressBar: StatusBarItem): Promise<boolean> {
+export async function installMissingSpl2Requirements(context: ExtensionContext, progressBar: StatusBarItem): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
         // If the user has already opted-out for good then stop here
         const termsStatus: TermsAcceptanceStatus = workspace.getConfiguration().get(configKeyAcceptedTerms);
@@ -41,7 +41,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
                 `User opted out of SPL2. To reset this adjust the '${configKeyAcceptedTerms}' ` +
                 `setting to = '${TermsAcceptanceStatus.DeclinedOnce}' in the Splunk Extension Settings.`
             );
-            return;
+            return Promise.resolve();
         }
         // Check for compatible Java version installed already
         let javaLoc;
@@ -108,7 +108,7 @@ export async function getMissingSpl2Requirements(context: ExtensionContext, prog
             try {
                 const accepted = await promptToDownloadJava();
                 if (!accepted) {
-                    return;
+                    return Promise.resolve();
                 }
             } catch (err) {
                 reject(`Error confirming JDK download, err: ${err}`);
@@ -209,15 +209,15 @@ async function promptToDownloadJava(): Promise<boolean> {
     const userSelection = (await popup) || null;
     switch(userSelection) {
         case downloadAndInstallChoice:
-            return true;
+            return Promise.resolve(true);
         case turnOffSPL2Choice:
             console.log('User opted out of SPL2 Langauge Server download, SPL2 support disabled');
             // Record preference so user is not asked again
             workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever, true);
-            return false;
+            return Promise.resolve(false);
         default:
             // Cancel, record no preference
-            return false;
+            return Promise.resolve(false);
     }
 }
 
@@ -270,24 +270,42 @@ async function installJDK(installDir: string, progressBar: StatusBarItem): Promi
     }
 
     // Extract JDK and return path to java executable
-    let binJarPath;
+    let binJavaPath;
 
     progressBar.show();
     try {
         if (ext === 'zip') {
-            binJarPath = await extractZipWithProgress(downloadedArchive, installDir, compressedSize, progressBar, 'Unzipping JDK');
+            binJavaPath = await extractZipWithProgress(downloadedArchive, installDir, compressedSize, progressBar, 'Unzipping JDK');
         } else { // tar.gz
-            binJarPath = await extractTgzWithProgress(downloadedArchive, installDir, compressedSize, progressBar, 'Extracting JDK');
+            binJavaPath = await extractTgzWithProgress(downloadedArchive, installDir, compressedSize, progressBar, 'Extracting JDK');
+        }
+        if (!binJavaPath) {
+            // If not found during unpacking, search for bin/java[.exe] and check that file
+            let pathSuffix = path.join('bin', 'java');
+            if (true || process.platform === 'win32') {
+                pathSuffix = `${pathSuffix}.exe`;
+            }
+            const matches = getFilesInDirectory(installDir)
+                .filter((file) => {
+                    return file.endsWith(pathSuffix);
+                });
+            if (matches.length === 0) {
+                throw new Error(`No ${pathSuffix} found within extracted JDK in ${installDir}`);
+            }
+            binJavaPath = matches[0];
+            if (!isJavaVersionCompatible(binJavaPath)) {
+                throw new Error(`Java executable found at ${binJavaPath} has -version not matching ${minimumMajorJavaVersion}+`);
+            }
         }
     } catch (err) {
         throw new Error(`Error extracting JDK: ${err}`);
     } finally {
         progressBar.hide();
     }
-    if (!binJarPath) {
+    if (!binJavaPath) {
         throw new Error(`Error finding path to java executable within extracted JDK`);
     }
-    return binJarPath;
+    return Promise.resolve(binJavaPath);
 }
 
 /**
@@ -378,7 +396,7 @@ async function extractZipWithProgress(
         readStream,
         unzipStream,
     );
-    return binJavaPath;
+    return Promise.resolve(binJavaPath);
 }
 
 async function extractTgzWithProgress(
@@ -410,11 +428,11 @@ async function extractTgzWithProgress(
                 if (header.name.endsWith(path.join('bin', 'java'))) {
                     binJavaPath = path.join(extractPath, header.name);
                 }
-                return header;
+                return Promise.resolve(header);
             }
         }),
     );
-    return binJavaPath;
+    return Promise.resolve(binJavaPath);
 }
 
 async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
@@ -444,19 +462,19 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
         case agreeAndContinueChoice:
             // Record preference so user is not asked again
             workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
-            return true;
+            return Promise.resolve(true);
         case viewTermsChoice:
             console.log('Viewing Splunk General Terms in browser...');
             env.openExternal(Uri.parse('https://www.splunk.com/en_us/legal/splunk-general-terms.html'));
-            return await promptToDownloadLsp(alsoInstallJava);
+            return promptToDownloadLsp(alsoInstallJava);
         case turnOffSPL2Choice:
             console.log('User opted out of SPL2 Langauge Server download, SPL2 support disabled');
             // Record preference so user is not asked again
             workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever, true);
-            return false;
+            return Promise.resolve(false);
         default:
             // Cancel
-            return false;
+            return Promise.resolve(false);
     }
 }
 
@@ -512,3 +530,21 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
         resolve();
     });
 }
+
+/**
+ * Helper function to get all files nested under a given directory
+ * and subdirectories.
+ */
+function getFilesInDirectory(directory: string): string[] {
+    const files: string[] = [];
+    const filesInDirectory = fs.readdirSync(directory);
+    for (const file of filesInDirectory) {
+        const fullPath = path.join(directory, file);
+        if (fs.statSync(fullPath).isDirectory()) {
+            files.push(...getFilesInDirectory(fullPath));
+        } else {
+            files.push(fullPath);
+        }
+    }
+    return files;
+};
