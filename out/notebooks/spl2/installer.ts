@@ -1,11 +1,11 @@
 import axios from 'axios';
 import * as child_process from 'child_process';
 import { XMLParser} from 'fast-xml-parser';
+import * as extract from 'extract-zip';
 import * as fs from 'fs';
 import * as path from 'path';
 import { pipeline } from 'stream';
 import * as tar from 'tar-fs';
-import * as unzipper from 'unzipper';
 import * as util from 'util';
 import { env, ExtensionContext, StatusBarItem, Uri, window, workspace } from 'vscode';
 import * as zlib from 'zlib';
@@ -59,7 +59,7 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
             if (isJavaVersionCompatible(javaHomeBin)) {
                 javaLoc = javaHomeBin;
                 try {
-                    workspace.getConfiguration().update(configKeyJavaPath, javaHomeBin, true);
+                    await workspace.getConfiguration().update(configKeyJavaPath, javaHomeBin, true);
                 } catch (err) {
                     reject(`Error updating configuration '${configKeyJavaPath}', err: ${err}`);
                 }
@@ -123,7 +123,7 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
                 makeLocalStorage(context); // recreate directory
 
                 javaLoc = await installJDK(localJdkDir, progressBar);
-                workspace.getConfiguration().update(configKeyJavaPath, javaLoc, true);
+                await workspace.getConfiguration().update(configKeyJavaPath, javaLoc, true);
             } catch (err) {
                 reject(`Error installing JDK for SPL2, err: ${err}`);
             }
@@ -161,8 +161,9 @@ function isJavaVersionCompatible(javaLoc: string): boolean {
 function makeLocalStorage(context: ExtensionContext): void {
     // We are guaranteed to have read/write access to this directory
     const localSplunkArtifacts = context.globalStorageUri.fsPath;
-    // Create this directory structure:
-    // .../User/globalStorage/splunk.splunk
+    // Create this directory structure with globalStorage which will be somewhere like this locally:
+    // Windows: C:\Users\<User>\AppData\Roaming\Code\User\globalStorage\splunk.splunk\spl2
+    // MacOS: /Users/<User>/Library/Application Support/Code/User/globalStorage/splunk.splunk/spl2
     // └── spl2
     //     ├── jdk
     //     └── lsp
@@ -213,7 +214,7 @@ async function promptToDownloadJava(): Promise<boolean> {
         case turnOffSPL2Choice:
             console.log('User opted out of SPL2 Langauge Server download, SPL2 support disabled');
             // Record preference so user is not asked again
-            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever, true);
+            await workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever, true);
             return Promise.resolve(false);
         default:
             // Cancel, record no preference
@@ -372,30 +373,23 @@ async function extractZipWithProgress(
     progressBar: StatusBarItem,
     progressBarText: string,
 ): Promise<string> {
-    // Create read and unzip streams and listen for individual entry to find bin\java.exe
-    let binJavaPath;
     let readCompressedSize = 0;
     let nextUpdate = 1;
-
-    const pipe = util.promisify(pipeline);
-    const readStream = fs.createReadStream(zipfilePath);
-    const unzipStream = unzipper.Extract({ path: extractPath });
-    unzipStream._writable.on('entry', entry => {
-        if (entry.path.endsWith(path.join('bin', 'java.exe'))) {
-            binJavaPath = path.join(extractPath, entry.path);
+    // For now hardcode the expected path - we've seen issues trying to
+    // infer this from the read/unzip stream
+    let binJavaPath = path.join(extractPath, 'jdk17.0.7_7', 'bin', 'java.exe');
+    progressBar.text = `${progressBarText}...`;
+    await extract(zipfilePath, { dir: extractPath, onEntry: (entry, zipfile) => {
+        if (entry.fileName.endsWith(path.join('bin', 'java.exe'))) {
+            binJavaPath = path.join(extractPath, entry.fileName);
         }
-        readCompressedSize += entry.vars.compressedSize;
+        readCompressedSize += entry.compressedSize;
         let pct = Math.floor(readCompressedSize * 100 / compressedSize);
         if (pct === nextUpdate) {
             progressBar.text = `${progressBarText} ${pct}%`;
             nextUpdate++;
         }
-        entry.autodrain();
-    });
-    await pipe(
-        readStream,
-        unzipStream,
-    );
+    }});
     return Promise.resolve(binJavaPath);
 }
 
@@ -461,7 +455,7 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
     switch(userSelection) {
         case agreeAndContinueChoice:
             // Record preference so user is not asked again
-            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
+            await workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
             return Promise.resolve(true);
         case viewTermsChoice:
             console.log('Viewing Splunk General Terms in browser...');
@@ -470,7 +464,7 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
         case turnOffSPL2Choice:
             console.log('User opted out of SPL2 Langauge Server download, SPL2 support disabled');
             // Record preference so user is not asked again
-            workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever, true);
+            await workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.DeclinedForever, true);
             return Promise.resolve(false);
         default:
             // Cancel
@@ -523,7 +517,7 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
         }
         // Update this setting to indicate that this version is ready-to-use
         try {
-            workspace.getConfiguration().update(configKeyLspVersion, lspVersion, true);
+            await workspace.getConfiguration().update(configKeyLspVersion, lspVersion, true);
         } catch (err) {
             reject(`Error updating configuration '${configKeyLspVersion}', err: ${err}`);
         }
