@@ -385,9 +385,9 @@ async function extractZipWithProgress(
         }
         readCompressedSize += entry.compressedSize;
         let pct = Math.floor(readCompressedSize * 100 / compressedSize);
-        if (pct === nextUpdate) {
+        if (pct >= nextUpdate) {
             progressBar.text = `${progressBarText} ${pct}%`;
-            nextUpdate++;
+            nextUpdate = pct + 1;
         }
     }});
     return Promise.resolve(binJavaPath);
@@ -411,9 +411,9 @@ async function extractTgzWithProgress(
         fs.createReadStream(tgzPath).on('data', (chunk) => {
             readCompressedSize += chunk.length;
             let pct = Math.floor(readCompressedSize * 100 / compressedSize);
-            if (pct === nextUpdate) {
+            if (pct >= nextUpdate) {
                 progressBar.text = `${progressBarText} ${pct}%`;
-                nextUpdate++;
+                nextUpdate = pct + 1;
             }
         }),
         zlib.createGunzip(),
