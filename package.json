@@ -1,6 +1,6 @@
 {
     "name": "splunk",
-    "version": "0.2.10",
+    "version": "0.2.11-beta1",
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.72.0"
@@ -175,6 +175,32 @@
                     "default": false,
                     "order": 9,
                     "description": "When auto-completing settings, trim whitespace around the '=' sign. For example, key = value will become key=value.\nNote: changing this setting requires a restart of Visual Studio Code."
+                },
+                "splunk.spl2.acceptedTerms": {
+                    "type": "string",
+                    "enum": [
+                        "accepted",
+                        "declined (once)",
+                        "declined (forever)"
+                    ],
+                    "scope": "resource",
+                    "default": "declined (once)",
+                    "order": 10,
+                    "description": "[SPL2] Accepted Splunk General Terms"
+                },
+                "splunk.spl2.javaPath": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "",
+                    "order": 11,
+                    "description": "[SPL2] Java Path"
+                },
+                "splunk.spl2.languageServerVersion": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "",
+                    "order": 12,
+                    "description": "[SPL2] Langauge Server Version"
                 }
             }
         },
@@ -404,12 +430,15 @@
         "@types/vscode-notebook-renderer": "^1.72.0",
         "axios": ">=0.27.2",
         "babel-loader": "^9.1.0",
+        "fast-xml-parser": "^4.2.4",
         "react": "^16",
         "react-dom": "^16.14.0",
         "splunk-sdk": "^1.12.1",
         "styled-components": "5",
+        "tar-fs": "^2.1.1",
         "ts-loader": "^9.4.2",
-        "typescript": "^4.2.2"
+        "typescript": "^4.2.2",
+        "unzipper": "^0.10.14"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
