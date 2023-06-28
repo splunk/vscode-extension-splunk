@@ -533,7 +533,7 @@ function isValueValid(specValue, settingValue) {
     if(DROPDOWN_PLACEHOLDER_REGEX.test(specValue)) {
         // Remove square brackets and curly braces
         let possibleValues = specValue.replace(/[\[\{\}\]]/g, '')
-        let settings = possibleValues.split('|')
+        let settings = possibleValues.toLowerCase().split('|')
         if (!settings.includes(settingValue.toLowerCase())) isValid = false;
     }
 

@@ -40,6 +40,9 @@ describe('authentication.conf', () => {
 	it('setting "user1 = admin::user1::user1@email.com" should be valid for stanza [userToRoleMap_SAML]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[userToRoleMap_SAML]", "user1 = admin::user1::user1@email.com"), true);
 	});
+	it('setting "authType = Splunk" should be valid for stanza [authentication]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[authentication]", "authType = Splunk"), true);
+	});
 });
 
 describe('distsearch.conf', () => {
