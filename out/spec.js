@@ -100,6 +100,27 @@ const stanzaTypes = {
         }
     }
 
+    // Special case for outputs.conf.spec
+    if(specConfig["specName"] == "outputs.conf.spec") {
+
+        // The outputs.conf.spec file shipped from Splunk does not specify useAck as a default parameter
+        // See https://github.com/splunk/vscode-extension-splunk/issues/75
+
+        let stanza = {
+            "stanzaName":"default",
+            "docString":"",
+            "stanzaType": stanzaTypes.ABSOLUTE,
+            "settings":[]
+        }
+        let stanzaSetting = {}
+        stanzaSetting["name"] = "useAck"
+        stanzaSetting["value"] = "<boolean>"
+        stanzaSetting["docString"] = "* Whether or not to use indexer acknowledgment.\n* Indexer acknowledgment is an optional capability on forwarders that helps\nprevent loss of data when sending data to an indexer.\n* A value of \"true\" means the forwarder retains a copy of each sent event\nuntil the receiving system sends an acknowledgment.\n* The receiver sends an acknowledgment when it has fully handled the event\n(typically when it has written it to disk in indexing).\n* If the forwarder does not receive an acknowledgment, it resends the data\nto an alternative receiver.\n* NOTE: The maximum memory used for the outbound data queues increases\nsignificantly by default (500KB -> 28MB) when the 'useACK' setting is\nenabled. This is intended for correctness and performance.\n* A value of \"false\" means the forwarder considers the data fully processed\nwhen it finishes writing it to the network socket.\n* You can configure this setting at the [tcpout] or [tcpout:<target_group>]\nstanza levels. You cannot set it for individual servers at the\n[tcpout-server: ...] stanza level.\n* Default: false"
+        stanza["settings"].push(stanzaSetting)
+
+        specConfig["stanzas"].push(stanza)
+    }
+
     // Modular .spec files allow freeform stanzas, but this is not denoted in the static .spec file.
     // So, override the freeform setting on these.
     if(modularSpecFiles.includes(specFileName)) {
