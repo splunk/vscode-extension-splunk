@@ -16,6 +16,7 @@ const reload = require("./commands/reload.js");
 
 const { SplunkNotebookSerializer } = require('./notebooks/serializers');
 const { SplunkController } = require('./notebooks/controller');
+const { Spl2NotebookSerializer } = require('./notebooks/spl2/serializer');
 const { Spl2Controller } = require('./notebooks/spl2/controller');
 const { installMissingSpl2Requirements, getLatestSpl2Release } = require('./notebooks/spl2/installer');
 const { startSpl2ClientAndServer } = require('./notebooks/spl2/initializer');
@@ -256,7 +257,7 @@ async function activate(context) {
 
     // Notebook
     context.subscriptions.push(vscode.workspace.registerNotebookSerializer('splunk-notebook', new SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
-	context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
+	context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new Spl2NotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
     const controller = new SplunkController();
     context.subscriptions.push(controller);
     const spl2Controller = new Spl2Controller();
