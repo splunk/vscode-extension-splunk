@@ -11,8 +11,9 @@ import {
 import { splunkMessagesToOutputItems } from './utils';
 
 export class SplunkController {
+    public notebookType: string;
+
     protected controllerId: string;
-    protected notebookType: string;
     protected label: string;
     protected supportedLanguages: string[];
 

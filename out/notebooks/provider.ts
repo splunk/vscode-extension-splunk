@@ -38,6 +38,33 @@ export class CellResultCountStatusBarProvider implements vscode.NotebookCellStat
             },
         });
 
+        const earliestPicker = {
+            text: 'earliest',
+            alignment: vscode.NotebookCellStatusBarAlignment.Right,
+            tooltip: 'Earliest time',
+            command: {
+                title: 'Enter Earliest time',
+                command: 'splunk.notebooks.enterEarliestTime',
+                arguments: [cell],
+            },
+        };
+
+        const latestPicker = {
+            text: 'latest',
+            alignment: vscode.NotebookCellStatusBarAlignment.Right,
+            tooltip: 'Latest time',
+            command: {
+                title: 'Enter Latest time',
+                command: 'splunk.notebooks.enterLatestTime',
+                arguments: [cell],
+            },
+        };
+        // earliest and latest time pickers are only supported for SPL2 at the moment
+        if (cell.document.languageId === 'splunk_spl2') {
+            items.push(earliestPicker);
+            items.push(latestPicker);
+        }
+
         if (cell.outputs.length === 1) {
             const meta = cell.outputs[0].metadata;
 
@@ -64,6 +91,11 @@ export class CellResultCountStatusBarProvider implements vscode.NotebookCellStat
                             "arguments": [cell]
                         }
                     });
+                    // earliest and latest time pickers are only supported for SPL2 at the moment
+                    if (cell.document.languageId === 'splunk_spl2') {
+                        items.push(earliestPicker);
+                        items.push(latestPicker);
+                    }
                     items.push({
                         tooltip: 'Dispatch State',
                         text: `$(gear) ${meta.job['dispatchState'] ? meta.job['dispatchState'].toLowerCase() : ''}`,

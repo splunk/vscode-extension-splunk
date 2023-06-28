@@ -56,7 +56,7 @@ export function createSearchJob(jobs, query, options) {
     });
 }
 
-export function dispatchSpl2Module(service: any, spl2Module: string) {
+export function dispatchSpl2Module(service: any, spl2Module: string, earliest: string, latest: string) {
     // Get last statement assignment '$my_statement = ...' -> 'my_statement' 
     const statementMatches = [...spl2Module.matchAll(/\$([a-zA-Z0-9_]+)[\s]*=/gm)];
     if (!statementMatches
@@ -68,6 +68,20 @@ export function dispatchSpl2Module(service: any, spl2Module: string) {
         );
     }
     const statementIdentifier = statementMatches[statementMatches.length - 1][1];
+    const params = {
+        'timezone': 'Etc/UTC',
+        'collectFieldSummary': true,
+        'collectEventSummary': false,
+        'collectTimeBuckets': false,
+        'output_mode': 'json_cols',
+        'status_buckets': 300,
+    };
+    if (earliest !== undefined) {
+        params['earliest'] = earliest;
+    }
+    if (latest !== undefined) {
+        params['latest'] = latest;
+    }
 
     // The Splunk SDK for Javascript doesn't currently support the spl2-module-dispatch endpoint
     // nor does it support sending requests in JSON format (only receiving responses), so
@@ -79,14 +93,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string) {
             'module': spl2Module,
             'namespace': '',
             'queryParameters': {
-                [statementIdentifier]: {
-                    'timezone': 'Etc/UTC',
-                    'collectFieldSummary': true,
-                    'collectEventSummary': false,
-                    'collectTimeBuckets': false,
-                    'output_mode': 'json_cols',
-                    'status_buckets': 300,
-                }
+                [statementIdentifier]: params
             }
         },
         {
