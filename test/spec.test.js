@@ -26,6 +26,16 @@ describe('authorize.conf', () => {
 	});
 });
 
+describe('outputs.conf', () => {
+	let specFileName = "outputs.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
+
+	it('setting "useAck = true" should be valid for stanza [tcpout:default-autolb-group]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[tcpout:default-autolb-group]", "useAck = true"), true);
+	});
+});
+
 describe('authentication.conf', () => {
 	let specFileName = "authentication.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
