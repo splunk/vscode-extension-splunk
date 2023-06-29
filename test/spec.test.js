@@ -97,6 +97,22 @@ describe('indexes.conf', () => {
 	it('setting "enableTsidxReduction = 0" should be valid for stanza [default]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[default]", "enableTsidxReduction = 0"), true);
 	});
+
+	it('setting "bucketRebuildMemoryHint = 0" should be valid for stanza [default]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[default]", "bucketRebuildMemoryHint = 0"), true);
+	});
+
+	it('setting "bucketRebuildMemoryHint = auto" should be valid for stanza [default]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[default]", "bucketRebuildMemoryHint = auto"), true);
+	});
+
+	it('setting "bucketRebuildMemoryHint = 10MB" should be valid for stanza [default]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[default]", "bucketRebuildMemoryHint = 10MB"), true);
+	});
+
+	it('setting "bucketRebuildMemoryHint = 10MBf" should be invalid for stanza [default]', () => {
+		assert.notEqual(splunkSpec.isSettingValid(specConfig, "[default]", "bucketRebuildMemoryHint = 10MBf"), true);
+	});
 });
 
 describe('inputs.conf', () => {

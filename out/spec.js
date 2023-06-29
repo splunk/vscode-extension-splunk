@@ -506,6 +506,7 @@ function isStanzaValid(specConfig, stanzaName) {
 function isValueValid(specValue, settingValue) {
 
     let isValid = true
+    let testDropdown = true
 
     // Look for known types
     switch(specValue) {
@@ -548,10 +549,34 @@ function isValueValid(specValue, settingValue) {
             isValid = FLOAT_REGEX.test(settingValue)
             break
         }
+        case "<positive integer>[KB|MB|GB]|auto":
+            testDropdown = false
+
+            if(settingValue.toLowerCase() == "auto") {
+                isValid = true
+                break
+            }
+            
+            // Test case for an int
+            let INT_REGEX1 = /^[-]?\d+\s*$/
+            if(INT_REGEX1.test(settingValue))
+            {
+                isValid = true
+                break
+            }
+
+            // Test case for an int followed by MB, KB, or GB
+            let INT_REGEX2 = /(\d+)(mb|kb|gb)$/i
+            if(INT_REGEX2.test(settingValue)) {
+                isValid = true
+                break
+            }
+            isValid = false
+        break
     }
 
     // Look for multiple choice types
-    if(DROPDOWN_PLACEHOLDER_REGEX.test(specValue)) {
+    if(DROPDOWN_PLACEHOLDER_REGEX.test(specValue) && testDropdown) {
         // Remove square brackets and curly braces
         let possibleValues = specValue.replace(/[\[\{\}\]]/g, '')
         let settings = possibleValues.toLowerCase().split('|')
