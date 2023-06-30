@@ -4,6 +4,7 @@ import * as path from 'path';
 import {
     ExtensionContext,
     StatusBarItem,
+    window,
     workspace,
 } from 'vscode';
 import {
@@ -207,6 +208,12 @@ export class Spl2ClientServer {
                         // this indicates a socket issue, try next port
                         console.warn('Connection lost, bumping port and retrying ...');
                         this.onClose(this.lspPort + 1);
+                    } else if (stderr.includes('Unable to access jarfile')) {
+                        // Jar file likely does not exists/permissions insufficient, fail now
+                        window.showErrorMessage(
+                            `SPL2 Server unable to access jarfile at ${this.lspPath}, ` +
+                            'check Splunk Extension Settings');
+                        this.deactivate();
                     }
                 });
                 this.serverProcess.stdout.on('data', stdout => {
@@ -268,6 +275,8 @@ export class Spl2ClientServer {
     }
   
     deactivate(): Promise<void> {
+        this.progressBar.text = 'SPL2 Language Server deactivated';
+        this.progressBar.show();
         try {
             this?.socket.destroy();
             this.killServer();

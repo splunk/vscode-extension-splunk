@@ -13,6 +13,7 @@ import * as zlib from 'zlib';
 // Keys used to store/retrieve state related to this extension
 export const configKeyAcceptedTerms = 'splunk.spl2.acceptedTerms';
 export const configKeyJavaPath = 'splunk.spl2.javaPath';
+export const configKeyLspDirectory = 'splunk.spl2.languageServerDirectory';
 export const configKeyLspVersion = 'splunk.spl2.languageServerVersion';
 
 export const stateKeyLatestLspVersion = 'splunk.spl2.latestLspVersion';
@@ -70,6 +71,10 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
         let lspVersion;
         try {
             lspVersion = workspace.getConfiguration().get(configKeyLspVersion);
+            if (!workspace.getConfiguration().get(configKeyLspDirectory)) {
+                const localLspDefault = path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
+                await workspace.getConfiguration().update(configKeyLspDirectory, localLspDefault, true);
+            }
         } catch (err) {
             reject(`Error retrieving configuration '${configKeyLspVersion}', err: ${err}`);
         }
@@ -186,6 +191,10 @@ function getLocalJdkDir(context: ExtensionContext): string {
 }
 
 export function getLocalLspDir(context: ExtensionContext): string {
+    const configuredDir: string = workspace.getConfiguration().get(configKeyLspDirectory);
+    if (configuredDir) {
+        return configuredDir;
+    }
     return path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
 }
 
@@ -385,9 +394,9 @@ async function extractZipWithProgress(
         }
         readCompressedSize += entry.compressedSize;
         let pct = Math.floor(readCompressedSize * 100 / compressedSize);
-        if (pct === nextUpdate) {
+        if (pct >= nextUpdate) {
             progressBar.text = `${progressBarText} ${pct}%`;
-            nextUpdate++;
+            nextUpdate = pct + 1;
         }
     }});
     return Promise.resolve(binJavaPath);
@@ -411,9 +420,9 @@ async function extractTgzWithProgress(
         fs.createReadStream(tgzPath).on('data', (chunk) => {
             readCompressedSize += chunk.length;
             let pct = Math.floor(readCompressedSize * 100 / compressedSize);
-            if (pct === nextUpdate) {
+            if (pct >= nextUpdate) {
                 progressBar.text = `${progressBarText} ${pct}%`;
-                nextUpdate++;
+                nextUpdate = pct + 1;
             }
         }),
         zlib.createGunzip(),
@@ -422,7 +431,7 @@ async function extractTgzWithProgress(
                 if (header.name.endsWith(path.join('bin', 'java'))) {
                     binJavaPath = path.join(extractPath, header.name);
                 }
-                return Promise.resolve(header);
+                return header;
             }
         }),
     );
@@ -478,11 +487,11 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
  */
 export async function getLatestSpl2Release(context: ExtensionContext, progressBar: StatusBarItem): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const lspArtifactPath = path.join(context.globalStorageUri.fsPath, 'lsp');
+        const lspArtifactPath = getLocalLspDir(context);
         // TODO: Remove this hardcoded version/update time and check for updates
-        let lspVersion: string = '2.0.362'; // context.globalState.get(stateKeyLatestLspVersion) || "";
+        let latestLspVersion: string = '2.0.362'; // context.globalState.get(stateKeyLatestLspVersion) || "";
         const lastUpdateMs: number = Date.now(); // context.globalState.get(stateKeyLastLspCheck) || 0;
-        // Check for new version of SPL2 Language Server if longer than 24 hours
+        // Don't check for new version of SPL2 Language Server if less than 24 hours since last check
         if (Date.now() - lastUpdateMs > 24 * 60 * 60 * 1000) {
             const metaPath = path.join(lspArtifactPath, 'maven-metadata.xml');
             try {
@@ -495,29 +504,37 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
                 const parser = new XMLParser();
                 const metadata = fs.readFileSync(metaPath);
                 const metaParsed = parser.parse(metadata);
-                lspVersion = metaParsed?.metadata?.versioning?.release;
+                latestLspVersion = metaParsed?.metadata?.versioning?.release;
             } catch (err) {
                 console.warn(`Error retrieving latest SPL2 version, err: ${err}`);
             }
         }
-        const lspFilename = getLspFilename(lspVersion);
+        const currentLspVersion = workspace.getConfiguration().get(configKeyLspVersion);
+        if (currentLspVersion === latestLspVersion) {
+            resolve();
+            return;
+        }
+        // Check if latest version has already been downloaded
+        const lspFilename = getLspFilename(latestLspVersion);
         const localLspPath = path.join(getLocalLspDir(context), lspFilename);
         // Check if local file exists before downloading
-        if (!fs.existsSync(localLspPath)) {
-            try {
-                await downloadWithProgress(
-                    `https://splunk.jfrog.io/splunk/maven-splunk/spl2/com/splunk/spl/spl-lang-server-sockets/${lspVersion}/${lspFilename}`,
-                    localLspPath,
-                    progressBar,
-                    'Downloading SPL2 Language Server',
-                );
-            } catch (err) {
-                reject(`Error downloading SPL2 Language Server, err: ${err}`);
-            }
+        if (fs.existsSync(localLspPath)) {
+            resolve();
+            return;
+        }
+        try {
+            await downloadWithProgress(
+                `https://splunk.jfrog.io/splunk/maven-splunk/spl2/com/splunk/spl/spl-lang-server-sockets/${latestLspVersion}/${lspFilename}`,
+                localLspPath,
+                progressBar,
+                'Downloading SPL2 Language Server',
+            );
+        } catch (err) {
+            reject(`Error downloading SPL2 Language Server, err: ${err}`);
         }
         // Update this setting to indicate that this version is ready-to-use
         try {
-            await workspace.getConfiguration().update(configKeyLspVersion, lspVersion, true);
+            await workspace.getConfiguration().update(configKeyLspVersion, latestLspVersion, true);
         } catch (err) {
             reject(`Error updating configuration '${configKeyLspVersion}', err: ${err}`);
         }

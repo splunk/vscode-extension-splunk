@@ -33,7 +33,12 @@ export class Spl2Controller extends SplunkController {
     
         let job;
         try {
-            job = await dispatchSpl2Module(service, spl2Module);
+            job = await dispatchSpl2Module(
+                service,
+                spl2Module,
+                cell?.metadata?.splunk?.earliestTime,
+                cell?.metadata?.splunk?.latestTime,
+            );
             await super._finishExecution(job, cell, execution);
         } catch (failedResponse) {
             let outputItems: vscode.NotebookCellOutputItem[] = [];
