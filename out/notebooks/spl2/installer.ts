@@ -492,24 +492,27 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
         let latestLspVersion: string = '2.0.362'; // context.globalState.get(stateKeyLatestLspVersion) || "";
         const lastUpdateMs: number = Date.now(); // context.globalState.get(stateKeyLastLspCheck) || 0;
         // Don't check for new version of SPL2 Language Server if less than 24 hours since last check
-        if (Date.now() - lastUpdateMs < 24 * 60 * 60 * 1000) {
+        if (Date.now() - lastUpdateMs > 24 * 60 * 60 * 1000) {
+            const metaPath = path.join(lspArtifactPath, 'maven-metadata.xml');
+            try {
+                await downloadWithProgress(
+                    'https://splunk.jfrog.io/splunk/maven-splunk-release/spl2/com/splunk/spl/spl-lang-server-sockets/maven-metadata.xml',
+                    metaPath,
+                    progressBar,
+                    'Checking for SPL2 updates',
+                );
+                const parser = new XMLParser();
+                const metadata = fs.readFileSync(metaPath);
+                const metaParsed = parser.parse(metadata);
+                latestLspVersion = metaParsed?.metadata?.versioning?.release;
+            } catch (err) {
+                console.warn(`Error retrieving latest SPL2 version, err: ${err}`);
+            }
+        }
+        const currentLspVersion = workspace.getConfiguration().get(configKeyLspVersion);
+        if (currentLspVersion === latestLspVersion) {
             resolve();
             return;
-        }
-        const metaPath = path.join(lspArtifactPath, 'maven-metadata.xml');
-        try {
-            await downloadWithProgress(
-                'https://splunk.jfrog.io/splunk/maven-splunk-release/spl2/com/splunk/spl/spl-lang-server-sockets/maven-metadata.xml',
-                metaPath,
-                progressBar,
-                'Checking for SPL2 updates',
-            );
-            const parser = new XMLParser();
-            const metadata = fs.readFileSync(metaPath);
-            const metaParsed = parser.parse(metadata);
-            latestLspVersion = metaParsed?.metadata?.versioning?.release;
-        } catch (err) {
-            console.warn(`Error retrieving latest SPL2 version, err: ${err}`);
         }
         // Check if latest version has already been downloaded
         const lspFilename = getLspFilename(latestLspVersion);
