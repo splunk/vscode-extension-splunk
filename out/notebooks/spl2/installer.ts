@@ -431,7 +431,7 @@ async function extractTgzWithProgress(
                 if (header.name.endsWith(path.join('bin', 'java'))) {
                     binJavaPath = path.join(extractPath, header.name);
                 }
-                return Promise.resolve(header);
+                return header;
             }
         }),
     );
