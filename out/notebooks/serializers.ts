@@ -56,7 +56,7 @@ export class SplunkNotebookSerializer implements vscode.NotebookSerializer {
 
         try {
             raw = <RawNotebookCell[]>JSON.parse(contents);
-        } catch {
+        } catch (err) {
             raw = [];
         }
 
