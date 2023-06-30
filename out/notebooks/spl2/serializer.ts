@@ -37,7 +37,10 @@ export class Spl2NotebookSerializer implements vscode.NotebookSerializer {
         try {
             raw = <Spl2ModulesJson>JSON.parse(contents);
         } catch {
-            raw = <Spl2ModulesJson>{};
+            raw = <Spl2ModulesJson>{
+                modules: [],
+                app: "apps.search",
+            };
         }
 
         const cells = raw.modules.map((module) => {
