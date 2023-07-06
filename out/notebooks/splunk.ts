@@ -94,7 +94,7 @@ export function updateSpl2Module(service: any, spl2ModuleCell: Spl2ModuleCell) {
                 return;
             }
             // This is in the expected successful response format
-            vscode.window.showInformationMessage(`${data.namespace}.${data.name} updated at ${data.updatedAt}`);
+            vscode.window.showInformationMessage(`Success! ${data.namespace}.${data.name} updated at ${data.updatedAt}`);
         });
 }
 
