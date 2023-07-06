@@ -79,7 +79,7 @@ function activate(context) {
             }
         );
         const updateWebview = async () => {
-            panel.webview.html = await splunkEmbeddedReportProvider.getWebviewContent(report);
+            panel.webview.html = await embeddedReportProvider.getWebviewContent(report);
         }
 
         updateWebview();
@@ -213,6 +213,12 @@ function activate(context) {
             handleSplunkFile(context);
         }
     }));
+
+    // Set up listener for configuration setting changes
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration( () => {
+        embeddedReportProvider.refresh();
+        savedSearchProvider.refresh();
+    }))
 }
 exports.activate = activate;
 
