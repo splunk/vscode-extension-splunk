@@ -15,7 +15,7 @@ interface Spl2ModulesJson {
     app: string, // hardcoded to apps.search for now
 }
 
-interface Spl2ModuleCell {
+export interface Spl2ModuleCell {
     name: string; // hardcoded to module1, module2, etc for now
     namespace: string; // hardcoded to "" for now
     definition: string; // SPL2 statements
@@ -39,6 +39,7 @@ export class Spl2NotebookSerializer implements vscode.NotebookSerializer {
         } catch (err) {
             raw = <Spl2ModulesJson>{
                 modules: [],
+                // TODO: make the app configurable rather than hardcoding to 'search'
                 app: "apps.search",
             };
         }
@@ -61,6 +62,7 @@ export class Spl2NotebookSerializer implements vscode.NotebookSerializer {
     ): Promise<Uint8Array> {
         let contents: Spl2ModulesJson = <Spl2ModulesJson>{
             modules: [],
+            // TODO: make the app configurable rather than hardcoding to 'search'
             app: "apps.search",
         };
 

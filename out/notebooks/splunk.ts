@@ -1,6 +1,7 @@
 import * as splunk from 'splunk-sdk';
 import * as needle from 'needle'; // transitive dependency of splunk-sdk
 import * as vscode from 'vscode';
+import { Spl2ModuleCell } from './spl2/serializer';
 import { SplunkMessage } from './utils';
 
 export function getClient() {
@@ -56,6 +57,39 @@ export function createSearchJob(jobs, query, options) {
     });
 }
 
+
+export function updateSpl2Module(service: any, spl2ModuleCell: Spl2ModuleCell) {
+    // TODO: make the app configurable rather than hardcoding to 'search'
+    const app = 'search';
+    const module = '_default';
+    // The Splunk SDK for Javascript doesn't currently support the spl2/modules endpoints
+    // nor does it support sending requests in JSON format (only receiving responses), so
+    // for now use the underlying needle library that the SDK uses for requests/responses
+    return needle(
+        'POST',
+        `${service.prefix}/services/spl2/modules/apps.${app}.${module}`,
+        {
+            'name': spl2ModuleCell.name,
+            'namespace': spl2ModuleCell.namespace,
+            'definition': spl2ModuleCell.definition,
+        },
+        {
+            'headers': {
+                'Authorization': `Bearer ${service.sessionKey}`,
+                'Content-Type': 'application/json',
+            },
+            'followAllRedirects': true,
+            'timeout': 0,
+            'strictSSL': false,
+            'rejectUnauthorized' : false,
+        })
+        .then((response) => {
+            const data = response.body;
+            // TODO: handle response
+        });
+}
+
+
 export function dispatchSpl2Module(service: any, spl2Module: string, earliest: string, latest: string) {
     // Get last statement assignment '$my_statement = ...' -> 'my_statement' 
     const statementMatches = [...spl2Module.matchAll(/\$([a-zA-Z0-9_]+)[\s]*=/gm)];
@@ -88,6 +122,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, earliest: s
     // for now use the underlying needle library that the SDK uses for requests/responses
     return needle(
         'POST',
+        // TODO: make the app configurable rather than hardcoding to 'search'
         `${service.prefix}/services/search/spl2-module-dispatch`,
         {
             'module': spl2Module,

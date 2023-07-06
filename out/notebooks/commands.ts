@@ -9,14 +9,20 @@ export async function registerNotebookCommands(controllers: SplunkController[], 
             .forEach((controller) => addVisualizationPreference(controller, cell));
 	}));
 
+    context.subscriptions.push(vscode.commands.registerCommand('splunk.notebooks.enterModuleName', (cell) => { 
+		enterModuleName(cell);
+	}));
+
+    context.subscriptions.push(vscode.commands.registerCommand('splunk.notebooks.enterNamespace', (cell) => { 
+		enterNamespace(cell);
+	}));
+
     context.subscriptions.push(vscode.commands.registerCommand('splunk.notebooks.enterEarliestTime', (cell) => { 
-		controllers.filter((controller) => (cell.notebook.notebookType === controller.notebookType))
-            .forEach((controller) => enterEarliestTime(controller, cell));
+		enterEarliestTime(cell);
 	}));
 
     context.subscriptions.push(vscode.commands.registerCommand('splunk.notebooks.enterLatestTime', (cell) => { 
-		controllers.filter((controller) => (cell.notebook.notebookType === controller.notebookType))
-            .forEach((controller) => enterLatestTime(controller, cell));
+		enterLatestTime(cell);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('splunk.notebooks.openJobInspector', (sid) => { 
@@ -123,26 +129,30 @@ export async function addVisualizationPreference(
     await controller.runCell(cell);
 }
 
-export async function enterEarliestTime(
-    controller: SplunkController,
-    cell: vscode.NotebookCell
-) {
+/**
+ * Helper function to record inputs provided to user as cell metadata
+ * @param cell Cell to refer to when manipulating metadata
+ * @param propertyName Name of metadata property to read/store inputs
+ * @param options Options to display to user when input box is displayed
+ * @returns Promise<void>
+ */
+async function recordInput(
+    cell: vscode.NotebookCell,
+    propertyName: string,
+    options: vscode.InputBoxOptions
+): Promise<void> {
     const cellMetadata = { ...cell.metadata };
     if (!cellMetadata.splunk) {
         cellMetadata.splunk = {};
     }
 
-    let value = await vscode.window.showInputBox({
-        title: 'Earliest time',
-        value: cellMetadata.splunk.earliestTime || '-24h',
-        prompt: 'e.g. -24h, @d, -2d@d+2h, 1687909025',
-    });
+    let value = await vscode.window.showInputBox(options);
 
     if (value === undefined) { // canceled
         return;
     }
     
-    cellMetadata.splunk.earliestTime = value;
+    cellMetadata.splunk[propertyName] = value;
 
     const edit = new vscode.WorkspaceEdit();
     const nbEdit = vscode.NotebookEdit.updateCellMetadata(cell.index, cellMetadata);
@@ -152,33 +162,72 @@ export async function enterEarliestTime(
     await vscode.workspace.applyEdit(edit);
 }
 
-export async function enterLatestTime(
-    controller: SplunkController,
-    cell: vscode.NotebookCell
-) {
+async function enterModuleName(cell: vscode.NotebookCell) {
     const cellMetadata = { ...cell.metadata };
     if (!cellMetadata.splunk) {
         cellMetadata.splunk = {};
     }
 
-    let value = await vscode.window.showInputBox({
-        title: 'Latest time',
-        value: cellMetadata.splunk.latestTime || 'now',
-        prompt: 'e.g. now, -24h, @d, -2d@d+2h, 1687909025',
-    });
+    await recordInput(
+        cell,
+        'moduleName',
+        {
+            title: 'Module name',
+            value: cellMetadata.splunk.moduleName || '_default',
+            prompt: 'Modules should only contain alphanumeric characters and underscores (_)',
+        },
+    );
+}
 
-    if (value === undefined) { // canceled
-        return;
+async function enterNamespace(cell: vscode.NotebookCell) {
+    const cellMetadata = { ...cell.metadata };
+    if (!cellMetadata.splunk) {
+        cellMetadata.splunk = {};
     }
-    
-    cellMetadata.splunk.latestTime = value;
 
-    const edit = new vscode.WorkspaceEdit();
-    const nbEdit = vscode.NotebookEdit.updateCellMetadata(cell.index, cellMetadata);
+    await recordInput(
+        cell,
+        'namespace',
+        {
+            title: 'Namespace',
+            value: cellMetadata.splunk.namespace || 'apps.search',
+            prompt: 'e.g. apps.search, apps.my_app, [blank], etc',
+        },
+    );
+}
 
-    edit.set(cell.notebook.uri, [nbEdit]);
+async function enterEarliestTime(cell: vscode.NotebookCell) {
+    const cellMetadata = { ...cell.metadata };
+    if (!cellMetadata.splunk) {
+        cellMetadata.splunk = {};
+    }
 
-    await vscode.workspace.applyEdit(edit);
+    await recordInput(
+        cell,
+        'earliestTime',
+        {
+            title: 'Earliest time',
+            value: cellMetadata.splunk.earliestTime || '-24h',
+            prompt: 'e.g. -24h, @d, -2d@d+2h, 1687909025',
+        },
+    );
+}
+
+async function enterLatestTime(cell: vscode.NotebookCell) {
+    const cellMetadata = { ...cell.metadata };
+    if (!cellMetadata.splunk) {
+        cellMetadata.splunk = {};
+    }
+
+    await recordInput(
+        cell,
+        'latestTime',
+        {
+            title: 'Latest time',
+            value: cellMetadata.splunk.latestTime || 'now',
+            prompt: 'e.g. now, -24h, @d, -2d@d+2h, 1687909025',
+        },
+    );
 }
 
 export async function copyJobIdToClipboard(cell) {
