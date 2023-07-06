@@ -1,0 +1,67 @@
+{
+  "scopeName": "source.spl2",
+  "patterns": [
+    {
+      "include": "#block_comment"
+    },
+    {
+      "include": "#line_comment"
+    },
+    {
+      "include": "#expression"
+    }
+  ],
+  "repository": {
+    "block_comment": {
+      "name": "comment.block.spl2",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    "line_comment": {
+      "name": "comment.line.double-slash.spl2",
+      "begin": "//",
+      "end": "$"
+    },
+    "expression": {
+      "patterns": [
+        {
+          "include": "#keyword"
+        },
+        {
+          "include": "#param"
+        },
+        {
+          "include": "#paren-expression"
+        }
+      ]
+    },
+    "keyword": {
+      "match": "\\b(between|BETWEEN|is|IS|like|LIKE'|and|AND|in|IN|not|NOT|or|OR|xor|XOR|after|apply|as|AS|asc|ASC|before|bin|branch|by|BY|dedup|desc|DESC|distinct|DISTINCT|eval|eventstats|exists|EXISTS|export|false|fit|from|FROM|function|group|GROUP|groupby|GROUPBY|having|HAVING|head|histperc|import|inner|INNER|into|join|JOIN|left|LEFT|limit|LIMIT|lookup|null|NULL|offset|OFFSET|on|ON|onchange|order|ORDER|orderby|ORDERBY|outer|OUTER|OUTPUT|OUTPUTNEW|rename|reset|return|rex|search|select|SELECT|sort|stats|streamstats|through|thru|timechart|timewrap|true|type|union|UNION|where|WHERE|while)\\b",
+      "name": "keyword"
+    },
+    "param": {
+      "match": "\\$[a-zA-Z0-9]+",
+      "name": "variable"
+    },
+    "paren-expression": {
+      "begin": "\\(",
+      "end": "\\)",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.paren.open"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.paren.close"
+        }
+      },
+      "name": "expression.group",
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    }
+  }
+}

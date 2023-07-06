@@ -16,7 +16,7 @@ interface RawNotebookCell {
     outputs?: RawCellOutput[];
 }
 
-function transformOutputFromCore(output: vscode.NotebookCellOutput): RawCellOutput {
+export function transformOutputFromCore(output: vscode.NotebookCellOutput): RawCellOutput {
 
     const cellOutput: RawCellOutput = {output_type: "execute_result", data: {}}
 
@@ -27,7 +27,7 @@ function transformOutputFromCore(output: vscode.NotebookCellOutput): RawCellOutp
     return cellOutput
 }
 
-function transformOutputToCore(rawOutput: RawCellOutput): vscode.NotebookCellOutput {
+export function transformOutputToCore(rawOutput: RawCellOutput): vscode.NotebookCellOutput {
     const cellOutput: vscode.NotebookCellOutput = new vscode.NotebookCellOutput([])
 
     for (const [key, value] of Object.entries(rawOutput.data)) {
@@ -56,7 +56,7 @@ export class SplunkNotebookSerializer implements vscode.NotebookSerializer {
 
         try {
             raw = <RawNotebookCell[]>JSON.parse(contents);
-        } catch {
+        } catch (err) {
             raw = [];
         }
 

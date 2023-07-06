@@ -11,18 +11,17 @@ import {
 import { splunkMessagesToOutputItems } from './utils';
 
 export class SplunkController {
-    readonly controllerId = 'splunk-notebook-controller';
-    readonly notebookType = 'splunk-notebook';
-    readonly label = 'SPL Note';
-    readonly supportedLanguages = ['markdown', 'splunk_search', 'splunk-spl-meta'];
+    public notebookType: string;
 
-    private readonly _controller: vscode.NotebookController;
+    protected controllerId: string;
+    protected label: string;
+    protected supportedLanguages: string[];
+
+    protected _controller: vscode.NotebookController;
     private _executionOrder = 0;
     private _interrupted = false;
     private _tokens = {};
     private _lastjob = undefined;
-
-    readonly rendererScriptId = 'splunk-visualization-script';
 
     readonly _spl_meta_help = `
     SPL-META Manual
@@ -40,7 +39,17 @@ export class SplunkController {
     _lastjob: Contains the search id (sid) of the last query
     `;
 
-    constructor() {
+    constructor(
+            controllerId = 'splunk-notebook-controller',
+            notebookType = 'splunk-notebook',
+            label = 'SPL Note',
+            supportedLanguages = ['markdown', 'splunk_search', 'splunk-spl-meta']
+        ) {
+        this.controllerId = controllerId;
+        this.notebookType = notebookType;
+        this.label = label;
+        this.supportedLanguages = supportedLanguages;
+
         this._controller = vscode.notebooks.createNotebookController(
             this.controllerId,
             this.notebookType,
@@ -61,7 +70,7 @@ export class SplunkController {
         this._execute([cell], notebookDocument, this._controller);
     }
 
-    private _execute(
+    protected _execute(
         cells: vscode.NotebookCell[],
         _notebook: vscode.NotebookDocument,
         _controller: vscode.NotebookController
@@ -122,21 +131,23 @@ export class SplunkController {
         execution.end(true, Date.now());
     }
 
-    private async _doExecution(cell: vscode.NotebookCell): Promise<void> {
+    protected _startExecution(cell: vscode.NotebookCell): vscode.NotebookCellExecution {
         this._interrupted = false;
         console.log(cell);
         const execution = this._controller.createNotebookCellExecution(cell);
         execution.executionOrder = ++this._executionOrder;
         execution.start(Date.now());
+        return execution;
+    }
+
+    private async _doExecution(cell: vscode.NotebookCell): Promise<void> {
+        const execution = this._startExecution(cell);
 
         let query = cell.document.getText().trim().replace(/^\s+|\s+$/g, '');
 
         const service = getClient()
     
         let jobs = service.jobs();
-
-        let activeThemeKind = vscode.window.activeColorTheme.kind;
-        let backgroundColor = new vscode.ThemeColor('notebook.editorBackground');
 
         const tokenRegex = /\$([a-zA-Z0-9_.|]*?)\$/g;
 
@@ -173,7 +184,10 @@ export class SplunkController {
             execution.end(false, Date.now());
             return;
         }
-
+        await this._finishExecution(job, cell, execution);
+    }
+    
+    protected async _finishExecution(job: any, cell: vscode.NotebookCell, execution: vscode.NotebookCellExecution) {
         let sid = job['sid'];
         this._lastjob = sid;
         this._tokens['_lastjob'] = this._lastjob;
@@ -199,7 +213,8 @@ export class SplunkController {
             if (job.properties().isDone == true) {
                 jobComplete = true;
                 continue;
-            } 
+            }
+            execution.replaceOutput([new vscode.NotebookCellOutput([], { job: job.properties() })]);
             wait(1000);
         }        
 
@@ -214,6 +229,8 @@ export class SplunkController {
 
         if (!this._interrupted) {
             let results: any = await getSearchJobResults(job);
+            let activeThemeKind = vscode.window.activeColorTheme.kind;
+            let backgroundColor = new vscode.ThemeColor('notebook.editorBackground');    
 
             execution.replaceOutput([
                 new vscode.NotebookCellOutput(
@@ -225,6 +242,7 @@ export class SplunkController {
                                     backgroundColor: backgroundColor,
                                     colorMode: activeThemeKind,
                                     cellMeta: cell.metadata,
+                                    languageId: cell?.document?.languageId,
                                 },
                             },
                             'application/splunk/events'

@@ -26,7 +26,7 @@ const StyledDiv = styled.div`
 } 
 `
 
-function VizViewer({data, backgroundColor, initialVizType, visualizationOptions}) {
+function VizViewer({data, backgroundColor, initialVizType, visualizationOptions, languageId}) {
 
     let initialType = "events"
  
@@ -100,7 +100,7 @@ function VizViewer({data, backgroundColor, initialVizType, visualizationOptions}
 
     return (
         <div>
-        <VizSelector isCollapsed={initialVizType !== undefined} onChange={handleChangeVizType} value={vizType} style={{"paddingBottom": "10px"}}></VizSelector>
+        <VizSelector isCollapsed={initialVizType !== undefined} onChange={handleChangeVizType} value={vizType} style={{"paddingBottom": "10px"}} languageId={languageId}></VizSelector>
 
         {viz}
         
@@ -115,6 +115,7 @@ export const activate= (_) => ({
 
         const visualizationPreference = _meta.cellMeta?.splunk?.visualizationPreference
         const visualizationOptions = _meta.cellMeta?.splunk?.visualizationOptions
+        const languageId = _meta?.languageId;
 
         console.log(visualizationOptions)
         //element.innerText = "H" + JSON.stringify(data.json())
@@ -127,7 +128,7 @@ export const activate= (_) => ({
         render(
             <SplunkThemeProvider family="prisma" colorScheme={colorScheme} density="compact">
                 <StyledDiv>
-                <VizViewer visualizationOptions={visualizationOptions} initialVizType={visualizationPreference} data={results} backgroundColor={_meta["backgroundColor"]}></VizViewer>
+                <VizViewer visualizationOptions={visualizationOptions} initialVizType={visualizationPreference} data={results} backgroundColor={_meta["backgroundColor"]} languageId={languageId}></VizViewer>
                 </StyledDiv>
         </SplunkThemeProvider>, element)
     },

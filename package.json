@@ -58,6 +58,16 @@
                 ]
             },
             {
+                "id": "splunk_spl2",
+                "aliases": [
+                    "SPL2"
+                ],
+                "configuration": "./spl2-language-configuration.json",
+                "extensions": [
+                    ".spl2"
+                ]
+            },
+            {
                 "id": "splunk-spl-meta",
                 "aliases": [
                     "SPL-META"
@@ -69,6 +79,11 @@
                 "language": "splunk",
                 "scopeName": "source.splunk",
                 "path": "./syntaxes/splunk.tmLanguage.json"
+            },
+            {
+                "language": "splunk_spl2",
+                "scopeName": "source.spl2",
+                "path": "./syntaxes/spl2.tmGrammar.json"
             }
         ],
         "jsonValidation": [
@@ -160,6 +175,39 @@
                     "default": false,
                     "order": 9,
                     "description": "When auto-completing settings, trim whitespace around the '=' sign. For example, key = value will become key=value.\nNote: changing this setting requires a restart of Visual Studio Code."
+                },
+                "splunk.spl2.acceptedTerms": {
+                    "type": "string",
+                    "enum": [
+                        "accepted",
+                        "declined (once)",
+                        "declined (forever)"
+                    ],
+                    "scope": "resource",
+                    "default": "declined (once)",
+                    "order": 10,
+                    "description": "[SPL2] Accepted Splunk General Terms"
+                },
+                "splunk.spl2.javaPath": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "",
+                    "order": 11,
+                    "description": "[SPL2] Java Path\nSpecify the full path to a Java executable (./java for Mac/Linux or java.exe for Windows). For example, the full path of $JAVA_HOME/bin/java."
+                },
+                "splunk.spl2.languageServerDirectory": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "",
+                    "order": 12,
+                    "description": "[SPL2] Language Server Directory\nSpecify the full path of the directory containing SPL2 (Websockets) Langauge Server. Trailing slash not required. Example:\n/Users/<User>/Library/Application Support/Code/User/globalStorage/splunk.splunk/spl2/lsp"
+                },
+                "splunk.spl2.languageServerVersion": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "",
+                    "order": 13,
+                    "description": "[SPL2] Language Server Version\nSpecify the version of the SPL2 language server which will be used to create the path to invoke the server. Example, a value of '2.0.362' will invoke spl-lang-server-sockets-2.0.362-all.jar"
                 }
             }
         },
@@ -320,6 +368,10 @@
             {
                 "command": "splunk.notebooks.copyDetection",
                 "title": "Copy Detection"
+            },
+            {
+                "command": "splunk.restartSpl2LanguageServer",
+                "title": "Restart SPL2 Language Server"
             }
         ],
         "notebooks": [
@@ -330,6 +382,19 @@
                 "selector": [
                     {
                         "filenamePattern": "*.splnb"
+                    }
+                ]
+            },
+            {
+                "id": "spl2-notebook",
+                "type": "spl2-notebook",
+                "displayName": "SPL2 Notebook",
+                "selector": [
+                    {
+                        "filenamePattern": "*.spl2nb"
+                    },
+                    {
+                        "filenamePattern": "modules.json"
                     }
                 ]
             }
@@ -376,12 +441,16 @@
         "@types/vscode-notebook-renderer": "^1.72.0",
         "axios": ">=0.27.2",
         "babel-loader": "^9.1.0",
+        "extract-zip": "^2.0.1",
+        "fast-xml-parser": "^4.2.4",
         "react": "^16",
         "react-dom": "^16.14.0",
         "splunk-sdk": "^1.12.1",
         "styled-components": "5",
+        "tar-fs": "^2.1.1",
         "ts-loader": "^9.4.2",
-        "typescript": "^4.2.2"
+        "typescript": "^4.2.2",
+        "vscode-languageclient": "^8.1.0"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",

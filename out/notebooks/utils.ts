@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-interface SplunkMessage {
+export interface SplunkMessage {
     type: string,
     code: string,
     text: string
