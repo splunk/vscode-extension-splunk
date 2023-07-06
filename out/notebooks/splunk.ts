@@ -3,6 +3,7 @@ import * as needle from 'needle'; // transitive dependency of splunk-sdk
 import * as vscode from 'vscode';
 import { Spl2ModuleCell } from './spl2/serializer';
 import { SplunkMessage } from './utils';
+import { ThrowStatement } from 'typescript';
 
 export function getClient() {
     const config = vscode.workspace.getConfiguration();
@@ -59,15 +60,13 @@ export function createSearchJob(jobs, query, options) {
 
 
 export function updateSpl2Module(service: any, spl2ModuleCell: Spl2ModuleCell) {
-    // TODO: make the app configurable rather than hardcoding to 'search'
-    const app = 'search';
-    const module = '_default';
     // The Splunk SDK for Javascript doesn't currently support the spl2/modules endpoints
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
     return needle(
-        'POST',
-        `${service.prefix}/services/spl2/modules/apps.${app}.${module}`,
+        'PUT',
+        // example: https://myhost.splunkcloud.com:8089/services/spl2/modules/apps.search._default
+        `${service.prefix}/services/spl2/modules/${spl2ModuleCell.namespace}.${spl2ModuleCell.name}`,
         {
             'name': spl2ModuleCell.name,
             'namespace': spl2ModuleCell.namespace,
@@ -85,7 +84,17 @@ export function updateSpl2Module(service: any, spl2ModuleCell: Spl2ModuleCell) {
         })
         .then((response) => {
             const data = response.body;
-            // TODO: handle response
+            if (!Object.prototype.isPrototypeOf(data)
+                || data.name === undefined
+                || data.namespace === undefined
+                || data.definition === undefined
+                || data.updatedAt === undefined
+            ) {
+                handleErrorPayloads(data);
+                return;
+            }
+            // This is in the expected successful response format
+            vscode.window.showInformationMessage(`${data.namespace}.${data.name} updated at ${data.updatedAt}`);
         });
 }
 
@@ -144,50 +153,55 @@ export function dispatchSpl2Module(service: any, spl2Module: string, earliest: s
         .then((response) => {
             const data = response.body;
             if (!Array.prototype.isPrototypeOf(data) || data.length < 1) {
-                // Response is not in expected successful format, let's handle a
-                // few different error cases and raise as expected messages format
-                let messages:SplunkMessage[] = [];
-                if (Object.prototype.isPrototypeOf(data)) {
-                    if (data.name === 'response'
-                        && Array.prototype.isPrototypeOf(data.children)) {
-                        // Reformat messages for errors such as unauthorized
-                        messages = data.children
-                            .filter((child) => child.name === 'messages')
-                            .flatMap((msgs) => msgs.children)
-                            .map((msg) => new Object({
-                                    'type': msg?.attributes?.type,
-                                    'code': msg.name,
-                                    'text': msg.value,
-                            }));
-                    } else if (data.code !== undefined && data.message !== undefined) {
-                        // Reformat if returns a `code` and `message for errors such
-                        // as invalid request body format
-                        messages = [{
-                            'type': 'error',
-                            'code': data.code,
-                            'text': data.message,
-                        }];
-                    }
-                }
-                // If we still haven't handled this unsuccessful response then simply
-                // output the body as an error message
-                if (messages.length === 0) {
-                    messages = [{
-                        'type': 'error',
-                        'code': '',
-                        'text': `Error dispatching SPL2: ${JSON.stringify(data)}`,
-                    }];
-                }
-                throw new Object({
-                    'data': {
-                        'messages': messages,
-                    },
-                }); 
+                handleErrorPayloads(data);
+                return;
             }
             // This is in the expected successful response format
             const sid = data[0]['sid'];
             return getSearchJobBySid(service, sid);
         });
+}
+
+function handleErrorPayloads(data: any): ThrowStatement {
+    // Response is not in expected successful format, let's handle a
+    // few different error cases and raise as expected messages format
+    let messages:SplunkMessage[] = [];
+    if (Object.prototype.isPrototypeOf(data)) {
+        if (data.name === 'response'
+            && Array.prototype.isPrototypeOf(data.children)) {
+            // Reformat messages for errors such as unauthorized
+            messages = data.children
+                .filter((child) => child.name === 'messages')
+                .flatMap((msgs) => msgs.children)
+                .map((msg) => new Object({
+                        'type': msg?.attributes?.type,
+                        'code': msg.name,
+                        'text': msg.value,
+                }));
+        } else if (data.code !== undefined && data.message !== undefined) {
+            // Reformat if returns a `code` and `message for errors such
+            // as invalid request body format
+            messages = [{
+                'type': 'error',
+                'code': data.code,
+                'text': data.message,
+            }];
+        }
+    }
+    // If we still haven't handled this unsuccessful response then simply
+    // output the body as an error message
+    if (messages.length === 0) {
+        messages = [{
+            'type': 'error',
+            'code': '',
+            'text': `Error making request: ${JSON.stringify(data)}`,
+        }];
+    }
+    throw new Object({
+        'data': {
+            'messages': messages,
+        },
+    });
 }
 
 export function getSearchJobBySid(service, sid) {

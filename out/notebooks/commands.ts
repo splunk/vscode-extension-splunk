@@ -1,12 +1,17 @@
 import * as vscode from 'vscode';
 import { SplunkController } from './controller';
+import { Spl2ModuleCell } from './spl2/serializer';
 import { VIZ_TYPES } from './visualizations';
-import { getClient, getJobSearchLog, getSearchJobBySid } from './splunk';
+import { getClient, getJobSearchLog, getSearchJobBySid, updateSpl2Module } from './splunk';
 
 export async function registerNotebookCommands(controllers: SplunkController[], outputChannel: vscode.OutputChannel, context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('splunk.notebooks.addVisualizationPreference', (cell) => {
 		controllers.filter((controller) => (cell.notebook.notebookType === controller.notebookType))
             .forEach((controller) => addVisualizationPreference(controller, cell));
+	}));
+
+    context.subscriptions.push(vscode.commands.registerCommand('splunk.notebooks.updateModule', (cell) => { 
+		updateModule(cell);
 	}));
 
     context.subscriptions.push(vscode.commands.registerCommand('splunk.notebooks.enterModuleName', (cell) => { 
@@ -127,6 +132,26 @@ export async function addVisualizationPreference(
 
     await vscode.workspace.applyEdit(edit);
     await controller.runCell(cell);
+}
+
+async function updateModule(cell: vscode.NotebookCell) {
+    const cellMetadata = { ...cell.metadata };
+    if (!cellMetadata.splunk) {
+        cellMetadata.splunk = {};
+    }
+
+    try {
+        const service = getClient();
+        await updateSpl2Module(
+            service,
+            <Spl2ModuleCell>{
+                name: cellMetadata?.splunk?.moduleName || `_default`,
+                namespace: cellMetadata?.splunk?.namespace || '',
+                definition: cell.document.getText(),
+            });
+    } catch (err) {
+        vscode.window.showErrorMessage(`Issue updating module: ${err}`);
+    }
 }
 
 /**

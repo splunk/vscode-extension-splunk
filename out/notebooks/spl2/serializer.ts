@@ -19,7 +19,7 @@ export interface Spl2ModuleCell {
     name: string; // hardcoded to module1, module2, etc for now
     namespace: string; // hardcoded to "" for now
     definition: string; // SPL2 statements
-    _vscode: {
+    _vscode?: {
         metadata: { [key: string]: any };
         outputs?: RawCellOutput[];
     };
@@ -68,9 +68,10 @@ export class Spl2NotebookSerializer implements vscode.NotebookSerializer {
 
         let indx = 1;
         for (const cell of data.cells) {
+            const metadata = cell.metadata || {};
             contents.modules.push(<Spl2ModuleCell>{
-                name: `module${indx++}`,
-                namespace: "",
+                name: metadata?.splunk?.moduleName || `module${indx++}`,
+                namespace: metadata?.splunk?.namespace || "",
                 definition: cell.value,
                 _vscode: {
                     metadata: cell.metadata,
