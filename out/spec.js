@@ -73,52 +73,12 @@ const stanzaTypes = {
 
     // Special case for inputs.conf.spec
     if(specConfig["specName"] == "inputs.conf.spec") {
-
-        // The inputs.conf.spec file shipped from Splunk does not include the disabled setting (even though that is a valid setting).
-        // See https://github.com/splunk/vscode-extension-splunk/issues/18
-        // Until this is fixed in the inputs.conf.spec file, we will add it here.
-        for (var i=0; i < specConfig["stanzas"].length; i++) {
-            if (specConfig["stanzas"][i]["stanzaName"] == "default") {
-                let specialDisalbedSetting = {
-                    "name": "disabled",
-                    "value": "<boolean>",
-                    "docString": '* Toggles your input entry off and on.\n* Set to "true" to disable an input.\n* Default: false'
-                }
-                specConfig["stanzas"][i]["settings"].push(specialDisalbedSetting)
-            }
-
-            // Spec versions less than 9 do not define the interval parameter for WinPrintMon stanzas
-            // See https://github.com/splunk/vscode-extension-splunk/issues/53
-            if(specConfig["specVersion"] < 9 && specConfig["stanzas"][i]["stanzaName"] == "WinPrintMon://<name>") {
-                let specialIntervalSetting = {
-                    "name": "interval",
-                    "value": "<integer>",
-                    "docString": '* The interval, in seconds, between when the input runs to gather\n  Windows host information and generate events.\n* See \'interval\' in the Scripted input section for more information.'
-                }
-                specConfig["stanzas"][i]["settings"].push(specialIntervalSetting)
-            }
-        }
+        handleInputsSpec(specConfig);
     }
 
     // Special case for outputs.conf.spec
     if(specConfig["specName"] == "outputs.conf.spec") {
-
-        // The outputs.conf.spec file shipped from Splunk does not specify useAck as a default parameter
-        // See https://github.com/splunk/vscode-extension-splunk/issues/75
-
-        let stanza = {
-            "stanzaName":"default",
-            "docString":"",
-            "stanzaType": stanzaTypes.ABSOLUTE,
-            "settings":[]
-        }
-        let stanzaSetting = {}
-        stanzaSetting["name"] = "useAck"
-        stanzaSetting["value"] = "<boolean>"
-        stanzaSetting["docString"] = "* Whether or not to use indexer acknowledgment.\n* Indexer acknowledgment is an optional capability on forwarders that helps\nprevent loss of data when sending data to an indexer.\n* A value of \"true\" means the forwarder retains a copy of each sent event\nuntil the receiving system sends an acknowledgment.\n* The receiver sends an acknowledgment when it has fully handled the event\n(typically when it has written it to disk in indexing).\n* If the forwarder does not receive an acknowledgment, it resends the data\nto an alternative receiver.\n* NOTE: The maximum memory used for the outbound data queues increases\nsignificantly by default (500KB -> 28MB) when the 'useACK' setting is\nenabled. This is intended for correctness and performance.\n* A value of \"false\" means the forwarder considers the data fully processed\nwhen it finishes writing it to the network socket.\n* You can configure this setting at the [tcpout] or [tcpout:<target_group>]\nstanza levels. You cannot set it for individual servers at the\n[tcpout-server: ...] stanza level.\n* Default: false"
-        stanza["settings"].push(stanzaSetting)
-
-        specConfig["stanzas"].push(stanza)
+        handleOutputsSpec(specConfig);
     }
 
     // Modular .spec files allow freeform stanzas, but this is not denoted in the static .spec file.
@@ -305,6 +265,53 @@ function createStanza (str) {
     return stanza
 }
 
+function handleInputsSpec(specConfig) {
+    // The inputs.conf.spec file shipped from Splunk does not include the disabled setting (even though that is a valid setting).
+    // See https://github.com/splunk/vscode-extension-splunk/issues/18
+    // Until this is fixed in the inputs.conf.spec file, we will add it here.
+    for (var i=0; i < specConfig["stanzas"].length; i++) {
+        if (specConfig["stanzas"][i]["stanzaName"] == "default") {
+            let specialDisalbedSetting = {
+                "name": "disabled",
+                "value": "<boolean>",
+                "docString": '* Toggles your input entry off and on.\n* Set to "true" to disable an input.\n* Default: false'
+            }
+            specConfig["stanzas"][i]["settings"].push(specialDisalbedSetting)
+        }
+
+        // Spec versions less than 9 do not define the interval parameter for WinPrintMon stanzas
+        // See https://github.com/splunk/vscode-extension-splunk/issues/53
+        if(specConfig["specVersion"] < 9 && specConfig["stanzas"][i]["stanzaName"] == "WinPrintMon://<name>") {
+            let specialIntervalSetting = {
+                "name": "interval",
+                "value": "<integer>",
+                "docString": '* The interval, in seconds, between when the input runs to gather\n  Windows host information and generate events.\n* See \'interval\' in the Scripted input section for more information.'
+            }
+            specConfig["stanzas"][i]["settings"].push(specialIntervalSetting)
+        }
+    }
+}
+
+function handleOutputsSpec(specConfig) {
+    // The settings in [tcpout<any of above>] apply to [httpout], [tcpout], and [tcpout:<target_group>]
+    // See https://github.com/splunk/vscode-extension-splunk/issues/72
+    // See https://github.com/splunk/vscode-extension-splunk/issues/75
+
+    let stanzaSettings = getStanzaSettingsByStanzaName(specConfig, "[tcpout<any of above>]")
+
+    for(var i=0; i < specConfig.stanzas.length; i++) {
+        if (specConfig.stanzas[i].stanzaName == "tcpout<any of above>") {
+            // Remove the literal "[tcpout<any of above>]" stanza from the config.
+            specConfig.stanzas.splice(i,1)
+        }
+
+        if ((specConfig.stanzas[i].stanzaName == "httpout") || (specConfig.stanzas[i].stanzaName == "tcpout") || (specConfig.stanzas[i].stanzaName == "tcpout:<target_group>")) {
+            // Add the [tcpout<any of above>] settings to [httpout], [tcpout], and [tcpout:<target_group>]
+            specConfig.stanzas[i].settings.push(...stanzaSettings)
+        }
+    }
+}
+
 function handleAuthorizeSpec(specConfig) {
     
     let capabilities = []
@@ -314,7 +321,7 @@ function handleAuthorizeSpec(specConfig) {
         if (specConfig.stanzas[i].stanzaName.startsWith("capability::")) {
             
             if (specConfig.stanzas[i].stanzaName == "capability::<capability>") {
-                // Remove the literal "[capability::<capability>]"" stanza from the config as you should not edit this.
+                // Remove the literal "[capability::<capability>]" stanza from the config as you should not edit this.
                 specConfig.stanzas.splice(i,1)
             } else {
                 // Add all [capability::capability_name] stanzas as capability settings to the [role_<roleName>] stanza.
@@ -438,7 +445,7 @@ function getStanzaSettings(specConfig, stanzaName) {
     switch(stanzaType) {
 
         case stanzaTypes.PREFIX: {
-            let colonMatch = /^\[(?<prefix>[^:].*?:)[\w|\<]/        // Example: [tcp:test] OR [tcp:<...
+            let colonMatch = /^\[(?<prefix>[^:].*?:)[\w|\<|:\/\/]/           // Example: [tcp:test] OR [tcp:<... OR [udp://:514]
             let uriMatch   = /^\[(?<prefix>[^:].*?:\/\/)[\w|\<|\/]/    // Example: [tcp://test] OR [tcp://<... OR [script:///]
             let sepMatch    = /^\[(?<prefix>.*?[=|_|:])[\w|\<|\/]/     // Example [author=test] OR [role_name]
             if (uriMatch.test(stanzaName)) {
@@ -549,7 +556,7 @@ function isValueValid(specValue, settingValue) {
             isValid = FLOAT_REGEX.test(settingValue)
             break
         }
-        case "<positive integer>[KB|MB|GB]|auto":
+        case "<positive integer>[KB|MB|GB]|auto": {
             testDropdown = false
 
             if(settingValue.toLowerCase() == "auto") {
@@ -572,7 +579,29 @@ function isValueValid(specValue, settingValue) {
                 break
             }
             isValid = false
-        break
+            break
+        }
+        case "<integer>[ms|s|m]":{
+            testDropdown = false
+
+            // Test case for an int
+            let INT_REGEX1 = /^[-]?\d+\s*$/
+            if(INT_REGEX1.test(settingValue))
+            {
+                isValid = true
+                break
+            }
+
+            // Test case for an int followed by ms, s, or m
+            let INT_REGEX2 = /(\d+)(ms|s|m)$/i
+            if(INT_REGEX2.test(settingValue)) {
+                isValid = true
+                break
+            }
+
+            isValid = false
+            break
+        }
     }
 
     // Look for multiple choice types

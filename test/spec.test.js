@@ -31,8 +31,16 @@ describe('outputs.conf', () => {
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
 	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
 
-	it('setting "useAck = true" should be valid for stanza [tcpout:default-autolb-group]', () => {
-		assert.equal(splunkSpec.isSettingValid(specConfig, "[tcpout:default-autolb-group]", "useAck = true"), true);
+	it('setting "useACK = true" should be valid for stanza [tcpout:default-autolb-group]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[tcpout:default-autolb-group]", "useACK = true"), true);
+	});
+
+	it('setting "useAck = true" should be invalid for stanza [tcpout:default-autolb-group]', () => {
+		assert.notEqual(splunkSpec.isSettingValid(specConfig, "[tcpout:default-autolb-group]", "useAck = true"), true);
+	});
+
+	it('setting "forwardedindex.filter.disable = true" should be valid for stanza [tcpout]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[tcpout]", "forwardedindex.filter.disable = true"), true);
 	});
 });
 
@@ -142,6 +150,10 @@ describe('inputs.conf', () => {
 
 	it('setting "interval = 60" should be valid for stanza [WinPrintMon://name]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[WinPrintMon://name]", "interval = 60"), true);
+	});
+
+	it('setting "connection_host = dns" should be valid for stanza [udp://:11514]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[udp://:11514]", "connection_host = dns"), true);
 	});
 
 });
