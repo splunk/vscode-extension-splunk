@@ -1,7 +1,6 @@
 import * as splunk from 'splunk-sdk';
 import * as needle from 'needle'; // transitive dependency of splunk-sdk
 import * as vscode from 'vscode';
-import { Spl2ModuleCell } from './spl2/serializer';
 import { SplunkMessage } from './utils';
 import { ThrowStatement } from 'typescript';
 
@@ -58,19 +57,26 @@ export function createSearchJob(jobs, query, options) {
     });
 }
 
-
-export function updateSpl2Module(service: any, spl2ModuleCell: Spl2ModuleCell) {
+/**
+ * Update a module by calling the PUT /services/spl2/modules/<namespace>.<moduleName>
+ * @param service Instance of the Javascript SDK Service
+ * @param moduleName Name of the module to append to the namespace to form the request path
+ * @param namespace Full namespace to be used directly to form the request path
+ * @param module Full contents of the module to update with
+ * @returns Promise<void> (or throw Error containing data.messages[])
+ */
+export function updateSpl2Module(service: any, moduleName: string, namespace: string, module: string) {
     // The Splunk SDK for Javascript doesn't currently support the spl2/modules endpoints
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
     return needle(
         'PUT',
         // example: https://myhost.splunkcloud.com:8089/services/spl2/modules/apps.search._default
-        `${service.prefix}/services/spl2/modules/${encodeURIComponent(spl2ModuleCell.namespace)}.${encodeURIComponent(spl2ModuleCell.name)}`,
+        `${service.prefix}/services/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`,
         {
-            'name': spl2ModuleCell.name,
-            'namespace': spl2ModuleCell.namespace,
-            'definition': spl2ModuleCell.definition,
+            'name': moduleName,
+            'namespace': namespace,
+            'definition': module,
         },
         {
             'headers': {
@@ -98,8 +104,18 @@ export function updateSpl2Module(service: any, spl2ModuleCell: Spl2ModuleCell) {
         });
 }
 
-
-export function dispatchSpl2Module(service: any, spl2Module: string, earliest: string, latest: string) {
+/**
+ * Dispatch a module to create a job using the POST /services/<app>/spl2-module-dispatch endpoint
+ * @param service Instance of the Javascript SDK Service
+ * @param spl2Module Full text of the SPL2 module to run (contents of a SPL2 notebook cell, for example)
+ * @param app App namespace to run within, this will determine /services/<app>/spl2-module-dispatch endpoint
+ * @param namespace Namespace _within_ the apps.<app> to run, this will be used directly in the body of the request
+ * @param earliest Earliest time to be included in the body of the request
+ * @param latest Latest time to be included in the body of the request
+ * @returns A Promise containing the job id created (or throw an Error containing data.messages[])
+ */
+export function dispatchSpl2Module(service: any, spl2Module: string, app: string, namespace: string, earliest: string, latest: string) {
+    app = app || 'search';
     // Get last statement assignment '$my_statement = ...' -> 'my_statement' 
     const statementMatches = [...spl2Module.matchAll(/\$([a-zA-Z0-9_]+)[\s]*=/gm)];
     if (!statementMatches
@@ -131,11 +147,10 @@ export function dispatchSpl2Module(service: any, spl2Module: string, earliest: s
     // for now use the underlying needle library that the SDK uses for requests/responses
     return needle(
         'POST',
-        // TODO: make the app configurable rather than hardcoding to 'search'
-        `${service.prefix}/services/search/spl2-module-dispatch`,
+        `${service.prefix}/services/${encodeURIComponent(app)}/spl2-module-dispatch`,
         {
             'module': spl2Module,
-            'namespace': '',
+            'namespace': namespace,
             'queryParameters': {
                 [statementIdentifier]: params
             }

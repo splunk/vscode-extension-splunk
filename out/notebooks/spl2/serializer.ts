@@ -15,7 +15,7 @@ interface Spl2ModulesJson {
     app: string, // hardcoded to apps.search for now
 }
 
-export interface Spl2ModuleCell {
+interface Spl2ModuleCell {
     name: string; // hardcoded to module1, module2, etc for now
     namespace: string; // hardcoded to "" for now
     definition: string; // SPL2 statements
@@ -23,6 +23,26 @@ export interface Spl2ModuleCell {
         metadata: { [key: string]: any };
         outputs?: RawCellOutput[];
     };
+}
+
+/**
+ * Utility function to extract apps.<app>.[sub.name.spaces] from full namespace
+ * @param fullNamespace Full namespace to use for extraction
+ * @returns Two element array containing [app, subnamespace] if fullNamespace matches
+ *   apps.<app>.[sub.name.spaces], otherwise default to ['search', '']
+ */
+export function getAppSubNamespace(fullNamespace: string): [string, string] {
+    let app: string = 'search'; // default
+    let subNamespace: string = ''; // default
+    if (fullNamespace.startsWith('apps.')) {
+        // Find <app> from apps.<app>[.optional.sub.namespaces]
+        let secondDotIndx = fullNamespace.indexOf('.', 'apps.'.length);
+        secondDotIndx = secondDotIndx < 0 ? fullNamespace.length : secondDotIndx;
+        app = fullNamespace.substring('apps.'.length, secondDotIndx);
+        // Find .optional.sub.namespaces from apps.<app>[.optional.sub.namespaces]
+        subNamespace = fullNamespace.substring(secondDotIndx + 1, fullNamespace.length);
+    }
+    return [app, subNamespace];
 }
 
 export class Spl2NotebookSerializer implements vscode.NotebookSerializer {
@@ -39,8 +59,7 @@ export class Spl2NotebookSerializer implements vscode.NotebookSerializer {
         } catch (err) {
             raw = <Spl2ModulesJson>{
                 modules: [],
-                // TODO: make the app configurable rather than hardcoding to 'search'
-                app: "apps.search",
+                app: 'apps.search', // default
             };
         }
 
@@ -62,13 +81,16 @@ export class Spl2NotebookSerializer implements vscode.NotebookSerializer {
     ): Promise<Uint8Array> {
         let contents: Spl2ModulesJson = <Spl2ModulesJson>{
             modules: [],
-            // TODO: make the app configurable rather than hardcoding to 'search'
-            app: "apps.search",
+            app: 'apps.search', // default
         };
 
         let indx = 1;
         for (const cell of data.cells) {
             const metadata = cell.metadata || {};
+            if (metadata?.splunk?.namespace !== undefined) {
+                // Attempt to read app from namespace
+                contents.app = `apps.${getAppSubNamespace(metadata?.splunk?.namespace)[0]}`;
+            }
             contents.modules.push(<Spl2ModuleCell>{
                 name: metadata?.splunk?.moduleName || `module${indx++}`,
                 namespace: metadata?.splunk?.namespace || "",

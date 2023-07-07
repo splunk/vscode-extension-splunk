@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { SplunkController } from './controller';
-import { Spl2ModuleCell } from './spl2/serializer';
 import { VIZ_TYPES } from './visualizations';
 import { getClient, getJobSearchLog, getSearchJobBySid, updateSpl2Module } from './splunk';
 
@@ -142,13 +141,13 @@ async function updateModule(cell: vscode.NotebookCell) {
 
     try {
         const service = getClient();
+
         await updateSpl2Module(
             service,
-            <Spl2ModuleCell>{
-                name: cellMetadata?.splunk?.moduleName || `_default`,
-                namespace: cellMetadata?.splunk?.namespace || 'apps.search',
-                definition: cell.document.getText(),
-            });
+            cellMetadata?.splunk?.moduleName || `_default`,
+            cellMetadata?.splunk?.namespace || 'apps.search',
+            cell.document.getText(),
+        );
     } catch (err) {
         if (err?.data?.messages !== undefined) {
             vscode.window.showErrorMessage(`Issue updating module: ${JSON.stringify(err.data.messages)}`);
