@@ -16,34 +16,6 @@ describe('app.conf', () => {
 	});
 });
 
-describe('authorize.conf', () => {
-	let specFileName = "authorize.conf.spec";
-	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
-
-	it('stanza "[role_org_custom]" should be valid', () => {
-		assert.equal(splunkSpec.isStanzaValid(specConfig, "[role_org_custom]"), true);
-	});
-});
-
-describe('outputs.conf', () => {
-	let specFileName = "outputs.conf.spec";
-	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
-
-	it('setting "useACK = true" should be valid for stanza [tcpout:default-autolb-group]', () => {
-		assert.equal(splunkSpec.isSettingValid(specConfig, "[tcpout:default-autolb-group]", "useACK = true"), true);
-	});
-
-	it('setting "useAck = true" should be invalid for stanza [tcpout:default-autolb-group]', () => {
-		assert.notEqual(splunkSpec.isSettingValid(specConfig, "[tcpout:default-autolb-group]", "useAck = true"), true);
-	});
-
-	it('setting "forwardedindex.filter.disable = true" should be valid for stanza [tcpout]', () => {
-		assert.equal(splunkSpec.isSettingValid(specConfig, "[tcpout]", "forwardedindex.filter.disable = true"), true);
-	});
-});
-
 describe('authentication.conf', () => {
 	let specFileName = "authentication.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
@@ -60,6 +32,26 @@ describe('authentication.conf', () => {
 	});
 	it('setting "authType = Splunk" should be valid for stanza [authentication]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[authentication]", "authType = Splunk"), true);
+	});
+});
+
+describe('authorize.conf', () => {
+	let specFileName = "authorize.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
+
+	it('stanza "[role_org_custom]" should be valid', () => {
+		assert.equal(splunkSpec.isStanzaValid(specConfig, "[role_org_custom]"), true);
+	});
+});
+
+describe('deploymentclient.conf', () => {
+	let specFileName = "deploymentclient.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
+
+	it('setting "serverRepositoryLocationPolicy = rejectAlways" should be valid for stanza [deployment-client]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[deployment-client]", "serverRepositoryLocationPolicy = rejectAlways"), true);
 	});
 });
 
@@ -158,6 +150,24 @@ describe('inputs.conf', () => {
 
 });
 
+describe('outputs.conf', () => {
+	let specFileName = "outputs.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
+
+	it('setting "useACK = true" should be valid for stanza [tcpout:default-autolb-group]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[tcpout:default-autolb-group]", "useACK = true"), true);
+	});
+
+	it('setting "useAck = true" should be invalid for stanza [tcpout:default-autolb-group]', () => {
+		assert.notEqual(splunkSpec.isSettingValid(specConfig, "[tcpout:default-autolb-group]", "useAck = true"), true);
+	});
+
+	it('setting "forwardedindex.filter.disable = true" should be valid for stanza [tcpout]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[tcpout]", "forwardedindex.filter.disable = true"), true);
+	});
+});
+
 describe('searchbnf.conf', () => {
 	let specFileName = "searchbnf.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
@@ -165,16 +175,6 @@ describe('searchbnf.conf', () => {
 
 	it('setting "syntax = mything" should be valid for stanza [mything-command]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[mything-command]", "syntax = mything"), true);
-	});
-});
-
-describe('deploymentclient.conf', () => {
-	let specFileName = "deploymentclient.conf.spec";
-	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
-
-	it('setting "serverRepositoryLocationPolicy = rejectAlways" should be valid for stanza [deployment-client]', () => {
-		assert.equal(splunkSpec.isSettingValid(specConfig, "[deployment-client]", "serverRepositoryLocationPolicy = rejectAlways"), true);
 	});
 });
 
