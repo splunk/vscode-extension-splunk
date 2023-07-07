@@ -73,31 +73,12 @@ const stanzaTypes = {
 
     // Special case for inputs.conf.spec
     if(specConfig["specName"] == "inputs.conf.spec") {
+        handleInputsSpec(specConfig);
+    }
 
-        // The inputs.conf.spec file shipped from Splunk does not include the disabled setting (even though that is a valid setting).
-        // See https://github.com/splunk/vscode-extension-splunk/issues/18
-        // Until this is fixed in the inputs.conf.spec file, we will add it here.
-        for (var i=0; i < specConfig["stanzas"].length; i++) {
-            if (specConfig["stanzas"][i]["stanzaName"] == "default") {
-                let specialDisalbedSetting = {
-                    "name": "disabled",
-                    "value": "<boolean>",
-                    "docString": '* Toggles your input entry off and on.\n* Set to "true" to disable an input.\n* Default: false'
-                }
-                specConfig["stanzas"][i]["settings"].push(specialDisalbedSetting)
-            }
-
-            // Spec versions less than 9 do not define the interval parameter for WinPrintMon stanzas
-            // See https://github.com/splunk/vscode-extension-splunk/issues/53
-            if(specConfig["specVersion"] < 9 && specConfig["stanzas"][i]["stanzaName"] == "WinPrintMon://<name>") {
-                let specialIntervalSetting = {
-                    "name": "interval",
-                    "value": "<integer>",
-                    "docString": '* The interval, in seconds, between when the input runs to gather\n  Windows host information and generate events.\n* See \'interval\' in the Scripted input section for more information.'
-                }
-                specConfig["stanzas"][i]["settings"].push(specialIntervalSetting)
-            }
-        }
+    // Special case for outputs.conf.spec
+    if(specConfig["specName"] == "outputs.conf.spec") {
+        handleOutputsSpec(specConfig);
     }
 
     // Modular .spec files allow freeform stanzas, but this is not denoted in the static .spec file.
@@ -284,6 +265,53 @@ function createStanza (str) {
     return stanza
 }
 
+function handleInputsSpec(specConfig) {
+    // The inputs.conf.spec file shipped from Splunk does not include the disabled setting (even though that is a valid setting).
+    // See https://github.com/splunk/vscode-extension-splunk/issues/18
+    // Until this is fixed in the inputs.conf.spec file, we will add it here.
+    for (var i=0; i < specConfig["stanzas"].length; i++) {
+        if (specConfig["stanzas"][i]["stanzaName"] == "default") {
+            let specialDisalbedSetting = {
+                "name": "disabled",
+                "value": "<boolean>",
+                "docString": '* Toggles your input entry off and on.\n* Set to "true" to disable an input.\n* Default: false'
+            }
+            specConfig["stanzas"][i]["settings"].push(specialDisalbedSetting)
+        }
+
+        // Spec versions less than 9 do not define the interval parameter for WinPrintMon stanzas
+        // See https://github.com/splunk/vscode-extension-splunk/issues/53
+        if(specConfig["specVersion"] < 9 && specConfig["stanzas"][i]["stanzaName"] == "WinPrintMon://<name>") {
+            let specialIntervalSetting = {
+                "name": "interval",
+                "value": "<integer>",
+                "docString": '* The interval, in seconds, between when the input runs to gather\n  Windows host information and generate events.\n* See \'interval\' in the Scripted input section for more information.'
+            }
+            specConfig["stanzas"][i]["settings"].push(specialIntervalSetting)
+        }
+    }
+}
+
+function handleOutputsSpec(specConfig) {
+    // The settings in [tcpout<any of above>] apply to [httpout], [tcpout], and [tcpout:<target_group>]
+    // See https://github.com/splunk/vscode-extension-splunk/issues/72
+    // See https://github.com/splunk/vscode-extension-splunk/issues/75
+
+    let stanzaSettings = getStanzaSettingsByStanzaName(specConfig, "[tcpout<any of above>]")
+
+    for(var i=0; i < specConfig.stanzas.length; i++) {
+        if (specConfig.stanzas[i].stanzaName == "tcpout<any of above>") {
+            // Remove the literal "[tcpout<any of above>]" stanza from the config.
+            specConfig.stanzas.splice(i,1)
+        }
+
+        if ((specConfig.stanzas[i].stanzaName == "httpout") || (specConfig.stanzas[i].stanzaName == "tcpout") || (specConfig.stanzas[i].stanzaName == "tcpout:<target_group>")) {
+            // Add the [tcpout<any of above>] settings to [httpout], [tcpout], and [tcpout:<target_group>]
+            specConfig.stanzas[i].settings.push(...stanzaSettings)
+        }
+    }
+}
+
 function handleAuthorizeSpec(specConfig) {
     
     let capabilities = []
@@ -293,7 +321,7 @@ function handleAuthorizeSpec(specConfig) {
         if (specConfig.stanzas[i].stanzaName.startsWith("capability::")) {
             
             if (specConfig.stanzas[i].stanzaName == "capability::<capability>") {
-                // Remove the literal "[capability::<capability>]"" stanza from the config as you should not edit this.
+                // Remove the literal "[capability::<capability>]" stanza from the config as you should not edit this.
                 specConfig.stanzas.splice(i,1)
             } else {
                 // Add all [capability::capability_name] stanzas as capability settings to the [role_<roleName>] stanza.
@@ -417,7 +445,7 @@ function getStanzaSettings(specConfig, stanzaName) {
     switch(stanzaType) {
 
         case stanzaTypes.PREFIX: {
-            let colonMatch = /^\[(?<prefix>[^:].*?:)[\w|\<]/        // Example: [tcp:test] OR [tcp:<...
+            let colonMatch = /^\[(?<prefix>[^:].*?:)[\w|\<|:\/\/]/           // Example: [tcp:test] OR [tcp:<... OR [udp://:514]
             let uriMatch   = /^\[(?<prefix>[^:].*?:\/\/)[\w|\<|\/]/    // Example: [tcp://test] OR [tcp://<... OR [script:///]
             let sepMatch    = /^\[(?<prefix>.*?[=|_|:])[\w|\<|\/]/     // Example [author=test] OR [role_name]
             if (uriMatch.test(stanzaName)) {
@@ -485,6 +513,7 @@ function isStanzaValid(specConfig, stanzaName) {
 function isValueValid(specValue, settingValue) {
 
     let isValid = true
+    let testDropdown = true
 
     // Look for known types
     switch(specValue) {
@@ -527,13 +556,59 @@ function isValueValid(specValue, settingValue) {
             isValid = FLOAT_REGEX.test(settingValue)
             break
         }
+        case "<positive integer>[KB|MB|GB]|auto": {
+            testDropdown = false
+
+            if(settingValue.toLowerCase() == "auto") {
+                isValid = true
+                break
+            }
+            
+            // Test case for an int
+            let INT_REGEX1 = /^[-]?\d+\s*$/
+            if(INT_REGEX1.test(settingValue))
+            {
+                isValid = true
+                break
+            }
+
+            // Test case for an int followed by MB, KB, or GB
+            let INT_REGEX2 = /(\d+)(mb|kb|gb)$/i
+            if(INT_REGEX2.test(settingValue)) {
+                isValid = true
+                break
+            }
+            isValid = false
+            break
+        }
+        case "<integer>[ms|s|m]":{
+            testDropdown = false
+
+            // Test case for an int
+            let INT_REGEX1 = /^[-]?\d+\s*$/
+            if(INT_REGEX1.test(settingValue))
+            {
+                isValid = true
+                break
+            }
+
+            // Test case for an int followed by ms, s, or m
+            let INT_REGEX2 = /(\d+)(ms|s|m)$/i
+            if(INT_REGEX2.test(settingValue)) {
+                isValid = true
+                break
+            }
+
+            isValid = false
+            break
+        }
     }
 
     // Look for multiple choice types
-    if(DROPDOWN_PLACEHOLDER_REGEX.test(specValue)) {
+    if(DROPDOWN_PLACEHOLDER_REGEX.test(specValue) && testDropdown) {
         // Remove square brackets and curly braces
         let possibleValues = specValue.replace(/[\[\{\}\]]/g, '')
-        let settings = possibleValues.split('|')
+        let settings = possibleValues.toLowerCase().split('|')
         if (!settings.includes(settingValue.toLowerCase())) isValid = false;
     }
 

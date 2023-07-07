@@ -12,8 +12,14 @@ const splunkCustomCommand = require('./customCommand.js');
 const globalConfigPreview = require('./globalConfigPreview')
 const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
-const reload = require("./commands/reload.js");
+const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
+let specConfigs = {};
+let timeout;
+let diagnosticCollection;
+let specConfig;
+let snippets = {};
 
+const reload = require("./commands/reload.js");
 const { SplunkNotebookSerializer } = require('./notebooks/serializers');
 const { SplunkController } = require('./notebooks/controller');
 const { Spl2NotebookSerializer } = require('./notebooks/spl2/serializer');
@@ -22,15 +28,6 @@ const { installMissingSpl2Requirements, getLatestSpl2Release } = require('./note
 const { startSpl2ClientAndServer } = require('./notebooks/spl2/initializer');
 const notebookCommands = require('./notebooks/commands');
 const { CellResultCountStatusBarProvider } = require('./notebooks/provider');
-
-//const { transpileModule } = require("typescript");
-//const { AsyncLocalStorage } = require("async_hooks");
-const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
-let specConfigs = {};
-let timeout;
-let diagnosticCollection;
-let specConfig;
-let snippets = {};
 let spl2Client;
 let spl2PortToAttempt = 59143; // 59143 ~ SPLNK if you squint really hard :)
 
@@ -92,7 +89,7 @@ async function activate(context) {
             }
         );
         const updateWebview = async () => {
-            panel.webview.html = await splunkEmbeddedReportProvider.getWebviewContent(report);
+            panel.webview.html = await embeddedReportProvider.getWebviewContent(report);
         }
 
         updateWebview();
@@ -254,10 +251,10 @@ async function activate(context) {
             await handleSpl2Document(context, progressBar);
         }
     }));
-
+  
     // Notebook
     context.subscriptions.push(vscode.workspace.registerNotebookSerializer('splunk-notebook', new SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
-	context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new Spl2NotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
+	  context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new Spl2NotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
     const controller = new SplunkController();
     context.subscriptions.push(controller);
     const spl2Controller = new Spl2Controller();
@@ -265,6 +262,13 @@ async function activate(context) {
     context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('splunk-notebook', new CellResultCountStatusBarProvider(splunkOutputChannel)));
     context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('spl2-notebook', new CellResultCountStatusBarProvider(splunkOutputChannel)));
     notebookCommands.registerNotebookCommands([controller, spl2Controller], splunkOutputChannel, context);
+
+
+    // Set up listener for configuration setting changes
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration( () => {
+        embeddedReportProvider.refresh();
+        savedSearchProvider.refresh();
+    }))
 }
 exports.activate = activate;
 

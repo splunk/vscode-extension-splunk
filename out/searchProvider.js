@@ -1,38 +1,41 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
-const splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunkRestUrl');
-const splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
-const outputMode = vscode.workspace.getConfiguration().get('splunk.search.searchOutputMode');
-const enableCertificateVerification = vscode.workspace.getConfiguration().get('splunk.commands.enableCertificateVerification');
-const https = require("https");
 const axios = require("axios");
 
-axios.defaults.headers.common["Authorization"] = `Bearer ${splunkToken}`;
-const agent = new https.Agent({  
-    rejectUnauthorized: enableCertificateVerification
-});
-
 class SearchProvider {
-    constructor() {}
+    constructor() {
+        this.splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunkRestUrl');
+        this.splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
+        this.outputMode = vscode.workspace.getConfiguration().get('splunk.search.searchOutputMode');
+        this.enableCertificateVerification = vscode.workspace.getConfiguration().get('splunk.commands.enableCertificateVerification');
+        if (!this.enableCertificateVerification) {
+            process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
+        } else {
+            process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 1;
+        }
+        axios.defaults.headers.common["Authorization"] = `Bearer ${this.splunkToken}`;
+    }
 
     async runSearch(search) {
-        if (!splunkUrl) {
-            let m = "A URL for the Splunk REST API is required. Please check your settings."
+
+        if (!this.splunkUrl) {
+            let m = "The URL specified for the Splunk REST API is incorrect. Please check your settings."
             vscode.window.showErrorMessage(m);
+            throw Error(m)
         }
 
-        if(!splunkToken) {
+        if(!this.splunkToken) {
             let m = "A Splunk autorization token is required. Please check your settings."
             vscode.window.showErrorMessage(m);
+            throw Error(m)
         }
 
         let searchResults = "No results";
         await axios(
             {
                 method: "POST",
-                url: `${splunkUrl}/services/search/jobs/export?output_mode=${outputMode}`,
-                httpsAgent: agent,
+                url: `${this.splunkUrl}/services/search/jobs/export?output_mode=${this.outputMode}`,
                 data: "search=" + encodeURIComponent(`search ${search}`)
             })
             .then(response => {
@@ -50,6 +53,16 @@ exports.SearchProvider = SearchProvider;
 
 class SavedSearchProvider {
     constructor() {
+        this.splunkUrl = vscode.workspace.getConfiguration().get('splunk.commands.splunkRestUrl');
+        this.splunkToken = vscode.workspace.getConfiguration().get('splunk.commands.token');
+        this.outputMode = vscode.workspace.getConfiguration().get('splunk.search.searchOutputMode');
+        this.enableCertificateVerification = vscode.workspace.getConfiguration().get('splunk.commands.enableCertificateVerification');
+        if (!this.enableCertificateVerification) {
+            process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
+        } else {
+            process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 1;
+        }
+        axios.defaults.headers.common["Authorization"] = `Bearer ${this.splunkToken}`;
         this._onDidChangeTreeData = new vscode.EventEmitter();
         this.onDidChangeTreeData = this._onDidChangeTreeData.event;
     }
@@ -65,7 +78,7 @@ class SavedSearchProvider {
 
     async getSavedSearches(filter="") {
 
-        if ((!splunkUrl) || (!splunkToken)) {
+        if ((!this.splunkUrl) || (!this.splunkToken)) {
             return [new vscode.TreeItem("Splunk URL and Token required. Check extension settings.")];
         }
         if(filter) {
@@ -73,7 +86,7 @@ class SavedSearchProvider {
         }
 
         let savedSearchArray = [];
-        await axios.get(`${splunkUrl}/servicesNS/-/-/saved/searches?sort_key=name&f=acl*&f=disabled&count=0&output_mode=json${filter}`, {httpsAgent: agent})
+        await axios.get(`${this.splunkUrl}/servicesNS/-/-/saved/searches?sort_key=name&f=acl*&f=disabled&count=0&output_mode=json${filter}`)
             .then(response => {
                 response.data.entry.forEach(search => {
                     if(!search.content.disabled) {
@@ -94,12 +107,12 @@ class SavedSearchProvider {
 
     async runSavedSearch(savedSearchItem) {
 
-        if (!splunkUrl) {
+        if (!this.splunkUrl) {
             let m = "The URL specified for the Splunk REST API is incorrect. Please check your settings."
             vscode.window.showErrorMessage(m);
         }
 
-        if(!splunkToken) {
+        if(!this.splunkToken) {
             let m = "A Splunk autorization token is required. Please check your settings."
             vscode.window.showErrorMessage(m);
         }
@@ -108,8 +121,7 @@ class SavedSearchProvider {
         await axios(
             {
                 method: "POST",
-                url: `${splunkUrl}/servicesNS/${savedSearchItem.owner}/${savedSearchItem.app}/search/jobs/export?output_mode=${outputMode}`,
-                httpsAgent: agent,
+                url: `${this.splunkUrl}/servicesNS/${savedSearchItem.owner}/${savedSearchItem.app}/search/jobs/export?output_mode=${this.outputMode}`,
                 data: "search=" + encodeURIComponent(`| savedsearch "${savedSearchItem.label}"`)
             })
             .then(response => {

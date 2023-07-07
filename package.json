@@ -1,9 +1,9 @@
 {
     "name": "splunk",
-    "version": "0.2.10",
+    "version": "0.3.0",
     "publisher": "Splunk",
     "engines": {
-        "vscode": "^1.72.0"
+        "vscode": "^1.75.0"
     },
     "license": "MIT",
     "displayName": "Splunk Extension",
@@ -133,7 +133,7 @@
                     "type": "boolean",
                     "scope": "resource",
                     "default": false,
-                    "description": "Enable SSL certificate verification for Splunk",
+                    "description": "Enable SSL certificate verification for Splunk\nWarning: Setting this to false makes TLS connections and HTTPS requests insecure.",
                     "order": 4
                 },
                 "splunk.commands.token": {
@@ -411,18 +411,7 @@
         ]
     },
     "activationEvents": [
-        "onLanguage:splunk",
-        "onCommand:splunk.search.adhoc",
-        "onCommand:splunk.savedSearches.refresh",
-        "onCommand:splunk.savedSearch.run",
         "onCommand:splunk.search.saved",
-        "onCommand:splunk.new.modviz",
-        "onCommand:splunk.new.command",
-        "onCommand:splunk.new.resthandler",
-        "onCommand:splunk.embeddedReport.show",
-        "onCommand:splunk.previewGlobalConfig",
-        "onView:savedSearches",
-        "onView:embeddedReports",
         "workspaceContains:**/globalConfig.json"
     ],
     "repository": {

@@ -16,16 +16,6 @@ describe('app.conf', () => {
 	});
 });
 
-describe('authorize.conf', () => {
-	let specFileName = "authorize.conf.spec";
-	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
-	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
-
-	it('stanza "[role_org_custom]" should be valid', () => {
-		assert.equal(splunkSpec.isStanzaValid(specConfig, "[role_org_custom]"), true);
-	});
-});
-
 describe('authentication.conf', () => {
 	let specFileName = "authentication.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
@@ -39,6 +29,29 @@ describe('authentication.conf', () => {
 	});
 	it('setting "user1 = admin::user1::user1@email.com" should be valid for stanza [userToRoleMap_SAML]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[userToRoleMap_SAML]", "user1 = admin::user1::user1@email.com"), true);
+	});
+	it('setting "authType = Splunk" should be valid for stanza [authentication]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[authentication]", "authType = Splunk"), true);
+	});
+});
+
+describe('authorize.conf', () => {
+	let specFileName = "authorize.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
+
+	it('stanza "[role_org_custom]" should be valid', () => {
+		assert.equal(splunkSpec.isStanzaValid(specConfig, "[role_org_custom]"), true);
+	});
+});
+
+describe('deploymentclient.conf', () => {
+	let specFileName = "deploymentclient.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
+
+	it('setting "serverRepositoryLocationPolicy = rejectAlways" should be valid for stanza [deployment-client]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[deployment-client]", "serverRepositoryLocationPolicy = rejectAlways"), true);
 	});
 });
 
@@ -84,6 +97,22 @@ describe('indexes.conf', () => {
 	it('setting "enableTsidxReduction = 0" should be valid for stanza [default]', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[default]", "enableTsidxReduction = 0"), true);
 	});
+
+	it('setting "bucketRebuildMemoryHint = 0" should be valid for stanza [default]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[default]", "bucketRebuildMemoryHint = 0"), true);
+	});
+
+	it('setting "bucketRebuildMemoryHint = auto" should be valid for stanza [default]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[default]", "bucketRebuildMemoryHint = auto"), true);
+	});
+
+	it('setting "bucketRebuildMemoryHint = 10MB" should be valid for stanza [default]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[default]", "bucketRebuildMemoryHint = 10MB"), true);
+	});
+
+	it('setting "bucketRebuildMemoryHint = 10MBf" should be invalid for stanza [default]', () => {
+		assert.notEqual(splunkSpec.isSettingValid(specConfig, "[default]", "bucketRebuildMemoryHint = 10MBf"), true);
+	});
 });
 
 describe('inputs.conf', () => {
@@ -115,6 +144,28 @@ describe('inputs.conf', () => {
 		assert.equal(splunkSpec.isSettingValid(specConfig, "[WinPrintMon://name]", "interval = 60"), true);
 	});
 
+	it('setting "connection_host = dns" should be valid for stanza [udp://:11514]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[udp://:11514]", "connection_host = dns"), true);
+	});
+
+});
+
+describe('outputs.conf', () => {
+	let specFileName = "outputs.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
+
+	it('setting "useACK = true" should be valid for stanza [tcpout:default-autolb-group]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[tcpout:default-autolb-group]", "useACK = true"), true);
+	});
+
+	it('setting "useAck = true" should be invalid for stanza [tcpout:default-autolb-group]', () => {
+		assert.notEqual(splunkSpec.isSettingValid(specConfig, "[tcpout:default-autolb-group]", "useAck = true"), true);
+	});
+
+	it('setting "forwardedindex.filter.disable = true" should be valid for stanza [tcpout]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[tcpout]", "forwardedindex.filter.disable = true"), true);
+	});
 });
 
 describe('searchbnf.conf', () => {
