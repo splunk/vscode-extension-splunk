@@ -146,11 +146,15 @@ async function updateModule(cell: vscode.NotebookCell) {
             service,
             <Spl2ModuleCell>{
                 name: cellMetadata?.splunk?.moduleName || `_default`,
-                namespace: cellMetadata?.splunk?.namespace || '',
+                namespace: cellMetadata?.splunk?.namespace || 'apps.search',
                 definition: cell.document.getText(),
             });
     } catch (err) {
-        vscode.window.showErrorMessage(`Issue updating module: ${err}`);
+        if (err?.data?.messages !== undefined) {
+            vscode.window.showErrorMessage(`Issue updating module: ${JSON.stringify(err.data.messages)}`);
+        } else {
+            vscode.window.showErrorMessage(`Issue updating module: ${err}`);
+        }
     }
 }
 
@@ -199,7 +203,7 @@ async function enterModuleName(cell: vscode.NotebookCell) {
         {
             title: 'Module name',
             value: cellMetadata.splunk.moduleName || '_default',
-            prompt: 'Modules should only contain alphanumeric characters and underscores (_)',
+            prompt: 'Module name (except for `_default` module) must start with a lowercase letter followed by digits, lowercase letters and underscore',
         },
     );
 }

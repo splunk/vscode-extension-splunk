@@ -66,7 +66,7 @@ export function updateSpl2Module(service: any, spl2ModuleCell: Spl2ModuleCell) {
     return needle(
         'PUT',
         // example: https://myhost.splunkcloud.com:8089/services/spl2/modules/apps.search._default
-        `${service.prefix}/services/spl2/modules/${spl2ModuleCell.namespace}.${spl2ModuleCell.name}`,
+        `${service.prefix}/services/spl2/modules/${encodeURIComponent(spl2ModuleCell.namespace)}.${encodeURIComponent(spl2ModuleCell.name)}`,
         {
             'name': spl2ModuleCell.name,
             'namespace': spl2ModuleCell.namespace,
