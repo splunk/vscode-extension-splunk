@@ -114,7 +114,10 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
  * @returns A Promise containing the job id created (or throw an Error containing data.messages[])
  */
 export function dispatchSpl2Module(service: any, spl2Module: string, app: string, namespace: string, earliest: string, latest: string) {
-    app = app || 'search';
+    // For now we're using /services/<app> which doesn't respect relative namespaces,
+    // so for now hardcode this to '' but if/when /servicesNS/<app>
+    namespace = '';
+    app = app || 'search'; // default to search app
     // Get last statement assignment '$my_statement = ...' -> 'my_statement' 
     const statementMatches = [...spl2Module.matchAll(/\$([a-zA-Z0-9_]+)[\s]*=/gm)];
     if (!statementMatches
