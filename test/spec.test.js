@@ -168,6 +168,16 @@ describe('searchbnf.conf', () => {
 	});
 });
 
+describe('deploymentclient.conf', () => {
+	let specFileName = "deploymentclient.conf.spec";
+	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
+	let specConfig = splunkSpec.getSpecConfig(extensionPath, specFilePath);
+
+	it('setting "serverRepositoryLocationPolicy = rejectAlways" should be valid for stanza [deployment-client]', () => {
+		assert.equal(splunkSpec.isSettingValid(specConfig, "[deployment-client]", "serverRepositoryLocationPolicy = rejectAlways"), true);
+	});
+});
+
 describe('serverclass.conf', () => {
 	let specFileName = "serverclass.conf.spec";
 	let specFilePath = path.join(specFolderLocation, specFileVersion, specFileName)
