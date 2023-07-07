@@ -2,7 +2,9 @@ on:
   push:
     branches:
       - main
+      - master
       - develop
+      - spl2
 
 jobs:
   build:

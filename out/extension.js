@@ -14,10 +14,22 @@ const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
 let specConfigs = {};
-let timeout = undefined;
-let diagnosticCollection = undefined;
-let specConfig = undefined;
+let timeout;
+let diagnosticCollection;
+let specConfig;
 let snippets = {};
+
+const reload = require("./commands/reload.js");
+const { SplunkNotebookSerializer } = require('./notebooks/serializers');
+const { SplunkController } = require('./notebooks/controller');
+const { Spl2NotebookSerializer } = require('./notebooks/spl2/serializer');
+const { Spl2Controller } = require('./notebooks/spl2/controller');
+const { installMissingSpl2Requirements, getLatestSpl2Release } = require('./notebooks/spl2/installer');
+const { startSpl2ClientAndServer } = require('./notebooks/spl2/initializer');
+const notebookCommands = require('./notebooks/commands');
+const { CellResultCountStatusBarProvider } = require('./notebooks/provider');
+let spl2Client;
+let spl2PortToAttempt = 59143; // 59143 ~ SPLNK if you squint really hard :)
 
 function getParentStanza(document, line) {
     // Start at the passed in line and go backwards
@@ -54,7 +66,7 @@ function getDocumentItems(document, PATTERN) {
     return items
 }
 
-function activate(context) {
+async function activate(context) {
 
     let splunkOutputChannel = vscode.window.createOutputChannel("Splunk");
 
@@ -187,14 +199,37 @@ function activate(context) {
 
     }));
 
+    // Setup progress bar for install
+    const progressBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    context.subscriptions.push(progressBar);
+    progressBar.hide();
+
+    // Register Utility Commands
+    context.subscriptions.push(vscode.commands.registerCommand('splunk.fullDebugRefresh', async () => {reload.fullDebugRefresh(splunkOutputChannel)}))
+
     // Set up stanza folding
     context.subscriptions.push(vscode.languages.registerFoldingRangeProvider([
         { language: 'splunk', pattern: '**/*.{conf,conf.spec}' }
     ], new splunkFoldingRangeProvider.confFoldingRangeProvider()));
 
     // If vscode was opened with an active Splunk file, handle it.
-    if(vscode.window.activeTextEditor && isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
-        handleSplunkFile(context);
+    vscode.commands.registerCommand('splunk.restartSpl2LanguageServer', async () => {
+        try {
+            if (spl2Client) {
+                await spl2Client.deactivate();
+            }
+            spl2Client = undefined;
+            await handleSpl2Document(context, progressBar);
+        } catch (err) {
+            console.warn(`Error restarting SPL2 language server, err: ${err}`);
+        }
+    });
+    if(vscode.window.activeTextEditor) {
+        if (isSplunkDocument(vscode.window.activeTextEditor.document)) {
+            handleSplunkDocument(context);
+        } else if (isSpl2Document(vscode.window.activeTextEditor.document)) {
+            await handleSpl2Document(context, progressBar);
+        }
     }
 
     // Set up listener for text document changes
@@ -206,11 +241,28 @@ function activate(context) {
     }));
 
     // Set up listener for active editor changing
-    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor( () => {
-        if (vscode.window.activeTextEditor && isSplunkFile(vscode.window.activeTextEditor.document.fileName)) {
-            handleSplunkFile(context);
+    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor( async () => {
+        if (!vscode.window.activeTextEditor) {
+            return;
+        }
+        if (isSplunkDocument(vscode.window.activeTextEditor.document)) {
+            handleSplunkDocument(context);
+        } else if (isSpl2Document(vscode.window.activeTextEditor.document)) {
+            await handleSpl2Document(context, progressBar);
         }
     }));
+  
+    // Notebook
+    context.subscriptions.push(vscode.workspace.registerNotebookSerializer('splunk-notebook', new SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
+	  context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new Spl2NotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
+    const controller = new SplunkController();
+    context.subscriptions.push(controller);
+    const spl2Controller = new Spl2Controller();
+    context.subscriptions.push(spl2Controller);
+    context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('splunk-notebook', new CellResultCountStatusBarProvider(splunkOutputChannel)));
+    context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('spl2-notebook', new CellResultCountStatusBarProvider(splunkOutputChannel)));
+    notebookCommands.registerNotebookCommands([controller, spl2Controller], splunkOutputChannel, context);
+
 
     // Set up listener for configuration setting changes
     context.subscriptions.push(vscode.workspace.onDidChangeConfiguration( () => {
@@ -220,17 +272,17 @@ function activate(context) {
 }
 exports.activate = activate;
 
-function isSplunkFile(fileName) {
+function isSplunkDocument(document) {
     let splunkFileExtensions = [".conf", "default.meta", "local.meta", "globalconfig.json"];
     for (let i=0; i < splunkFileExtensions.length; i++) {
-        if(fileName.toLowerCase().endsWith(splunkFileExtensions[i])) {
+        if(document.fileName.toLowerCase().endsWith(splunkFileExtensions[i])) {
             return true;
         }
     }
     return false;
 }
 
-function handleSplunkFile(context) {
+function handleSplunkDocument(context) {
 
     if(diagnosticCollection === undefined) {
         diagnosticCollection = vscode.languages.createDiagnosticCollection('splunk');
@@ -270,6 +322,37 @@ function handleSplunkFile(context) {
 
     // Cache specConfig
     specConfigs[currentDocument] = specConfig
+}
+
+function isSpl2Document(document) {
+    return document.languageId == 'splunk_spl2';
+}
+
+async function handleSpl2Document(context, progressBar) {
+    if (spl2Client) {
+        // Client and server are already running, try refreshing for case of new document
+        const range = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 1));
+        const text = vscode.window.activeTextEditor.document.getText(range) || " ";
+        vscode.window.activeTextEditor.edit((editBuilder) => {
+            // To refresh language server make a harmless edit by replacing the first character
+            editBuilder.replace(range, text);
+        });
+        return;
+    }
+    try {
+        const installedLatestLsp = await installMissingSpl2Requirements(context, progressBar);
+        if (!installedLatestLsp) {
+            await getLatestSpl2Release(context, progressBar);
+        }
+        const onSpl2Restart = async (nextPort) => {
+            await spl2Client.deactivate();
+            spl2PortToAttempt = nextPort;
+            spl2Client = await startSpl2ClientAndServer(context, progressBar, spl2PortToAttempt, onSpl2Restart);
+        };
+        spl2Client = await startSpl2ClientAndServer(context, progressBar, spl2PortToAttempt, onSpl2Restart);
+    } catch (err) {
+        vscode.window.showErrorMessage(`Issue setting up SPL2 environment: ${err}`);
+    }
 }
 
 function getSpecFilePath(basePath, filename) {
@@ -495,5 +578,10 @@ function getDiagnostics(specConfig, document) {
     return diagnostics;
 }
 
-function deactivate() { }
+async function deactivate() {
+    if (spl2Client) {
+        return await spl2Client.deactivate();
+    }
+}
+
 exports.deactivate = deactivate;

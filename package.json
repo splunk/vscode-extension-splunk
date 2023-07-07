@@ -24,7 +24,7 @@
         "color": "#000000",
         "theme": "dark"
     },
-    "main": "./out/extension.js",
+    "main": "./dist/extension.js",
     "contributes": {
         "languages": [
             {
@@ -46,6 +46,32 @@
                     "text/x-code-output"
                 ],
                 "configuration": "./splunk-language-configuration.json"
+            },
+            {
+                "id": "splunk_search",
+                "aliases": [
+                    "SPL"
+                ],
+                "configuration": "./spl-language-configuration.json",
+                "extensions": [
+                    ".splunk-spl"
+                ]
+            },
+            {
+                "id": "splunk_spl2",
+                "aliases": [
+                    "SPL2"
+                ],
+                "configuration": "./spl2-language-configuration.json",
+                "extensions": [
+                    ".spl2"
+                ]
+            },
+            {
+                "id": "splunk-spl-meta",
+                "aliases": [
+                    "SPL-META"
+                ]
             }
         ],
         "grammars": [
@@ -53,6 +79,11 @@
                 "language": "splunk",
                 "scopeName": "source.splunk",
                 "path": "./syntaxes/splunk.tmLanguage.json"
+            },
+            {
+                "language": "splunk_spl2",
+                "scopeName": "source.spl2",
+                "path": "./syntaxes/spl2.tmGrammar.json"
             }
         ],
         "jsonValidation": [
@@ -144,6 +175,39 @@
                     "default": false,
                     "order": 9,
                     "description": "When auto-completing settings, trim whitespace around the '=' sign. For example, key = value will become key=value.\nNote: changing this setting requires a restart of Visual Studio Code."
+                },
+                "splunk.spl2.acceptedTerms": {
+                    "type": "string",
+                    "enum": [
+                        "accepted",
+                        "declined (once)",
+                        "declined (forever)"
+                    ],
+                    "scope": "resource",
+                    "default": "declined (once)",
+                    "order": 10,
+                    "description": "[SPL2] Accepted Splunk General Terms"
+                },
+                "splunk.spl2.javaPath": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "",
+                    "order": 11,
+                    "description": "[SPL2] Java Path\nSpecify the full path to a Java executable (./java for Mac/Linux or java.exe for Windows). For example, the full path of $JAVA_HOME/bin/java."
+                },
+                "splunk.spl2.languageServerDirectory": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "",
+                    "order": 12,
+                    "description": "[SPL2] Language Server Directory\nSpecify the full path of the directory containing SPL2 (Websockets) Langauge Server. Trailing slash not required. Example:\n/Users/<User>/Library/Application Support/Code/User/globalStorage/splunk.splunk/spl2/lsp"
+                },
+                "splunk.spl2.languageServerVersion": {
+                    "type": "string",
+                    "scope": "resource",
+                    "default": "",
+                    "order": 13,
+                    "description": "[SPL2] Language Server Version\nSpecify the version of the SPL2 language server which will be used to create the path to invoke the server. Example, a value of '2.0.362' will invoke spl-lang-server-sockets-2.0.362-all.jar"
                 }
             }
         },
@@ -279,6 +343,70 @@
                 "title": "Preview globalConfig.json",
                 "category": "Splunk",
                 "enablement": "resourceFilename == globalConfig.json"
+            },
+            {
+                "command": "splunk.fullDebugRefresh",
+                "title": "Trigger Full Debug Refresh",
+                "category": "Splunk"
+            },
+            {
+                "command": "splunk.notebooks.addVisualizationPreference",
+                "title": "Add Visualization Preference"
+            },
+            {
+                "command": "splunk.notebooks.openJobInspector",
+                "title": "Open Job Inspector"
+            },
+            {
+                "command": "splunk.notebooks.openSearchLog",
+                "title": "Open Search Log"
+            },
+            {
+                "command": "splunk.notebooks.copyJobIdToClipboard",
+                "title": "Copy Job ID to Clipboard"
+            },
+            {
+                "command": "splunk.notebooks.copyDetection",
+                "title": "Copy Detection"
+            },
+            {
+                "command": "splunk.restartSpl2LanguageServer",
+                "title": "Restart SPL2 Language Server"
+            }
+        ],
+        "notebooks": [
+            {
+                "id": "splunk-notebook",
+                "type": "splunk-notebook",
+                "displayName": "Splunk Notebook",
+                "selector": [
+                    {
+                        "filenamePattern": "*.splnb"
+                    }
+                ]
+            },
+            {
+                "id": "spl2-notebook",
+                "type": "spl2-notebook",
+                "displayName": "SPL2 Notebook",
+                "selector": [
+                    {
+                        "filenamePattern": "*.spl2nb"
+                    },
+                    {
+                        "filenamePattern": "modules.json"
+                    }
+                ]
+            }
+        ],
+        "notebookRenderer": [
+            {
+                "id": "splunk-visualization-renderer",
+                "displayName": "Splunk Visualization Renderer",
+                "mimeTypes": [
+                    "application/splunk/events"
+                ],
+                "entrypoint": "./dist/visualization.js"
             }
         ]
     },
@@ -293,23 +421,45 @@
     "icon": "images/icon.png",
     "extensionDependencies": [],
     "dependencies": {
+        "@babel/preset-env": "^7.20.2",
+        "@babel/preset-react": "^7.18.6",
+        "@splunk/react-ui": "^4.14.0",
+        "@splunk/splunk-utils": "^2.2.3",
+        "@splunk/visualization-context": "^25.3.0",
+        "@splunk/visualizations": "^25.3.0",
+        "@types/vscode-notebook-renderer": "^1.72.0",
         "axios": ">=0.27.2",
-        "typescript": "^4.2.2"
+        "babel-loader": "^9.1.0",
+        "extract-zip": "^2.0.1",
+        "fast-xml-parser": "^4.2.5",
+        "react": "^16",
+        "react-dom": "^16.14.0",
+        "splunk-sdk": "^1.12.1",
+        "styled-components": "5",
+        "tar-fs": "^2.1.1",
+        "ts-loader": "^9.4.2",
+        "typescript": "^4.2.2",
+        "vscode-languageclient": "^8.1.0"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
-        "chai": "^4.3.6",
-        "mocha": "^10.0.0",
         "@types/node": "^12.12.0",
-        "@types/vscode": "^1.52.0",
+        "@types/vscode": "^1.72.0",
+        "chai": "^4.3.6",
         "eslint": "^8.21.0",
         "glob": "^7.1.5",
+        "mocha": "^10.0.0",
+        "process": "^0.11.10",
         "typescript": "^4.2.2",
-        "vscode-test": "^1.3.2"
+        "vscode-test": "^1.3.2",
+        "webpack": "^5.76.0",
+        "webpack-cli": "^5.0.1"
     },
     "scripts": {
         "lint": "eslint .",
         "pretest": "npm run lint",
-        "test": "mocha"
+        "test": "mocha",
+        "compile": "webpack",
+        "watch": "webpack --watch --mode none"
     }
 }

@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.2.9]
+## [0.2.10]
 - Added spec files for Splunk 9.0
 - Added CIM tags to auto complete and linting when editing tags.conf.  Issue [#25](https://github.com/splunk/vscode-extension-splunk/issues/25)
 - Fixed issue where free form stanza settings appeared invalid.  Issue [#60](https://github.com/splunk/vscode-extension-splunk/issues/60)
