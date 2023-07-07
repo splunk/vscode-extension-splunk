@@ -8,9 +8,6 @@
     },
     {
       "include": "#expression"
-    },
-    {
-      "include": "#identifier"
     }
   ],
   "repository": {
@@ -61,15 +58,16 @@
     "expression": {
       "patterns": [
         {
+          "include": "#keyword"
+        },
+
+        {
           "include": "#identifier"
         },
         {
           "include": "#literal"
         },
 
-        {
-          "include": "#keyword"
-        },
         {
           "include": "#paren-expression"
         }
