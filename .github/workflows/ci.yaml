@@ -4,7 +4,6 @@ on:
       - main
       - master
       - develop
-      - spl2
 
 jobs:
   build:

@@ -2,7 +2,6 @@ import * as splunk from 'splunk-sdk';
 import * as needle from 'needle'; // transitive dependency of splunk-sdk
 import * as vscode from 'vscode';
 import { SplunkMessage } from './utils';
-import { ThrowStatement } from 'typescript';
 
 export function getClient() {
     const config = vscode.workspace.getConfiguration();
@@ -177,7 +176,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
         });
 }
 
-function handleErrorPayloads(data: any): ThrowStatement {
+function handleErrorPayloads(data: any) {
     // Response is not in expected successful format, let's handle a
     // few different error cases and raise as expected messages format
     let messages:SplunkMessage[] = [];
