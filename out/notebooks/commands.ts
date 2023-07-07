@@ -191,68 +191,48 @@ async function recordInput(
 }
 
 async function enterModuleName(cell: vscode.NotebookCell) {
-    const cellMetadata = { ...cell.metadata };
-    if (!cellMetadata.splunk) {
-        cellMetadata.splunk = {};
-    }
-
     await recordInput(
         cell,
         'moduleName',
         {
             title: 'Module name',
-            value: cellMetadata.splunk.moduleName || '_default',
+            value: cell?.metadata?.splunk?.moduleName || '_default',
             prompt: 'Module name (except for `_default` module) must start with a lowercase letter followed by digits, lowercase letters and underscore',
         },
     );
 }
 
 async function enterNamespace(cell: vscode.NotebookCell) {
-    const cellMetadata = { ...cell.metadata };
-    if (!cellMetadata.splunk) {
-        cellMetadata.splunk = {};
-    }
-
     await recordInput(
         cell,
         'namespace',
         {
             title: 'Namespace',
-            value: cellMetadata.splunk.namespace || 'apps.search',
+            value: cell?.metadata?.splunk?.namespace || 'apps.search',
             prompt: 'e.g. apps.search, apps.my_app, [blank], etc',
         },
     );
 }
 
 async function enterEarliestTime(cell: vscode.NotebookCell) {
-    const cellMetadata = { ...cell.metadata };
-    if (!cellMetadata.splunk) {
-        cellMetadata.splunk = {};
-    }
-
     await recordInput(
         cell,
         'earliestTime',
         {
             title: 'Earliest time',
-            value: cellMetadata.splunk.earliestTime || '-24h',
+            value: cell?.metadata?.splunk?.earliestTime || '-24h',
             prompt: 'e.g. -24h, @d, -2d@d+2h, 1687909025',
         },
     );
 }
 
 async function enterLatestTime(cell: vscode.NotebookCell) {
-    const cellMetadata = { ...cell.metadata };
-    if (!cellMetadata.splunk) {
-        cellMetadata.splunk = {};
-    }
-
     await recordInput(
         cell,
         'latestTime',
         {
             title: 'Latest time',
-            value: cellMetadata.splunk.latestTime || 'now',
+            value: cell?.metadata?.splunk?.latestTime || 'now',
             prompt: 'e.g. now, -24h, @d, -2d@d+2h, 1687909025',
         },
     );

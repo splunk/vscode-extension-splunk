@@ -57,6 +57,18 @@ export function createSearchJob(jobs, query, options) {
 }
 
 /**
+ * Helper function to create Authorization and Content-Type headers
+ * @param service A Javascript SDK Service instance
+ * @returns An object reflecting Authorization and Content-Type headers
+ */
+function makeHeaders(service: any): object {
+    return {
+        'Authorization': `Bearer ${service.sessionKey}`,
+        'Content-Type': 'application/json',
+    };
+}
+
+/**
  * Update a module by calling the PUT /services/spl2/modules/<namespace>.<moduleName>
  * @param service Instance of the Javascript SDK Service
  * @param moduleName Name of the module to append to the namespace to form the request path
@@ -78,10 +90,7 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
             'definition': module,
         },
         {
-            'headers': {
-                'Authorization': `Bearer ${service.sessionKey}`,
-                'Content-Type': 'application/json',
-            },
+            'headers': makeHeaders(service),
             'followAllRedirects': true,
             'timeout': 0,
             'strictSSL': false,
@@ -89,7 +98,8 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
         })
         .then((response) => {
             const data = response.body;
-            if (!Object.prototype.isPrototypeOf(data)
+            if (response.statusCode >= 400 ||
+                !Object.prototype.isPrototypeOf(data)
                 || data.name === undefined
                 || data.namespace === undefined
                 || data.definition === undefined
@@ -158,10 +168,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
             }
         },
         {
-            'headers': {
-                'Authorization': `Bearer ${service.sessionKey}`,
-                'Content-Type': 'application/json',
-            },
+            'headers': makeHeaders(service),
             'followAllRedirects': true,
             'timeout': 0,
             'strictSSL': false,
@@ -169,7 +176,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
         })
         .then((response) => {
             const data = response.body;
-            if (!Array.prototype.isPrototypeOf(data) || data.length < 1) {
+            if (response.statusCode >= 400 || !Array.prototype.isPrototypeOf(data) || data.length < 1) {
                 handleErrorPayloads(data);
                 return;
             }
