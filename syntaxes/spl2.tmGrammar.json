@@ -17,11 +17,11 @@
    "boolean-literal": {
       "patterns": [
         {
-          "name": "constant.language.boolean.true.spl",
+          "name": "constant.language.boolean.true.spl2",
           "match": "(?<!\\.)\\btrue\\b"
         },
         {
-          "name": "constant.language.boolean.false.spl",
+          "name": "constant.language.boolean.false.spl2",
           "match": "(?<!\\.)\\bfalse\\b"
         }
       ]
@@ -29,29 +29,29 @@
     "comment": {
       "patterns": [
         {
-          "name": "comment.block.spl",
+          "name": "comment.block.spl2",
           "begin": "/\\*",
           "beginCaptures": {
             "0": {
-              "name": "punctuation.definition.comment.spl"
+              "name": "punctuation.definition.comment.spl2"
             }
           },
           "end": "\\*/",
           "endCaptures": {
             "0": {
-              "name": "punctuation.definition.comment.spl"
+              "name": "punctuation.definition.comment.spl2"
             }
           }
         },
         {
-          "name": "comment.line.double-slash.spl",
+          "name": "comment.line.double-slash.spl2",
           "begin": "(^[ \\t]+)?(//)",
           "beginCaptures": {
             "1": {
-              "name": "punctuation.whitespace.comment.leading.spl"
+              "name": "punctuation.whitespace.comment.leading.spl2"
             },
             "2": {
-              "name": "punctuation.definition.comment.spl"
+              "name": "punctuation.definition.comment.spl2"
             }
           },
           "end": "(?=$)"
@@ -86,17 +86,17 @@
       ]
     },
     "identifier-escaped": {
-      "name": "variable.other.readwrite.spl",
+      "name": "variable.other.readwrite.spl2",
       "begin": "'",
       "beginCaptures": {
         "0": {
-          "name": "punctuation.identifier.begin.spl"
+          "name": "punctuation.identifier.begin.spl2"
         }
       },
       "end": "'",
       "endCaptures": {
         "0": {
-          "name": "punctuation.identifier.end.spl"
+          "name": "punctuation.identifier.end.spl2"
         }
       },
       "patterns": [
@@ -109,21 +109,21 @@
       ]
     },
     "identifier-escaped-character-escape": {
-      "name": "constant.character.escape.spl",
+      "name": "constant.character.escape.spl2",
       "match": "\\\\.$"
     },
     "identifier-escaped-template": {
-      "name": "meta.template.spl",
+      "name": "meta.template.spl2",
       "begin": "\\$\\{",
       "beginCaptures": {
         "0": {
-          "name": "punctuation.definition.template.begin.spl"
+          "name": "punctuation.definition.template.begin.spl2"
         }
       },
       "end": "\\}",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.template.end.spl"
+          "name": "punctuation.definition.template.end.spl2"
         }
       },
       "patterns": [
@@ -133,7 +133,7 @@
       ]
     },
     "identifier-simple": {
-      "name": "variable.other.readwrite.spl",
+      "name": "variable.other.readwrite.spl2",
       "match": "\\$?[_[:alpha:]][_[:alnum:]]*"
     },
     "literal": {
@@ -162,18 +162,18 @@
       "match": "(?<!\\w)(\\.?\\d(?:\\d|\\.\\d)*)(log)(\\.?\\d(?:\\d|\\.\\d)*)",
       "captures": {
         "1": {
-          "name": "constant.numeric.decimal.spl"
+          "name": "constant.numeric.decimal.spl2"
         },
         "2": {
-          "name": "constant.numeric.other.logarithm.spl"
+          "name": "constant.numeric.other.logarithm.spl2"
         },
         "3": {
-          "name": "constant.numeric.decimal.spl"
+          "name": "constant.numeric.decimal.spl2"
         }
       }
     },
     "null-literal": {
-      "name": "constant.language.null.spl",
+      "name": "constant.language.null.spl2",
       "match": "(?<!\\.)\\b(null|NULL)\\b"
     },
     "numeric-literal": {
@@ -189,28 +189,28 @@
                   "match": "(\\G(?=[0-9.]))([0-9]+)?((?:(?<=[0-9])|\\.(?=[0-9])))([0-9]+)?(([eE])(\\+?)(\\-?)((?:[0-9]+)))?([FD](?!\\w))?$",
                   "captures": {
                     "2": {
-                      "name": "constant.numeric.decimal.spl"
+                      "name": "constant.numeric.decimal.spl2"
                     },
                     "3": {
-                      "name": "constant.numeric.other.separator.decimals.spl"
+                      "name": "constant.numeric.other.separator.decimals.spl2"
                     },
                     "4": {
-                      "name": "constant.numeric.decimal.spl"
+                      "name": "constant.numeric.decimal.spl2"
                     },
                     "6": {
-                      "name": "constant.numeric.other.exponent.spl"
+                      "name": "constant.numeric.other.exponent.spl2"
                     },
                     "7": {
-                      "name": "keyword.operator.arithmetic.spl"
+                      "name": "keyword.operator.arithmetic.spl2"
                     },
                     "8": {
-                      "name": "keyword.operator.arithmetic.spl"
+                      "name": "keyword.operator.arithmetic.spl2"
                     },
                     "9": {
-                      "name": "constant.numeric.decimal.spl"
+                      "name": "constant.numeric.decimal.spl2"
                     },
                     "10": {
-                      "name": "constant.numeric.other.suffix.spl"
+                      "name": "constant.numeric.other.suffix.spl2"
                     }
                   }
                 },
@@ -218,28 +218,28 @@
                   "match": "(\\G(?=[0-9.]))([0-9]+)(([eE])(\\+?)(\\-?)((?:[0-9]+)))?((?:[LFD])(?!\\w))?$",
                   "captures": {
                     "2": {
-                      "name": "constant.numeric.decimal.spl"
+                      "name": "constant.numeric.decimal.spl2"
                     },
                     "4": {
-                      "name": "constant.numeric.other.exponent.spl"
+                      "name": "constant.numeric.other.exponent.spl2"
                     },
                     "5": {
-                      "name": "keyword.operator.arithmetic.spl"
+                      "name": "keyword.operator.arithmetic.spl2"
                     },
                     "6": {
-                      "name": "keyword.operator.arithmetic.spl"
+                      "name": "keyword.operator.arithmetic.spl2"
                     },
                     "7": {
-                      "name": "constant.numeric.decimal.spl"
+                      "name": "constant.numeric.decimal.spl2"
                     },
                     "8": {
-                      "name": "constant.numeric.other.suffix.spl"
+                      "name": "constant.numeric.other.suffix.spl2"
                     }
                   }
                 },
                 {
                   "match": "(?:(?:[0-9a-zA-Z])|(?<=[eE])[+-]|\\.\\d)+",
-                  "name": "invalid.illegal.constant.numeric.spl"
+                  "name": "invalid.illegal.constant.numeric.spl2"
                 }
               ]
             }
@@ -248,17 +248,17 @@
       }
     },
     "raw-string-literal": {
-      "name": "string.quoted.double.spl",
+      "name": "string.quoted.double.spl2",
       "begin": "@\"",
       "beginCaptures": {
         "0": {
-          "name": "punctuation.definition.string.begin.spl"
+          "name": "punctuation.definition.string.begin.spl2"
         }
       },
       "end": "\"(?=[^\"])",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.string.end.spl"
+          "name": "punctuation.definition.string.end.spl2"
         }
       },
       "patterns": [
@@ -268,24 +268,24 @@
       ]
     },
     "raw-string-literal-character-escape": {
-      "name": "constant.character.escape.spl",
+      "name": "constant.character.escape.spl2",
       "match": "\"\""
     },
     "regular-string-literal": {
-      "name": "string.quoted.double.spl",
+      "name": "string.quoted.double.spl2",
       "begin": "(?<!@)\"",
       "beginCaptures": {
         "0": {
-          "name": "punctuation.definition.string.begin.spl"
+          "name": "punctuation.definition.string.begin.spl2"
         }
       },
       "end": "(\")|((?:[^\\\\\\n])$)",
       "endCaptures": {
         "1": {
-          "name": "punctuation.definition.string.end.spl"
+          "name": "punctuation.definition.string.end.spl2"
         },
         "2": {
-          "name": "invalid.illegal.newline.spl"
+          "name": "invalid.illegal.newline.spl2"
         }
       },
       "patterns": [
@@ -298,24 +298,24 @@
       ]
     },
     "regular-string-literal-character-escape": {
-      "name": "constant.character.escape.spl",
+      "name": "constant.character.escape.spl2",
       "match": "\\\\(u[0-9A-Fa-f]{4}|\\$\\{|.|$)"
     },
     "regular-string-literal-template": {
-      "name": "meta.template.spl",
+      "name": "meta.template.spl2",
       "begin": "(?<=[^\\\\]|^)(\\$\\{)",
       "beginCaptures": {
         "1": {
-          "name": "string.quoted.double.spl"
+          "name": "string.quoted.double.spl2"
         },
         "2": {
-          "name": "punctuation.definition.template.begin.spl"
+          "name": "punctuation.definition.template.begin.spl2"
         }
       },
       "end": "\\}",
       "endCaptures": {
         "0": {
-          "name": "punctuation.definition.template.end.spl"
+          "name": "punctuation.definition.template.end.spl2"
         }
       },
       "patterns": [
@@ -338,10 +338,10 @@
       "match": "(?<!\\w)(\\d+)([a-dg-zA-DG-Z][a-zA-Z]*)",
       "captures": {
         "1": {
-          "name": "constant.numeric.decimal.spl"
+          "name": "constant.numeric.decimal.spl2"
         },
         "2": {
-          "name": "constant.numeric.other.time.spl"
+          "name": "constant.numeric.other.time.spl2"
         }
       }
     },
