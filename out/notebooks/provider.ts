@@ -38,6 +38,39 @@ export class CellResultCountStatusBarProvider implements vscode.NotebookCellStat
             },
         });
 
+        const moduleUpdateButton = {
+            text: '$(cloud-upload)',
+            alignment: vscode.NotebookCellStatusBarAlignment.Right,
+            tooltip: 'Update module (Splunk deployment)',
+            command: {
+                title: 'Update module (Splunk deployment)',
+                command: 'splunk.notebooks.updateModule',
+                arguments: [cell],
+            },
+        };
+
+        const moduleNamePicker = {
+            text: '$(edit)',
+            alignment: vscode.NotebookCellStatusBarAlignment.Right,
+            tooltip: 'Module name',
+            command: {
+                title: 'Enter module name',
+                command: 'splunk.notebooks.enterModuleName',
+                arguments: [cell],
+            },
+        };
+
+        const namespacePicker = {
+            text: '$(preserve-case)',
+            alignment: vscode.NotebookCellStatusBarAlignment.Right,
+            tooltip: 'Namespace',
+            command: {
+                title: 'Enter namespace',
+                command: 'splunk.notebooks.enterNamespace',
+                arguments: [cell],
+            },
+        };
+
         const earliestPicker = {
             text: 'earliest',
             alignment: vscode.NotebookCellStatusBarAlignment.Right,
@@ -61,6 +94,9 @@ export class CellResultCountStatusBarProvider implements vscode.NotebookCellStat
         };
         // earliest and latest time pickers are only supported for SPL2 at the moment
         if (cell.document.languageId === 'splunk_spl2') {
+            items.push(moduleUpdateButton);
+            items.push(moduleNamePicker);
+            items.push(namespacePicker);
             items.push(earliestPicker);
             items.push(latestPicker);
         }
@@ -93,6 +129,9 @@ export class CellResultCountStatusBarProvider implements vscode.NotebookCellStat
                     });
                     // earliest and latest time pickers are only supported for SPL2 at the moment
                     if (cell.document.languageId === 'splunk_spl2') {
+                        items.push(moduleUpdateButton);
+                        items.push(moduleNamePicker);
+                        items.push(namespacePicker);
                         items.push(earliestPicker);
                         items.push(latestPicker);
                     }

@@ -6,6 +6,7 @@ import {
 } from '../splunk';
 import { SplunkController } from '../controller';
 import { splunkMessagesToOutputItems } from '../utils';
+import { getAppSubNamespace } from './serializer';
 
 export class Spl2Controller extends SplunkController {
     constructor() {
@@ -30,14 +31,21 @@ export class Spl2Controller extends SplunkController {
 
         const spl2Module = cell.document.getText().trim();
         const service = getClient();
+        let fullNamespace: string = cell?.metadata?.splunk?.namespace || '';
+        // Get apps.<app>[.optional.sub.namespaces] from fullNamespace
+        const [app, subNamespace] = getAppSubNamespace(fullNamespace);
+        const earliest = cell?.metadata?.splunk?.earliestTime;
+        const latest = cell?.metadata?.splunk?.latestTime;
     
         let job;
         try {
             job = await dispatchSpl2Module(
                 service,
                 spl2Module,
-                cell?.metadata?.splunk?.earliestTime,
-                cell?.metadata?.splunk?.latestTime,
+                app,
+                subNamespace,
+                earliest,
+                latest,
             );
             await super._finishExecution(job, cell, execution);
         } catch (failedResponse) {
