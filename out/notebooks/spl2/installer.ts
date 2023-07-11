@@ -47,7 +47,10 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
         // Check for compatible Java version installed already
         let javaLoc;
         try {
-            javaLoc = workspace.getConfiguration().get(configKeyJavaPath);
+            let javaLocSetting: string = workspace.getConfiguration().get(configKeyJavaPath);
+            if (javaLocSetting.trim().length != 0) {
+                javaLoc = javaLocSetting;
+            }
         } catch (err) {
             reject(`Error retrieving configuration '${configKeyJavaPath}', err: ${err}`);
         }
@@ -70,7 +73,10 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
         // Check workspace for current installed LSP version
         let lspVersion;
         try {
-            lspVersion = workspace.getConfiguration().get(configKeyLspVersion);
+            let lspVersionSetting: string = workspace.getConfiguration().get(configKeyLspVersion);
+            if (lspVersionSetting.trim().length != 0) {
+                lspVersion = lspVersionSetting;
+            }
             if (!workspace.getConfiguration().get(configKeyLspDirectory)) {
                 const localLspDefault = path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
                 await workspace.getConfiguration().update(configKeyLspDirectory, localLspDefault, true);
