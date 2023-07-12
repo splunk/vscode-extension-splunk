@@ -86,6 +86,7 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
         }
         if (javaLoc && lspVersion) {
             // Already set up, no need to continue
+            // TODO: makre sure the jar files are still in the expected location 
             resolve(false);
         }
         // Setup local storage directory for downloads and installs
@@ -348,8 +349,8 @@ async function downloadWithProgress(
             responseType: 'stream',
             transformRequest: (data, headers) => {
                 // Override defaults set elsewhere for splunkd communication
-                delete headers.common['Authorization'];
-                delete headers.common['Accept'];
+                delete headers['Authorization'];
+                delete headers['Accept'];
                 return data;
               },
         });
