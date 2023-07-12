@@ -12,13 +12,17 @@ The Visual Studio Code Extension for Splunk helps developers create, test, and d
 * Stanza folding
 * Linting
 
+## Splunk Notebooks
+Splunk Notebooks provide the ability to author SPL Notes, execute SPL Notes as search jobs, and view results in Visual Studio Code.  Splunk Notebooks works for both SPL and SPL2.
+
+![Splunk Notebooks](https://raw.githubusercontent.com/wiki/splunk/vscode-extension-splunk/images/spl_notebooks/SPL_Notebook.gif)
+
+
 ## Running Saved Searches
 
 Visual Studio Code communicates with the Splunk REST API to enumerate saved searches and displays the reports in the editor.
 
 ![Splunk Saved Search](https://raw.githubusercontent.com/wiki/splunk/vscode-extension-splunk/images/saved_search_activity_bar.gif)
-
-
 
 ## Viewing Reports
 
@@ -26,7 +30,7 @@ Visual Studio Code communicates with the Splunk REST API to enumerate reports an
 
 ![Splunk Report](https://raw.githubusercontent.com/wiki/splunk/vscode-extension-splunk/images/embedded_view.gif)
 
-
+## Debugging Splunk Code
 This extension also provides capabilities for debugging user-generated Python code run by Splunk Enterprise (local or remote):
 
 * Debug configurations
