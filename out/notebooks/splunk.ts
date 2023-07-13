@@ -129,7 +129,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     namespace = '';
     app = app || 'search'; // default to search app
     // Get last statement assignment '$my_statement = ...' -> 'my_statement' 
-    const statementMatches = [...spl2Module.matchAll(/\$([a-zA-Z0-9_]+)[\s]*=/gm)];
+    const statementMatches = [...spl2Module.matchAll(/^\s*\$([a-zA-Z0-9_]+)[\s]*=/gm)];
     if (!statementMatches
         || statementMatches.length < 1
         || statementMatches[statementMatches.length - 1].length < 2) {
