@@ -496,7 +496,7 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
     return new Promise(async (resolve, reject) => {
         const lspArtifactPath = getLocalLspDir(context);
         // TODO: Remove this hardcoded version/update time and check for updates
-        let latestLspVersion: string = '2.0.362'; // context.globalState.get(stateKeyLatestLspVersion) || "";
+        let latestLspVersion: string = '2.0.366'; // context.globalState.get(stateKeyLatestLspVersion) || "";
         const lastUpdateMs: number = Date.now(); // context.globalState.get(stateKeyLastLspCheck) || 0;
         // Don't check for new version of SPL2 Language Server if less than 24 hours since last check
         if (Date.now() - lastUpdateMs > 24 * 60 * 60 * 1000) {
