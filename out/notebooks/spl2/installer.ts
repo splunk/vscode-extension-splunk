@@ -351,6 +351,10 @@ async function downloadWithProgress(
                 // Override defaults set elsewhere for splunkd communication
                 delete headers['Authorization'];
                 delete headers['Accept'];
+                delete headers?.common['Authorization'];
+                delete headers?.common['Accept'];
+                delete headers?.get['Authorization'];
+                delete headers?.get['Accept'];
                 return data;
               },
         });
