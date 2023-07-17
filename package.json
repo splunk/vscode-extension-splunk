@@ -436,7 +436,7 @@
         "konva": "^3.4.1",
         "react": "^16.14.0",
         "react-dom": "^16.14.0",
-        "styled-components": "^5.3.11",
+        "styled-components": "^5.1.1",
         "splunk-sdk": "^1.12.1",
         "tar-fs": "^2.1.1",
         "ts-loader": "^9.4.2",
@@ -446,7 +446,7 @@
     "overrides": {
         "react": "^16.14.0",
         "react-dom": "^16.14.0",
-        "styled-components": "^5.3.11"
+        "styled-components": "^5.1.1"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
