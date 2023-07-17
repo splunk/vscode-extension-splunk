@@ -2,6 +2,9 @@
 
 Complete documentation is available at the [extension wiki](https://github.com/splunk/vscode-extension-splunk/wiki)
 
+## [0.3.1]
+Minor updates to SPL language server handling.
+
 ## [0.3.0]
 ### New Features
 - Added SPL Notebook functionality.  Splunk Notebooks provide the ability to author SPL Notes, execute SPL Notes as search jobs, and view results in Visual Studio Code.
