@@ -433,14 +433,17 @@
         "axios": "^0.27.2",
         "extract-zip": "^2.0.1",
         "fast-xml-parser": "^4.2.5",
-        "react": "^16",
-        "react-dom": "^16.14.0",
+        "konva": "^3.4.1",
         "splunk-sdk": "^1.12.1",
-        "styled-components": "^5.1.1",
         "tar-fs": "^2.1.1",
         "ts-loader": "^9.4.2",
         "typescript": "^4.2.2",
         "vscode-languageclient": "^8.1.0"
+    },
+    "overrides": {
+        "react": "^16.14.0",
+        "react-dom": "^16.14.0",
+        "styled-components": "^5.3.11"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",

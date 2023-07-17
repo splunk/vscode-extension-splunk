@@ -8,7 +8,7 @@ on:
       - package-vsix
 
 jobs:
-  test:
+  package:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
