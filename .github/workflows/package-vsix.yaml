@@ -2,10 +2,8 @@ name: Package .vsix
 
 on:
   push:
-    # tags:
-    #   - '*'
-    branches:
-      - package-vsix
+    tags:
+      - '*'
 
 jobs:
   package:

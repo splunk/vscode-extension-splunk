@@ -4,7 +4,6 @@ on:
       - main
       - master
       - develop
-      - package-vsix
 
 jobs:
   build:
