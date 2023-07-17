@@ -86,7 +86,7 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
         }
         if (javaLoc && lspVersion) {
             // Already set up, no need to continue
-            // TODO: makre sure the jar files are still in the expected location 
+            // TODO: make sure the jar files are still in the expected location
             resolve(false);
         }
         // Setup local storage directory for downloads and installs
@@ -498,7 +498,7 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
  */
 export async function getLatestSpl2Release(context: ExtensionContext, progressBar: StatusBarItem): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const lspArtifactPath = getLocalLspDir(context);
+        const lspArtifactPath =  getLocalLspDir(context);
         // TODO: Remove this hardcoded version/update time and check for updates
         let latestLspVersion: string = '2.0.366'; // context.globalState.get(stateKeyLatestLspVersion) || "";
         const lastUpdateMs: number = Date.now(); // context.globalState.get(stateKeyLastLspCheck) || 0;
