@@ -31,6 +31,7 @@ jobs:
         if-no-files-found: error
   
   integration-test:
+    needs: package
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
