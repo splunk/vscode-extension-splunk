@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - '*'
+    branches:
+      - spl2-tests
 
 jobs:
   package:
@@ -27,3 +29,19 @@ jobs:
         name: vsix-package
         path: splunk-*.vsix
         if-no-files-found: error
+  
+  integration-test:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Download package
+      uses: actions/download-artifact@v3
+      with:
+        name: vsix-package
+    - run: pwd
+    - run: ls -l *.vsix
+    - run: npm run compile-tests
+    - run: echo "Run integration tests" && node ./out/test/runTest.js
+

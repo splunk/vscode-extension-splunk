@@ -15,3 +15,5 @@ tsconfig.lsif.json
 conf_diff.py
 *.vsix
 dist/
+out/test
+.vscode-test
