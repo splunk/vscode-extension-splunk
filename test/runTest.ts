@@ -5,20 +5,20 @@ import {
   resolveCliArgsFromVSCodeExecutablePath,
   runTests
 } from '@vscode/test-electron';
-//import packageJSON from '../package.json';
+import { version } from '../package.json';
 
 // Example taken from: https://code.visualstudio.com/api/working-with-extensions/testing-extension#custom-setup-with-vscodetestelectron
 async function main() {
   try {
     const extensionDevelopmentPath = path.resolve(__dirname, '..'); // root of repo
-    const extensionTestsPath = path.resolve(__dirname, './suite/index');
+    const extensionTestsPath = path.resolve(__dirname, './integration/index');
     const vscodeExecutablePath = await downloadAndUnzipVSCode('stable');
     const [cliPath, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
 
     // Use cp.spawn / cp.exec for custom setup
     cp.spawnSync(
       cliPath,
-      [...args, '--install-extension', `splunk-0.3.1.vsix`], //TODO: use ${packageJSON.version}
+      [...args, '--install-extension', `splunk-${version}.vsix`], //TODO: use ${packageJSON.version}
       {
         encoding: 'utf-8',
         stdio: 'inherit'
