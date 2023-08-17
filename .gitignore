@@ -16,4 +16,5 @@ conf_diff.py
 *.vsix
 dist/
 out/test
+out/package.json
 .vscode-test
