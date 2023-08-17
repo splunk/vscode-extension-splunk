@@ -44,10 +44,10 @@ jobs:
       with:
         name: vsix-package
     - run: pwd
-    - run: dir *.vsix
-      if: runner.os == 'Windows'
     - run: ls -l *.vsix
       if: runner.os != 'Windows'
+    - run: dir /n *.vsix
+      if: runner.os == 'Windows'
     - name: Install Node.js
       uses: actions/setup-node@v2
       with:
@@ -57,7 +57,9 @@ jobs:
     - run: npm install
     - run: npm list
     - run: npm run compile-tests
+    - run: echo "Run integration tests" && node ./out/test/runTest.js
+      if: runner.os == 'macOS'
+    - run: echo "Run integration tests" && xvfb-run -a node ./out/test/runTest.js
+      if: runner.os == 'Linux'
     - run: node .\out\test\runTest.js
       if: runner.os == 'Windows'
-    - run: echo "Run integration tests" && node ./out/test/runTest.js
-      if: runner.os != 'Windows'
