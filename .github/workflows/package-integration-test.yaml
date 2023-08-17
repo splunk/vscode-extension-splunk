@@ -46,7 +46,7 @@ jobs:
     - run: pwd
     - run: ls -l *.vsix
       if: runner.os != 'Windows'
-    - run: dir /n *.vsix
+    - run: dir *.vsix
       if: runner.os == 'Windows'
     - name: Install Node.js
       uses: actions/setup-node@v2
