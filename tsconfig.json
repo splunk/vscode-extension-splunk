@@ -1,4 +1,7 @@
 {
+	"include": [
+		"./out/**/*.ts"
+	],
 	"compilerOptions": {
 		"jsx": "react",
 		"module": "commonjs",
