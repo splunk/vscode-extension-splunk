@@ -37,6 +37,8 @@ jobs:
         os: [macos-latest, ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: Download package
       uses: actions/download-artifact@v3
       with:
@@ -46,8 +48,6 @@ jobs:
       if: runner.os == 'Windows'
     - run: ls -l *.vsix
       if: runner.os != 'Windows'
-    - name: Checkout
-      uses: actions/checkout@v2
     - name: Install Node.js
       uses: actions/setup-node@v2
       with:
