@@ -42,7 +42,10 @@ jobs:
       with:
         name: vsix-package
     - run: pwd
+    - run: dir *.vsix
+      if: runner.os == 'Windows'
     - run: ls -l *.vsix
+      if: runner.os != 'Windows'
     - name: Checkout
       uses: actions/checkout@v2
     - name: Install Node.js
@@ -54,5 +57,7 @@ jobs:
     - run: npm install
     - run: npm list
     - run: npm run compile-tests
+    - run: node .\out\test\runTest.js
+      if: runner.os == 'Windows'
     - run: echo "Run integration tests" && node ./out/test/runTest.js
-
+      if: runner.os != 'Windows'
