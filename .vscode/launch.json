@@ -45,6 +45,21 @@
                 "<node_internals>/**"
             ],
             "type": "node"
-        }
+        },
+		{
+			"name": "Extension Integration Tests",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+			  "--disable-extensions",
+			  "--extensionDevelopmentPath=${workspaceFolder}",
+			  "--extensionTestsPath=${workspaceFolder}/out/test/integration/index"
+			],
+			"outFiles": [
+				"${workspaceFolder}/out/**/*.js",
+				"${workspaceFolder}/out/**/*.json"
+			],
+		  }
     ]
 }
