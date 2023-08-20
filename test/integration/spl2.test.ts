@@ -9,23 +9,25 @@ import * as vscode from 'vscode';
 // back out of out/test/integration and into test/integration/documents because ts compile
 // won't handle these files
 const docsDir = path.join(__dirname, '..', '..', '..', 'test', 'integration', 'documents');
+const blankDocUri = vscode.Uri.file(path.join(docsDir, 'blank.spl2nb'));
 
-// Some pointers taken from here: https://vscode.rocks/testing/#end-to-end-testing
+// Some very helpful pointers taken from here: https://vscode.rocks/testing/#end-to-end-testing
 suite('SPL2 Language Server integration', async () => {
-	try {
-		vscode.window.showInformationMessage('Start all tests.');
-		const splunkExt = vscode.extensions.getExtension('Splunk.splunk');
-		const blankDocUri = vscode.Uri.file(path.join(docsDir, 'blank.spl2nb'));
+	vscode.window.showInformationMessage('Start all tests.');
+	
+	test('SPL2 Language detected in .spl2nb', async () => {
 		const doc = await vscode.workspace.openNotebookDocument(blankDocUri);
+		assert.ok(doc, `Blank example .spl2nb doc not loaded from path: ${blankDocUri}`);
 		const editor = await vscode.window.showNotebookDocument(doc);
-		const nb = editor.notebook;
-	} catch (e) {
-		console.log(e);
-		assert.fail(e);
-	}
-
-	test('Sample test', () => {
-		assert.strictEqual([1, 2, 3].indexOf(5), -1);
-		assert.strictEqual([1, 2, 3].indexOf(0), -1);
+		await sleep(500);
+		assert.ok(editor, 'Loading editor with blank example .spl2nb doc failed');
+		assert.ok(editor.notebook, 'Loading editor.notebook with blank example .spl2nb doc failed');
+		assert.strictEqual(editor.notebook.notebookType, 'spl2-notebook');
 	}).timeout(60*1000); // 1 min
 }).timeout(10*60*1000); // 10 min
+
+function sleep(ms: number): Promise<void> {
+	return new Promise(resolve => {
+		setTimeout(resolve, ms)
+	})
+}
