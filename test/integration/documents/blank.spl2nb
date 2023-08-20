@@ -1,0 +1,14 @@
+{
+  "modules": [
+    {
+      "name": "module1",
+      "namespace": "",
+      "definition": "",
+      "_vscode": {
+        "metadata": {},
+        "outputs": []
+      }
+    }
+  ],
+  "app": "apps.search"
+}

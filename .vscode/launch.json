@@ -60,6 +60,7 @@
 				"${workspaceFolder}/out/**/*.js",
 				"${workspaceFolder}/out/**/*.json"
 			],
+			"preLaunchTask": "npm: compile-tests"
 		  }
     ]
 }
