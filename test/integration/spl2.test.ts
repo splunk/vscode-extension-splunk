@@ -19,7 +19,7 @@ suite('SPL2 Language Server integration', async () => {
 		const doc = await vscode.workspace.openNotebookDocument(blankDocUri);
 		assert.ok(doc, `Blank example .spl2nb doc not loaded from path: ${blankDocUri}`);
 		const editor = await vscode.window.showNotebookDocument(doc);
-		await sleep(1500);
+		await sleep(30000);
 		assert.ok(editor, 'Loading editor with blank example .spl2nb doc failed');
 		// const nb = editor.notebook;
 		// assert.ok(nb, 'Loading editor.notebook with blank example .spl2nb doc failed');
