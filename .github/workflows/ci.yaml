@@ -5,6 +5,7 @@ on:
       - main
       - master
       - develop
+      - spl2-unit-tests
 
 jobs:
   build:
