@@ -15,19 +15,22 @@ const blankDocUri = vscode.Uri.file(path.join(docsDir, 'blank.spl2nb'));
 suite('SPL2 Language Server integration', async () => {
 	vscode.window.showInformationMessage('Start all tests.');
 	
-	test('SPL2 Language detected in .spl2nb', async () => {
+	test('Language detected in .spl2nb should be SPL2', async () => {
+		await sleep(5000);
 		console.log(`[DEBUG] opening ${blankDocUri} ...`);
 		const doc = await vscode.workspace.openNotebookDocument(blankDocUri);
 		assert.ok(doc, `Blank example .spl2nb doc not loaded from path: ${blankDocUri}`);
-		await sleep(500);
+		await sleep(5000);
 		console.log(`[DEBUG] showing ${blankDocUri} ...`);
 		const editor = await vscode.window.showNotebookDocument(doc);
-		await sleep(500);
 		assert.ok(editor, 'Loading editor with blank example .spl2nb doc failed');
-		// const nb = editor.notebook;
-		// assert.ok(nb, 'Loading editor.notebook with blank example .spl2nb doc failed');
-		// assert.strictEqual(nb.notebookType, 'spl2-notebook');
-		// assert.strictEqual(nb.cellAt(0).document.languageId, 'splunk_spl2');
+		console.log(`[DEBUG] showing ${blankDocUri} ...`);
+		await sleep(5000);
+		console.log(`[DEBUG] accessing editor.notebook = ${editor.notebook} ...`);
+		const nb = editor.notebook;
+		assert.ok(nb, 'Loading editor.notebook with blank example .spl2nb doc failed');
+		assert.strictEqual(nb.notebookType, 'spl2-notebook');
+		assert.strictEqual(nb.cellAt(0).document.languageId, 'splunk_spl2');
 	}).timeout(2*60*1000); // 2 min
 }).timeout(10*60*1000); // 10 min
 
