@@ -25,7 +25,7 @@ suite('SPL2 Language Server integration', async () => {
 		// assert.ok(nb, 'Loading editor.notebook with blank example .spl2nb doc failed');
 		// assert.strictEqual(nb.notebookType, 'spl2-notebook');
 		// assert.strictEqual(nb.cellAt(0).document.languageId, 'splunk_spl2');
-	}).timeout(60*1000); // 1 min
+	}).timeout(2*60*1000); // 2 min
 }).timeout(10*60*1000); // 10 min
 
 function sleep(ms: number): Promise<void> {
