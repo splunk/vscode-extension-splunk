@@ -38,9 +38,6 @@ jobs:
       # Without this a failure in one OS will cancel jobs running for others
       fail-fast: false
     runs-on: ${{ matrix.os }}
-    env:
-      # See: https://github.com/microsoft/WSL/issues/7915
-      LIBGL_ALWAYS_INDIRECT: 1
     steps:
     - name: Checkout
       uses: actions/checkout@v2

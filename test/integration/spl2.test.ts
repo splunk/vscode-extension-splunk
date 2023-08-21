@@ -16,10 +16,13 @@ suite('SPL2 Language Server integration', async () => {
 	vscode.window.showInformationMessage('Start all tests.');
 	
 	test('SPL2 Language detected in .spl2nb', async () => {
+		console.log(`[DEBUG] opening ${blankDocUri} ...`);
 		const doc = await vscode.workspace.openNotebookDocument(blankDocUri);
 		assert.ok(doc, `Blank example .spl2nb doc not loaded from path: ${blankDocUri}`);
+		await sleep(500);
+		console.log(`[DEBUG] showing ${blankDocUri} ...`);
 		const editor = await vscode.window.showNotebookDocument(doc);
-		await sleep(30000);
+		await sleep(500);
 		assert.ok(editor, 'Loading editor with blank example .spl2nb doc failed');
 		// const nb = editor.notebook;
 		// assert.ok(nb, 'Loading editor.notebook with blank example .spl2nb doc failed');
