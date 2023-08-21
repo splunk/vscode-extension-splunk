@@ -48,7 +48,7 @@ export function getAppSubNamespace(fullNamespace: string): [string, string] {
 export class Spl2NotebookSerializer implements vscode.NotebookSerializer {
     async deserializeNotebook(
         content: Uint8Array,
-        token: vscode.CancellationToken
+        token: vscode.CancellationToken | null
     ): Promise<vscode.NotebookData> {
         var contents = new TextDecoder().decode(content);
 
@@ -77,7 +77,7 @@ export class Spl2NotebookSerializer implements vscode.NotebookSerializer {
 
     async serializeNotebook(
         data: vscode.NotebookData,
-        token: vscode.CancellationToken
+        token: vscode.CancellationToken | null
     ): Promise<Uint8Array> {
         let contents: Spl2ModulesJson = <Spl2ModulesJson>{
             modules: [],
