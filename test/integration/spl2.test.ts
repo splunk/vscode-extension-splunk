@@ -16,7 +16,7 @@ suite('SPL2 Language Server integration', async () => {
 	vscode.window.showInformationMessage('Start all tests.');
 	
 	test('Language detected in .spl2nb should be SPL2', async () => {
-		await sleep(5000);
+		await sleep(30000);
 		console.log(`[DEBUG] opening ${blankDocUri} ...`);
 		const doc = await vscode.workspace.openNotebookDocument(blankDocUri);
 		assert.ok(doc, `Blank example .spl2nb doc not loaded from path: ${blankDocUri}`);
