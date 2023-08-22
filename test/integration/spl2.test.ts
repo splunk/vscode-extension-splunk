@@ -9,7 +9,7 @@ import * as vscode from 'vscode';
 // back out of out/test/integration and into test/integration/documents because ts compile
 // won't handle these files
 const docsDir = path.join(__dirname, '..', '..', '..', 'test', 'integration', 'documents');
-const blankDocUri = vscode.Uri.file(path.join(docsDir, 'blank.spl2nb'));
+const blankDocUri = vscode.Uri.file(path.join(docsDir, 'blank.splnb'));
 
 // Some very helpful pointers taken from here: https://vscode.rocks/testing/#end-to-end-testing
 suite('SPL2 Language Server integration', async () => {
