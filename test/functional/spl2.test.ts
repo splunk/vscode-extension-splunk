@@ -1,15 +1,21 @@
 import * as assert from 'assert';
+import * as fs from 'fs';
+import * as path from 'path';
 import * as vscode from 'vscode';
 import { Spl2NotebookSerializer } from '../../out/notebooks/spl2/serializer';
-// import { Spl2Controller } from '../../out/notebooks/spl2/controller';
-// import { installMissingSpl2Requirements, getLatestSpl2Release } from '../../out/notebooks/spl2/installer';
+import { installMissingSpl2Requirements, getLatestSpl2Release } from '../../out/notebooks/spl2/installer';
 // import { startSpl2ClientAndServer } from '../../out/notebooks/spl2/initializer';
 suite('SPL2 Language Server functional', async () => {
 	const serializer = new Spl2NotebookSerializer();
+	// NOTE: if you find yourself changing this input notebook data then it's likely that
+	// you may be making a breaking change to the SPL2 notebook format which would break
+	// users with existing notebooks in this format! Consider changing the serializer.ts
+	// code instead to accomodate a backwards-compatible deserialization of this (potentially
+	// legacy) notebook format.
     const input = `{
 		"modules": [
 			{
-				"name": "my_module",
+				"name": "_default",
 				"namespace": "apps.search",
 				"definition": "$data = from my_index_1",
 				"_vscode": {
@@ -25,7 +31,7 @@ suite('SPL2 Language Server functional', async () => {
 				}
 			},
 			{
-				"name": "apps.baz",
+				"name": "my_module",
 				"namespace": "apps.my_spl2_app",
 				"definition": "$data = from my_index_2",
 				"_vscode": {
@@ -42,7 +48,7 @@ suite('SPL2 Language Server functional', async () => {
 		"app": "apps.my_spl2_app"
 		}`;
 
-	test('test .spl2nb contents should deserialize and serialize as expected', async () => {
+	test('.spl2nb contents should deserialize and serialize as expected', async () => {
         const notebookData = await serializer.deserializeNotebook(new TextEncoder().encode(input));
         assert.ok(notebookData);
 		assert.strictEqual(notebookData.cells.length, 2);
@@ -63,5 +69,12 @@ suite('SPL2 Language Server functional', async () => {
 		assert.ok(cell2?.metadata?.splunk);
 		assert.strictEqual(cell2.metadata.splunk.moduleName, 'my_module');
 		assert.strictEqual(cell2.metadata.splunk.namespace, 'apps.my_spl2_app');
+
+		// now test serialize
+		const inputJSON = JSON.parse(input);
+		const output = await serializer.serializeNotebook(notebookData);
+		var outputStr = new TextDecoder().decode(output);
+		const outputJSON = JSON.parse(outputStr);
+		assert.deepStrictEqual(inputJSON, outputJSON, 'De-serialized and re-serialized notebook does not match original input');
 	});
 });
