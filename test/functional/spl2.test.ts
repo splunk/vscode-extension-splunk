@@ -77,4 +77,19 @@ suite('SPL2 Language Server functional', async () => {
 		const outputJSON = JSON.parse(outputStr);
 		assert.deepStrictEqual(inputJSON, outputJSON, 'De-serialized and re-serialized notebook does not match original input');
 	});
-});
+
+	test('should install Java and language server prerequisites', async () => {
+		const progressBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+		const show = progressBar.show;
+		// Override this method to provide updates for CI in testing
+		progressBar.show = (): void => {
+			console.log(`[Progress Bar]: ${progressBar.text}`);
+			show();
+		};
+		const tempDir = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
+		fs.mkdirSync(tempDir);
+		const installedLatestLsp = await installMissingSpl2Requirements(tempDir, progressBar);
+		assert.strictEqual(installMissingSpl2Requirements, true);
+		// TODO: assert that files exist in tempDir
+	}).timeout(10*60*1000); // 10 minutes
+}).timeout(15*60*1000); // 15 minutes

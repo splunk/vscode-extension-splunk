@@ -2,7 +2,6 @@ import * as child_process from 'child_process';
 import { AddressInfo, Socket } from 'net';
 import * as path from 'path';
 import {
-    ExtensionContext,
     StatusBarItem,
     window,
     workspace,
@@ -49,7 +48,7 @@ interface LSPLog {
 	message: string,
 }
 
-export async function startSpl2ClientAndServer(context: ExtensionContext, progressBar: StatusBarItem, portToAttempt: number, onClose: (nextPort: number) => void): Promise<Spl2ClientServer> {
+export async function startSpl2ClientAndServer(globalStoragePath: string, progressBar: StatusBarItem, portToAttempt: number, onClose: (nextPort: number) => void): Promise<Spl2ClientServer> {
     return new Promise(async (resolve, reject) => {
         try {
             // If the user has already opted-out for good then stop here
@@ -77,9 +76,9 @@ export async function startSpl2ClientAndServer(context: ExtensionContext, progre
                 );
                 return;
             }
-            const lspPath = path.join(getLocalLspDir(context), getLspFilename(lspVersion));
+            const lspPath = path.join(getLocalLspDir(globalStoragePath), getLspFilename(lspVersion));
             
-            const server = new Spl2ClientServer(context, progressBar, javaPath, lspPath, portToAttempt, onClose);
+            const server = new Spl2ClientServer(progressBar, javaPath, lspPath, portToAttempt, onClose);
             await server.initialize();
             resolve(server);
         } catch (err) {
@@ -89,7 +88,6 @@ export async function startSpl2ClientAndServer(context: ExtensionContext, progre
 }
 
 export class Spl2ClientServer {
-    context: ExtensionContext;
     progressBar: StatusBarItem;
     javaPath: string;
     lspPath: string;
@@ -103,8 +101,7 @@ export class Spl2ClientServer {
     serverProcess: child_process.ChildProcess;
     socket: Socket;
 
-    constructor(context: ExtensionContext, progressBar: StatusBarItem, javaPath: string, lspPath: string, portToAttempt: number, onClose: (nextPort: number) => void) {
-        this.context = context;
+    constructor(progressBar: StatusBarItem, javaPath: string, lspPath: string, portToAttempt: number, onClose: (nextPort: number) => void) {
         this.progressBar = progressBar;
         this.javaPath = javaPath;
         this.lspPath = lspPath;

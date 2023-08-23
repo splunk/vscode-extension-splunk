@@ -7,7 +7,7 @@ import * as path from 'path';
 import { pipeline } from 'stream';
 import * as tar from 'tar-fs';
 import * as util from 'util';
-import { env, ExtensionContext, StatusBarItem, Uri, window, workspace } from 'vscode';
+import { env, StatusBarItem, Uri, window, workspace } from 'vscode';
 import * as zlib from 'zlib';
 
 // Keys used to store/retrieve state related to this extension
@@ -33,7 +33,7 @@ export enum TermsAcceptanceStatus {
  * accepting Splunk General terms. If compatible Java and Language Server is already installed
  * this will be a no-op.
  */
-export async function installMissingSpl2Requirements(context: ExtensionContext, progressBar: StatusBarItem): Promise<boolean> {
+export async function installMissingSpl2Requirements(globalStoragePath: string, progressBar: StatusBarItem): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
         // If the user has already opted-out for good then stop here
         const termsStatus: TermsAcceptanceStatus = workspace.getConfiguration().get(configKeyAcceptedTerms);
@@ -78,7 +78,7 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
                 lspVersion = lspVersionSetting;
             }
             if (!workspace.getConfiguration().get(configKeyLspDirectory)) {
-                const localLspDefault = path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
+                const localLspDefault = path.join(globalStoragePath, 'spl2', 'lsp');
                 await workspace.getConfiguration().update(configKeyLspDirectory, localLspDefault, true);
             }
         } catch (err) {
@@ -91,7 +91,7 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
         }
         // Setup local storage directory for downloads and installs
         try {
-            makeLocalStorage(context);
+            makeLocalStorage(globalStoragePath);
         } catch (err) {
             reject(`Error creating local artifact storage for SPL2, err: ${err}`);
         }
@@ -106,11 +106,11 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
                     return;
                 }
                 // Remove any existing LSP artifacts first
-                const localLspDir = getLocalLspDir(context);
+                const localLspDir = getLocalLspDir(globalStoragePath);
                 fs.rmdirSync(localLspDir, { recursive: true });
-                makeLocalStorage(context); // recreate directory
+                makeLocalStorage(globalStoragePath); // recreate directory
             
-                await getLatestSpl2Release(context, progressBar);
+                await getLatestSpl2Release(globalStoragePath, progressBar);
                 installedLatestLsp = true;
             } catch (err) {
                 reject(`Error retrieving latest SPL2 release, err: ${err}`);
@@ -129,10 +129,10 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
         // We already prompted the user to confirm this download, proceed
         if (!javaLoc) {
             // Remove any old artifacts first
-            const localJdkDir = path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
+            const localJdkDir = path.join(globalStoragePath, 'spl2', 'jdk');
             try {
                 fs.rmdirSync(localJdkDir, { recursive: true });
-                makeLocalStorage(context); // recreate directory
+                makeLocalStorage(globalStoragePath); // recreate directory
 
                 javaLoc = await installJDK(localJdkDir, progressBar);
                 await workspace.getConfiguration().update(configKeyJavaPath, javaLoc, true);
@@ -170,39 +170,37 @@ function isJavaVersionCompatible(javaLoc: string): boolean {
  * Create the local storage directory struture for storing SPL2 artifacts
  * if they haven't already been created
  */
-function makeLocalStorage(context: ExtensionContext): void {
-    // We are guaranteed to have read/write access to this directory
-    const localSplunkArtifacts = context.globalStorageUri.fsPath;
+function makeLocalStorage(globalStoragePath: string): void {
     // Create this directory structure with globalStorage which will be somewhere like this locally:
     // Windows: C:\Users\<User>\AppData\Roaming\Code\User\globalStorage\splunk.splunk\spl2
     // MacOS: /Users/<User>/Library/Application Support/Code/User/globalStorage/splunk.splunk/spl2
     // └── spl2
     //     ├── jdk
     //     └── lsp
-    const spl2Artifacts = getLocalSpl2Dir(context);
-    const jdkArtifacts = getLocalJdkDir(context);
-    const lspArtifacts = getLocalLspDir(context);
-    [localSplunkArtifacts, spl2Artifacts, jdkArtifacts, lspArtifacts].forEach((path) => {
+    const spl2Artifacts = getLocalSpl2Dir(globalStoragePath);
+    const jdkArtifacts = getLocalJdkDir(globalStoragePath);
+    const lspArtifacts = getLocalLspDir(globalStoragePath);
+    [globalStoragePath, spl2Artifacts, jdkArtifacts, lspArtifacts].forEach((path) => {
         if (!fs.existsSync(path)) {
             fs.mkdirSync(path);
         }
     });
 }
 
-function getLocalSpl2Dir(context: ExtensionContext): string {
-    return path.join(context.globalStorageUri.fsPath, 'spl2');
+function getLocalSpl2Dir(globalStoragePath: string): string {
+    return path.join(globalStoragePath, 'spl2');
 }
 
-function getLocalJdkDir(context: ExtensionContext): string {
-    return path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
+function getLocalJdkDir(globalStoragePath: string): string {
+    return path.join(globalStoragePath, 'spl2', 'jdk');
 }
 
-export function getLocalLspDir(context: ExtensionContext): string {
+export function getLocalLspDir(globalStoragePath: string): string {
     const configuredDir: string = workspace.getConfiguration().get(configKeyLspDirectory);
     if (configuredDir) {
         return configuredDir;
     }
-    return path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
+    return path.join(globalStoragePath, 'spl2', 'lsp');
 }
 
 export function getLspFilename(lspVersion: string): string {
@@ -496,12 +494,12 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
  * Checks if the installed SPL2 Language Server version is the latest and prompt for
  * upgrade if not, or automatically upgrade if user has that setting enabled.
  */
-export async function getLatestSpl2Release(context: ExtensionContext, progressBar: StatusBarItem): Promise<void> {
+export async function getLatestSpl2Release(globalStoragePath: string, progressBar: StatusBarItem): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const lspArtifactPath =  getLocalLspDir(context);
+        const lspArtifactPath =  getLocalLspDir(globalStoragePath);
         // TODO: Remove this hardcoded version/update time and check for updates
-        let latestLspVersion: string = '2.0.366'; // context.globalState.get(stateKeyLatestLspVersion) || "";
-        const lastUpdateMs: number = Date.now(); // context.globalState.get(stateKeyLastLspCheck) || 0;
+        let latestLspVersion: string = '2.0.366';
+        const lastUpdateMs: number = Date.now();
         // Don't check for new version of SPL2 Language Server if less than 24 hours since last check
         if (Date.now() - lastUpdateMs > 24 * 60 * 60 * 1000) {
             const metaPath = path.join(lspArtifactPath, 'maven-metadata.xml');
@@ -527,7 +525,7 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
         }
         // Check if latest version has already been downloaded
         const lspFilename = getLspFilename(latestLspVersion);
-        const localLspPath = path.join(getLocalLspDir(context), lspFilename);
+        const localLspPath = path.join(getLocalLspDir(globalStoragePath), lspFilename);
         // Check if local file exists before downloading
         if (fs.existsSync(localLspPath)) {
             resolve();

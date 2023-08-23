@@ -340,9 +340,10 @@ async function handleSpl2Document(context, progressBar) {
         return;
     }
     try {
-        const installedLatestLsp = await installMissingSpl2Requirements(context, progressBar);
+        const globalStoragePath = context.globalStorageUri.fsPath;
+        const installedLatestLsp = await installMissingSpl2Requirements(globalStoragePath, progressBar);
         if (!installedLatestLsp) {
-            await getLatestSpl2Release(context, progressBar);
+            await getLatestSpl2Release(globalStoragePath, progressBar);
         }
         const onSpl2Restart = async (nextPort) => {
             await spl2Client.deactivate();
