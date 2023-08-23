@@ -3,7 +3,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { Spl2NotebookSerializer } from '../../out/notebooks/spl2/serializer';
-import { installMissingSpl2Requirements, getLatestSpl2Release } from '../../out/notebooks/spl2/installer';
+import {
+	configKeyAcceptedTerms,
+	getLatestSpl2Release,
+	installMissingSpl2Requirements,
+	TermsAcceptanceStatus } from '../../out/notebooks/spl2/installer';
 // import { startSpl2ClientAndServer } from '../../out/notebooks/spl2/initializer';
 suite('SPL2 Language Server functional', async () => {
 	const serializer = new Spl2NotebookSerializer();
@@ -80,6 +84,9 @@ suite('SPL2 Language Server functional', async () => {
 
 	test('should install Java and language server prerequisites', async () => {
 		const progressBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+		// Before running tests, let's accept the terms of use since the UI can't be used to do this
+		// Record preference so user is not asked again
+		await vscode.workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
 		const show = progressBar.show;
 		// Override this method to provide updates for CI in testing
 		progressBar.show = (): void => {
