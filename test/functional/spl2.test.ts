@@ -3,7 +3,7 @@ import { Spl2NotebookSerializer } from '../../out/notebooks/spl2/serializer';
 // import { Spl2Controller } from '../../out/notebooks/spl2/controller';
 // import { installMissingSpl2Requirements, getLatestSpl2Release } from '../../out/notebooks/spl2/installer';
 // import { startSpl2ClientAndServer } from '../../out/notebooks/spl2/initializer';
-suite('SPL2 Language Server unit', async () => {
+suite('SPL2 Language Server functional', async () => {
 	const serializer = new Spl2NotebookSerializer();
     const input = `{
 		"modules": [
@@ -44,6 +44,6 @@ suite('SPL2 Language Server unit', async () => {
 	test('test .spl2nb contents should deserialize as expected', async () => {
         const out = await serializer.deserializeNotebook(new TextEncoder().encode(input));
         assert.ok(out);
-
+		// TODO better assertions
 	});
 });

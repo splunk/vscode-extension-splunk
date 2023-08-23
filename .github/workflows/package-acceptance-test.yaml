@@ -1,11 +1,11 @@
-name: Package .vsix
+name: Package .vsix and run acceptance tests
 
 on:
   push:
     tags:
       - '*'
     branches:
-      - spl2-tests
+      - spl2-tests # TODO: remove
 
 jobs:
   package:
@@ -30,7 +30,7 @@ jobs:
         path: splunk-*.vsix
         if-no-files-found: error
   
-  integration-test:
+  acceptance-test:
     needs: package
     strategy:
       matrix:
@@ -59,9 +59,9 @@ jobs:
     - run: npm install
     - run: npm list
     - run: npm run compile-tests
-    - run: echo "Run integration tests" && node ./out/test/runTest.js
+    - run: echo "Run acceptance tests" && node ./out/test/runAcceptanceTests.js
       if: runner.os == 'macOS'
-    - run: echo "Run integration tests" && xvfb-run -a node ./out/test/runTest.js
+    - run: echo "Run acceptance tests" && xvfb-run -a node ./out/test/runAcceptanceTests.js
       if: runner.os == 'Linux'
-    - run: node .\out\test\runTest.js
+    - run: echo "Run acceptance tests" && node .\out\test\runAcceptanceTests.js
       if: runner.os == 'Windows'
