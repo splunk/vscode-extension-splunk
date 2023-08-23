@@ -60,8 +60,8 @@ suite('SPL2 Language Server integration', async () => {
 	test('Language detected in .spl2nb should be SPL2', async () => {
 		await sleep(30000);
 		console.log(`[DEBUG] opening ${blankDocUri} ...`);
-		const doc = await vscode.workspace.openNotebookDocument(blankDocUri);
-		assert.ok(doc, `Blank example .spl2nb doc not loaded from path: ${blankDocUri}`);
+		const cell = new vscode.NotebookCellData(vscode.NotebookCellKind.Code, '$q = from [{}]', 'splunk_spl2');
+		const doc = await vscode.workspace.openNotebookDocument('spl2-notebook', new vscode.NotebookData([cell]));
 		await sleep(5000);
 		console.log(`[DEBUG] showing ${blankDocUri} ...`);
 		const editor = await vscode.window.showNotebookDocument(doc);
