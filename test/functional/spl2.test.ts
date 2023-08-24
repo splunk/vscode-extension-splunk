@@ -93,7 +93,7 @@ suite('SPL2 Language Server functional', async () => {
 		await vscode.workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
 		const storagePath = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
 		fs.mkdirSync(storagePath);
-		const installedLatestLsp = await installMissingSpl2Requirements(tempDir, progressBar);
+		const installedLatestLsp = await installMissingSpl2Requirements(storagePath, progressBar);
 		assert.strictEqual(installedLatestLsp, true);
 		// Check for installed java and lsp
 		const javaPath: string = vscode.workspace.getConfiguration().get(configKeyJavaPath) || "";
