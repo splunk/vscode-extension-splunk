@@ -101,9 +101,11 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
             // If we haven't set up a Language Server version prompt use to accept terms
             // and also confirm install of java if needed
             try {
-                const accepted = await promptToDownloadLsp(!javaLoc);
-                if (!accepted) {
-                    return;
+                if (termsStatus !== TermsAcceptanceStatus.Accepted) {
+                    const accepted = await promptToDownloadLsp(!javaLoc);
+                    if (!accepted) {
+                        return;
+                    }
                 }
                 // Remove any existing LSP artifacts first
                 const localLspDir = getLocalLspDir(globalStoragePath);
@@ -115,7 +117,7 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
             } catch (err) {
                 reject(`Error retrieving latest SPL2 release, err: ${err}`);
             }
-        } else if (!javaLoc) {
+        } else if (!javaLoc && termsStatus !== TermsAcceptanceStatus.Accepted) {
             // Ask user to confirm download, cancel, or opt-out of SPL2 altogether
             try {
                 const accepted = await promptToDownloadJava();
