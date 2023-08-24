@@ -92,11 +92,16 @@ suite('SPL2 Language Server functional', async () => {
 		// Before running tests, let's accept the terms of use since the UI can't be used to do this
 		// Record preference so user is not asked again
 		await vscode.workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
+		await vscode.workspace.getConfiguration().update(configKeyJavaPath, '', true);
+		await vscode.workspace.getConfiguration().update(configKeyLspVersion, '', true);
 		const storagePath = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
-		fs.mkdirSync(storagePath);
+		if (!fs.existsSync(storagePath)) {
+            fs.mkdirSync(storagePath);
+        }
 		// Periodically log the current progress since we have no UI to provide feedback in CI
 		const tid = setInterval(() => console.log(`[Progress Bar]: ${progressBar.text}`), 500);
 		const installedLatestLsp = await installMissingSpl2Requirements(storagePath, progressBar);
+		console.log(`installedLatestLsp: ${installedLatestLsp}`);
 		clearInterval(tid);
 		assert.strictEqual(installedLatestLsp, true);
 		// Check for installed java and lsp
