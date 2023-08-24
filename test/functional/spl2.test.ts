@@ -93,6 +93,7 @@ suite('SPL2 Language Server functional', async () => {
 			console.log(`[Progress Bar]: ${progressBar.text}`);
 			show();
 		};
+		progressBar.show.bind(progressBar);
 		const tempDir = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
 		fs.mkdirSync(tempDir);
 		const installedLatestLsp = await installMissingSpl2Requirements(tempDir, progressBar);
