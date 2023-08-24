@@ -94,6 +94,7 @@ suite('SPL2 Language Server functional', async () => {
 		await vscode.workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
 		const storagePath = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
 		fs.mkdirSync(storagePath);
+		// Periodically log the current progress since we have no UI to provide feedback in CI
 		const tid = setInterval(() => console.log(`[Progress Bar]: ${progressBar.text}`), 500);
 		const installedLatestLsp = await installMissingSpl2Requirements(storagePath, progressBar);
 		clearInterval(tid);
@@ -107,5 +108,5 @@ suite('SPL2 Language Server functional', async () => {
 		const lspPath = path.join(getLocalLspDir(storagePath), getLspFilename(lspVersion));
 		assert.ok(lspPath);
 		assert.strictEqual(fs.existsSync(lspPath), true);
-	}).timeout(10*60*1000); // 10 minutes
-}).timeout(15*60*1000); // 15 minutes
+	}).timeout(1*60*1000); // 1 minute
+}).timeout(5*60*1000); // 5 minutes
