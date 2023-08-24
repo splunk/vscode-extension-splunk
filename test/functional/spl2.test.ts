@@ -59,25 +59,25 @@ suite('SPL2 Language Server functional', async () => {
 
 	test('.spl2nb contents should deserialize and serialize as expected', async () => {
         const notebookData = await serializer.deserializeNotebook(new TextEncoder().encode(input));
-        assert.ok(notebookData);
-		assert.strictEqual(notebookData.cells.length, 2);
+        assert.ok(notebookData, 'bad notebookData');
+		assert.strictEqual(notebookData.cells.length, 2, 'bad notebookData.cells.length');
 		const cell1 = notebookData.cells[0];
-		assert.strictEqual(cell1.kind, vscode.NotebookCellKind.Code);
-		assert.strictEqual(cell1.value, '$data = from my_index_1');
-		assert.strictEqual(cell1.languageId, 'splunk_spl2');
-		assert.ok(cell1?.metadata?.splunk);
-		assert.strictEqual(cell1.metadata.splunk.earliestTime, '-2h');
-		assert.strictEqual(cell1.metadata.splunk.latestTime, '-1h');
-		assert.strictEqual(cell1.metadata.splunk.moduleName, '_default');
-		assert.strictEqual(cell1.metadata.splunk.namespace, 'apps.search');
-		assert.strictEqual(cell1.outputs?.length, 0);
+		assert.strictEqual(cell1.kind, vscode.NotebookCellKind.Code, 'bad cell1.kind');
+		assert.strictEqual(cell1.value, '$data = from my_index_1', 'bad cell1.value');
+		assert.strictEqual(cell1.languageId, 'splunk_spl2', 'bad cell1.languageId');
+		assert.ok(cell1?.metadata?.splunk, 'bad cell1?.metadata?.splunk');
+		assert.strictEqual(cell1.metadata.splunk.earliestTime, '-2h', 'bad cell1.metadata.splunk.earliestTime');
+		assert.strictEqual(cell1.metadata.splunk.latestTime, '-1h', 'bad cell1.metadata.splunk.latestTime');
+		assert.strictEqual(cell1.metadata.splunk.moduleName, '_default', 'bad cell1.metadata.splunk.moduleName');
+		assert.strictEqual(cell1.metadata.splunk.namespace, 'apps.search', 'bad cell1.metadata.splunk.namespace');
+		assert.strictEqual(cell1.outputs?.length, 0, 'bad cell1.outputs?.length');
 		const cell2 = notebookData.cells[1];
-		assert.strictEqual(cell2.kind, vscode.NotebookCellKind.Code);
-		assert.strictEqual(cell2.value, '$data = from my_index_2');
-		assert.strictEqual(cell2.languageId, 'splunk_spl2');
-		assert.ok(cell2?.metadata?.splunk);
-		assert.strictEqual(cell2.metadata.splunk.moduleName, 'my_module');
-		assert.strictEqual(cell2.metadata.splunk.namespace, 'apps.my_spl2_app');
+		assert.strictEqual(cell2.kind, vscode.NotebookCellKind.Code, 'bad cell2.kind');
+		assert.strictEqual(cell2.value, '$data = from my_index_2', 'bad cell2.value');
+		assert.strictEqual(cell2.languageId, 'splunk_spl2', 'bad cell2.languageId');
+		assert.ok(cell2?.metadata?.splunk, 'bad cell2?.metadata?.splunk');
+		assert.strictEqual(cell2.metadata.splunk.moduleName, 'my_module', 'bad cell2.metadata.splunk.moduleName');
+		assert.strictEqual(cell2.metadata.splunk.namespace, 'apps.my_spl2_app', 'bad cell2.metadata.splunk.namespace');
 
 		// now test serialize
 		const inputJSON = JSON.parse(input);
@@ -103,15 +103,15 @@ suite('SPL2 Language Server functional', async () => {
 		const installedLatestLsp = await installMissingSpl2Requirements(storagePath, progressBar);
 		console.log(`installedLatestLsp: ${installedLatestLsp}`);
 		clearInterval(tid);
-		assert.strictEqual(installedLatestLsp, true);
+		assert.strictEqual(installedLatestLsp, true, 'bad installedLatestLsp');
 		// Check for installed java and lsp
 		const javaPath: string = vscode.workspace.getConfiguration().get(configKeyJavaPath) || "";
-		assert.ok(javaPath);
-		assert.strictEqual(fs.existsSync(javaPath), true);
+		assert.ok(javaPath, 'bad javaPath');
+		assert.strictEqual(fs.existsSync(javaPath), true, 'bad fs.existsSync(javaPath)');
 		const lspVersion: string = vscode.workspace.getConfiguration().get(configKeyLspVersion) || "";
-		assert.ok(lspVersion);
+		assert.ok(lspVersion, 'bad lspVersion');
 		const lspPath = path.join(getLocalLspDir(storagePath), getLspFilename(lspVersion));
-		assert.ok(lspPath);
-		assert.strictEqual(fs.existsSync(lspPath), true);
+		assert.ok(lspPath, 'bad lspPath');
+		assert.strictEqual(fs.existsSync(lspPath), true, 'bad fs.existsSync(lspPath)');
 	}).timeout(1*60*1000); // 1 minute
 }).timeout(5*60*1000); // 5 minutes
