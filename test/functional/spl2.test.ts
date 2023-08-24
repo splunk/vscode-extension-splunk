@@ -5,7 +5,11 @@ import * as vscode from 'vscode';
 import { Spl2NotebookSerializer } from '../../out/notebooks/spl2/serializer';
 import {
 	configKeyAcceptedTerms,
+	configKeyJavaPath,
+	configKeyLspVersion,
 	getLatestSpl2Release,
+	getLspFilename,
+	getLocalLspDir,
 	installMissingSpl2Requirements,
 	TermsAcceptanceStatus } from '../../out/notebooks/spl2/installer';
 // import { startSpl2ClientAndServer } from '../../out/notebooks/spl2/initializer';
@@ -87,10 +91,18 @@ suite('SPL2 Language Server functional', async () => {
 		// Before running tests, let's accept the terms of use since the UI can't be used to do this
 		// Record preference so user is not asked again
 		await vscode.workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
-		const tempDir = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
-		fs.mkdirSync(tempDir);
+		const storagePath = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
+		fs.mkdirSync(storagePath);
 		const installedLatestLsp = await installMissingSpl2Requirements(tempDir, progressBar);
-		assert.strictEqual(installMissingSpl2Requirements, true);
-		// TODO: assert that files exist in tempDir
+		assert.strictEqual(installedLatestLsp, true);
+		// Check for installed java and lsp
+		const javaPath: string = vscode.workspace.getConfiguration().get(configKeyJavaPath) || "";
+		assert.ok(javaPath);
+		assert.strictEqual(fs.existsSync(javaPath), true);
+		const lspVersion: string = vscode.workspace.getConfiguration().get(configKeyLspVersion) || "";
+		assert.ok(lspVersion);
+		const lspPath = path.join(getLocalLspDir(storagePath), getLspFilename(lspVersion));
+		assert.ok(lspPath);
+		assert.strictEqual(fs.existsSync(lspPath), true);
 	}).timeout(10*60*1000); // 10 minutes
 }).timeout(15*60*1000); // 15 minutes
