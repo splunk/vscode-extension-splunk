@@ -87,13 +87,6 @@ suite('SPL2 Language Server functional', async () => {
 		// Before running tests, let's accept the terms of use since the UI can't be used to do this
 		// Record preference so user is not asked again
 		await vscode.workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
-		const show = progressBar.show;
-		// Override this method to provide updates for CI in testing
-		progressBar.show = (): void => {
-			console.log(`[Progress Bar]: ${progressBar.text}`);
-			show();
-		};
-		progressBar.show.bind(progressBar);
 		const tempDir = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
 		fs.mkdirSync(tempDir);
 		const installedLatestLsp = await installMissingSpl2Requirements(tempDir, progressBar);
