@@ -1,6 +1,7 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
+import { setTimeout } from 'timers';
 import * as vscode from 'vscode';
 import { Spl2NotebookSerializer } from '../../out/notebooks/spl2/serializer';
 import {
@@ -12,6 +13,7 @@ import {
 	getLocalLspDir,
 	installMissingSpl2Requirements,
 	TermsAcceptanceStatus } from '../../out/notebooks/spl2/installer';
+
 // import { startSpl2ClientAndServer } from '../../out/notebooks/spl2/initializer';
 suite('SPL2 Language Server functional', async () => {
 	const serializer = new Spl2NotebookSerializer();
@@ -93,7 +95,9 @@ suite('SPL2 Language Server functional', async () => {
 		await vscode.workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
 		const storagePath = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
 		fs.mkdirSync(storagePath);
+		const tid = setTimeout(() => console.log(`[Progress Bar]: ${progressBar.text}`), 500);
 		const installedLatestLsp = await installMissingSpl2Requirements(storagePath, progressBar);
+		clearTimeout(tid);
 		assert.strictEqual(installedLatestLsp, true);
 		// Check for installed java and lsp
 		const javaPath: string = vscode.workspace.getConfiguration().get(configKeyJavaPath) || "";
