@@ -28,6 +28,9 @@ export enum TermsAcceptanceStatus {
     Accepted = 'accepted',
 }
 
+const optOutMessage = `User opted out of SPL2. To reset this adjust the '${configKeyAcceptedTerms}' ` +
+    `setting to = '${TermsAcceptanceStatus.DeclinedOnce}' in the Splunk Extension Settings.`;
+
 /**
  * Provide a guided install experience for installing Java and SPL2 Language Server including
  * accepting Splunk General terms. If compatible Java and Language Server is already installed
@@ -38,10 +41,7 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
         // If the user has already opted-out for good then stop here
         const termsStatus: TermsAcceptanceStatus = workspace.getConfiguration().get(configKeyAcceptedTerms);
         if (termsStatus === TermsAcceptanceStatus.DeclinedForever) {
-            reject(
-                `User opted out of SPL2. To reset this adjust the '${configKeyAcceptedTerms}' ` +
-                `setting to = '${TermsAcceptanceStatus.DeclinedOnce}' in the Splunk Extension Settings.`
-            );
+            reject(optOutMessage);
             return Promise.resolve();
         }
         // Check for compatible Java version installed already
@@ -53,6 +53,7 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
             }
         } catch (err) {
             reject(`Error retrieving configuration '${configKeyJavaPath}', err: ${err}`);
+            return Promise.resolve();
         }
         // If java hasn't been set up, check $JAVA_HOME before downloading a JDK
         if (!javaLoc && process.env.JAVA_HOME) {
@@ -66,6 +67,7 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
                     await workspace.getConfiguration().update(configKeyJavaPath, javaHomeBin, true);
                 } catch (err) {
                     reject(`Error updating configuration '${configKeyJavaPath}', err: ${err}`);
+                    return Promise.resolve();
                 }
             }
         }
@@ -83,17 +85,20 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
             }
         } catch (err) {
             reject(`Error retrieving configuration '${configKeyLspVersion}', err: ${err}`);
+            return Promise.resolve();
         }
         if (javaLoc && lspVersion) {
             // Already set up, no need to continue
             // TODO: make sure the jar files are still in the expected location
             resolve(false);
+            return Promise.resolve();
         }
         // Setup local storage directory for downloads and installs
         try {
             makeLocalStorage(globalStoragePath);
         } catch (err) {
             reject(`Error creating local artifact storage for SPL2, err: ${err}`);
+            return Promise.resolve();
         }
         
         let installedLatestLsp = false;
@@ -104,7 +109,8 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
                 if (termsStatus !== TermsAcceptanceStatus.Accepted) {
                     const accepted = await promptToDownloadLsp(!javaLoc);
                     if (!accepted) {
-                        return;
+                        reject(optOutMessage);
+                        return Promise.resolve();
                     }
                 }
                 // Remove any existing LSP artifacts first
@@ -116,12 +122,14 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
                 installedLatestLsp = true;
             } catch (err) {
                 reject(`Error retrieving latest SPL2 release, err: ${err}`);
+                return Promise.resolve();
             }
         } else if (!javaLoc && termsStatus !== TermsAcceptanceStatus.Accepted) {
             // Ask user to confirm download, cancel, or opt-out of SPL2 altogether
             try {
                 const accepted = await promptToDownloadJava();
                 if (!accepted) {
+                    reject(optOutMessage);
                     return Promise.resolve();
                 }
             } catch (err) {
@@ -498,7 +506,7 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
  */
 export async function getLatestSpl2Release(globalStoragePath: string, progressBar: StatusBarItem): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const lspArtifactPath =  getLocalLspDir(globalStoragePath);
+        const lspArtifactPath = getLocalLspDir(globalStoragePath);
         // TODO: Remove this hardcoded version/update time and check for updates
         let latestLspVersion: string = '2.0.366';
         const lastUpdateMs: number = Date.now();
@@ -523,7 +531,7 @@ export async function getLatestSpl2Release(globalStoragePath: string, progressBa
         const currentLspVersion = workspace.getConfiguration().get(configKeyLspVersion);
         if (currentLspVersion === latestLspVersion) {
             resolve();
-            return;
+            return Promise.resolve();
         }
         // Check if latest version has already been downloaded
         const lspFilename = getLspFilename(latestLspVersion);
@@ -531,7 +539,7 @@ export async function getLatestSpl2Release(globalStoragePath: string, progressBa
         // Check if local file exists before downloading
         if (fs.existsSync(localLspPath)) {
             resolve();
-            return;
+            return Promise.resolve();
         }
         try {
             await downloadWithProgress(
@@ -542,12 +550,14 @@ export async function getLatestSpl2Release(globalStoragePath: string, progressBa
             );
         } catch (err) {
             reject(`Error downloading SPL2 Language Server, err: ${err}`);
+            return Promise.resolve();
         }
         // Update this setting to indicate that this version is ready-to-use
         try {
             await workspace.getConfiguration().update(configKeyLspVersion, latestLspVersion, true);
         } catch (err) {
             reject(`Error updating configuration '${configKeyLspVersion}', err: ${err}`);
+            return Promise.resolve();
         }
         resolve();
     });
