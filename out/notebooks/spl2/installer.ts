@@ -405,10 +405,10 @@ async function extractZipWithProgress(
     let nextUpdate = 1;
     // For now hardcode the expected path - we've seen issues trying to
     // infer this from the read/unzip stream
-    let binJavaPath = path.join(extractPath, 'jdk17.0.7_7', 'bin', 'java.exe');
+    let binJavaPath = '';
     progressBar.text = `${progressBarText}...`;
     await extract(zipfilePath, { dir: extractPath, onEntry: (entry, zipfile) => {
-        if (entry.fileName.endsWith(path.join('bin', 'java.exe'))) {
+        if (entry.fileName.endsWith('bin/java.exe') || entry.fileName.endsWith('bin\\java.exe')) {
             binJavaPath = path.join(extractPath, entry.fileName);
         }
         readCompressedSize += entry.compressedSize;
@@ -418,6 +418,14 @@ async function extractZipWithProgress(
             nextUpdate = pct + 1;
         }
     }});
+    console.log(`binJavaPath: ${binJavaPath}`);
+    if (!binJavaPath) {
+        const jdkDir = fs.readdirSync(extractPath).filter(fn => fn.startsWith('jdk')); // e.g. jdk17.0.7_7
+        if (jdkDir.length === 1) {
+            binJavaPath = path.join(extractPath, jdkDir[0], 'bin', 'java.exe');
+            console.log(`new binJavaPath: ${binJavaPath}`);
+        }
+    }
     return Promise.resolve(binJavaPath);
 }
 
