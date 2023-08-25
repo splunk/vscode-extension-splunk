@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - '*'
-    branches:
-      - spl2-tests # TODO: remove
 
 jobs:
   package:

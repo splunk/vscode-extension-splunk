@@ -5,7 +5,8 @@ on:
       - main
       - master
       - develop
-      - spl2-tests # TODO: remove
+  pull_request:
+    types: [opened, reopened]
 
 jobs:
   unit-test:
