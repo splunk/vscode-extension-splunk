@@ -126,7 +126,8 @@ suite('SPL2 Language Server functional', async () => {
 			await sleep(500);
 		}
 		assert.strictEqual(server?.client?.state, State.Running, 'client and server did not start');
-	});
+	}).timeout(1*60*1000); // 1 minute
+
 }).timeout(5*60*1000); // 5 minutes
 
 function sleep(ms: number): Promise<void> {
