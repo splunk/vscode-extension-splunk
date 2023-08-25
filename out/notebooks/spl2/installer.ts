@@ -525,7 +525,7 @@ export async function getLatestSpl2Release(globalStoragePath: string, progressBa
     return new Promise(async (resolve, reject) => {
         const lspArtifactPath = getLocalLspDir(globalStoragePath);
         // TODO: Remove this hardcoded version/update time and check for updates
-        let latestLspVersion: string = '2.0.366';
+        let latestLspVersion: string = '2.0.373';
         const lastUpdateMs: number = Date.now();
         // Don't check for new version of SPL2 Language Server if less than 24 hours since last check
         if (Date.now() - lastUpdateMs > 24 * 60 * 60 * 1000) {
