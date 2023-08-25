@@ -13,7 +13,9 @@ suite('SPL2 Language Server acceptance', async () => {
 
 	test('Language detected in .spl2nb should be SPL2', async () => {
 		const splunkExt = vscode.extensions.getExtension('Splunk.splunk');
+		console.log(`[DEBUG] activating extension ${splunkExt} ...`);
 		const context = splunkExt?.activate();
+		await sleep(1500);
 		console.log(`[DEBUG] opening ${blankDocUri} ...`);
 		const doc = await vscode.workspace.openNotebookDocument(blankDocUri);
 		console.log(`[DEBUG] showing ${blankDocUri} ...`);
