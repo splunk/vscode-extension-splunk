@@ -162,18 +162,18 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
  *          meets out minimum Java major version
  */
 function isJavaVersionCompatible(javaLoc: string): boolean {
+    let output;
     try {
         const javaVerCmd = child_process.spawnSync(javaLoc, ['-version'], { encoding : 'utf8' });
         if (!javaVerCmd || javaVerCmd.stdout) {
             return false;
         }
         // java -version actually writes to stderr so check for a match there
-        const output = javaVerCmd.stderr.toString();
-        console.log(`$ java -version\n\n${output}`);
-        const match = output.match(/version \"([0-9]+)\.[0-9]+\.[0-9]\"/m);
+        output = javaVerCmd.stderr.toString();
+        const match = output.match(/version \"([0-9]+)\.[0-9]+\.[0-9].*\"/m);
         return (match && match.length > 1 && (parseInt(match[1]) >= minimumMajorJavaVersion));
     } catch (err) {
-        console.warn(`Error checking for java version via '${javaLoc} -version', err: ${err}`);
+        console.warn(`Error checking for java version via '${javaLoc} -version' output: '${output}' could not find 'version "A.B.C[.D]"', err: ${err}`);
     }
     return false;
 }
