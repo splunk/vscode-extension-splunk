@@ -307,7 +307,7 @@ async function installJDK(installDir: string, progressBar: StatusBarItem): Promi
         if (!binJavaPath) {
             // If not found during unpacking, search for bin/java[.exe] and check that file
             let pathSuffix = path.join('bin', 'java');
-            if (true || process.platform === 'win32') {
+            if (process.platform === 'win32') {
                 pathSuffix = `${pathSuffix}.exe`;
             }
             const matches = getFilesInDirectory(installDir)
@@ -409,7 +409,7 @@ async function extractZipWithProgress(
     progressBar.text = `${progressBarText}...`;
     await extract(zipfilePath, { dir: extractPath, onEntry: (entry, zipfile) => {
         if (entry.fileName.endsWith('bin/java.exe') || entry.fileName.endsWith('bin\\java.exe')) {
-            binJavaPath = path.join(extractPath, entry.fileName);
+            // binJavaPath = path.join(extractPath, entry.fileName);
         }
         readCompressedSize += entry.compressedSize;
         let pct = Math.floor(readCompressedSize * 100 / compressedSize);
@@ -422,6 +422,9 @@ async function extractZipWithProgress(
         const jdkDir = fs.readdirSync(extractPath).filter(fn => fn.startsWith('jdk')); // e.g. jdk17.0.7_7
         if (jdkDir.length === 1) {
             binJavaPath = path.join(extractPath, jdkDir[0], 'bin', 'java.exe');
+        }
+        if (!fs.existsSync(binJavaPath)) {
+            binJavaPath = '';
         }
     }
     return Promise.resolve(binJavaPath);
@@ -461,9 +464,9 @@ async function extractTgzWithProgress(
         }),
     );
     if (!binJavaPath) {
-        const jdkDir = fs.readdirSync(extractPath).filter(fn => fn.startsWith('amazon-corretto-')); // e.g. amazon-corretto-17.jdk
-        if (jdkDir.length === 1) {
-            binJavaPath = path.join(extractPath, jdkDir[0], 'Contents', 'Home', 'bin', 'java');
+        binJavaPath = path.join(extractPath, `amazon-corretto-${minimumMajorJavaVersion}.jdk`, 'Contents', 'Home', 'bin', 'java');
+        if (!fs.existsSync(binJavaPath)) {
+            binJavaPath = '';
         }
     }
     return Promise.resolve(binJavaPath);
