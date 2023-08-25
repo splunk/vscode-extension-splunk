@@ -409,7 +409,7 @@ async function extractZipWithProgress(
     progressBar.text = `${progressBarText}...`;
     await extract(zipfilePath, { dir: extractPath, onEntry: (entry, zipfile) => {
         if (entry.fileName.endsWith('bin/java.exe') || entry.fileName.endsWith('bin\\java.exe')) {
-            binJavaPath = path.join(extractPath, entry.fileName);
+            // binJavaPath = path.join(extractPath, entry.fileName);
         }
         readCompressedSize += entry.compressedSize;
         let pct = Math.floor(readCompressedSize * 100 / compressedSize);
