@@ -409,7 +409,7 @@ async function extractZipWithProgress(
     progressBar.text = `${progressBarText}...`;
     await extract(zipfilePath, { dir: extractPath, onEntry: (entry, zipfile) => {
         if (entry.fileName.endsWith('bin/java.exe') || entry.fileName.endsWith('bin\\java.exe')) {
-            // binJavaPath = path.join(extractPath, entry.fileName);
+            binJavaPath = path.join(extractPath, entry.fileName);
         }
         readCompressedSize += entry.compressedSize;
         let pct = Math.floor(readCompressedSize * 100 / compressedSize);
@@ -418,12 +418,10 @@ async function extractZipWithProgress(
             nextUpdate = pct + 1;
         }
     }});
-    console.log(`binJavaPath: ${binJavaPath}`);
     if (!binJavaPath) {
         const jdkDir = fs.readdirSync(extractPath).filter(fn => fn.startsWith('jdk')); // e.g. jdk17.0.7_7
         if (jdkDir.length === 1) {
             binJavaPath = path.join(extractPath, jdkDir[0], 'bin', 'java.exe');
-            console.log(`new binJavaPath: ${binJavaPath}`);
         }
     }
     return Promise.resolve(binJavaPath);

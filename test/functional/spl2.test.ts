@@ -2,18 +2,18 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { State } from 'vscode-languageclient/node';
 import { Spl2NotebookSerializer } from '../../out/notebooks/spl2/serializer';
 import {
 	configKeyAcceptedTerms,
 	configKeyJavaPath,
 	configKeyLspVersion,
-	getLatestSpl2Release,
 	getLspFilename,
 	getLocalLspDir,
 	installMissingSpl2Requirements,
 	TermsAcceptanceStatus } from '../../out/notebooks/spl2/installer';
+import { startSpl2ClientAndServer } from '../../out/notebooks/spl2/initializer';
 
-// import { startSpl2ClientAndServer } from '../../out/notebooks/spl2/initializer';
 suite('SPL2 Language Server functional', async () => {
 	const serializer = new Spl2NotebookSerializer();
 	// NOTE: if you find yourself changing this input notebook data then it's likely that
@@ -87,21 +87,21 @@ suite('SPL2 Language Server functional', async () => {
 		assert.deepStrictEqual(inputJSON, outputJSON, 'De-serialized and re-serialized notebook does not match original input');
 	});
 
+	const storagePath = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
+	if (!fs.existsSync(storagePath)) {
+		fs.mkdirSync(storagePath);
+	}
+	const progressBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+
 	test('should install Java and language server prerequisites', async () => {
-		const progressBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 		// Before running tests, let's accept the terms of use since the UI can't be used to do this
 		// Record preference so user is not asked again
 		await vscode.workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);
 		await vscode.workspace.getConfiguration().update(configKeyJavaPath, '', true);
 		await vscode.workspace.getConfiguration().update(configKeyLspVersion, '', true);
-		const storagePath = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
-		if (!fs.existsSync(storagePath)) {
-            fs.mkdirSync(storagePath);
-        }
 		// Periodically log the current progress since we have no UI to provide feedback in CI
 		const tid = setInterval(() => console.log(`[Progress Bar]: ${progressBar.text}`), 500);
 		const installedLatestLsp = await installMissingSpl2Requirements(storagePath, progressBar);
-		console.log(`installedLatestLsp: ${installedLatestLsp}`);
 		clearInterval(tid);
 		assert.strictEqual(installedLatestLsp, true, 'bad installedLatestLsp');
 		// Check for installed java and lsp
@@ -113,5 +113,24 @@ suite('SPL2 Language Server functional', async () => {
 		const lspPath = path.join(getLocalLspDir(storagePath), getLspFilename(lspVersion));
 		assert.ok(lspPath, 'bad lspPath');
 		assert.strictEqual(fs.existsSync(lspPath), true, 'bad fs.existsSync(lspPath)');
+
+		// verify that it's not installed the next time we call
+		const newInstalledLatestLsp = await installMissingSpl2Requirements(storagePath, progressBar);
+		assert.strictEqual(newInstalledLatestLsp, false, 'bad newInstalledLatestLsp');
 	}).timeout(1*60*1000); // 1 minute
+
+	test('should initialize language server', async () => {
+		const server = await startSpl2ClientAndServer(storagePath, progressBar, 59143, (p) => {});
+		while (server?.client?.state != State.Running) {
+			console.log(`Language client state: ${server?.client?.state}`);
+			await sleep(500);
+		}
+		assert.strictEqual(server?.client?.state, State.Running, 'client and server did not start');
+	});
 }).timeout(5*60*1000); // 5 minutes
+
+function sleep(ms: number): Promise<void> {
+	return new Promise(resolve => {
+		setTimeout(resolve, ms)
+	})
+}
