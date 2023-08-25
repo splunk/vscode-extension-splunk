@@ -168,7 +168,9 @@ function isJavaVersionCompatible(javaLoc: string): boolean {
             return false;
         }
         // java -version actually writes to stderr so check for a match there
-        const match = javaVerCmd.stderr.toString().match(/version \"([0-9]+)\.[0-9]+\.[0-9]\"/m);
+        const output = javaVerCmd.stderr.toString();
+        console.log(`$ java -version\n\n${output}`);
+        const match = output.match(/version \"([0-9]+)\.[0-9]+\.[0-9]\"/m);
         return (match && match.length > 1 && (parseInt(match[1]) >= minimumMajorJavaVersion));
     } catch (err) {
         console.warn(`Error checking for java version via '${javaLoc} -version', err: ${err}`);
