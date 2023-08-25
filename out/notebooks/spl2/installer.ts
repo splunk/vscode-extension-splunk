@@ -454,12 +454,18 @@ async function extractTgzWithProgress(
         tar.extract(extractPath, {
             map: (header) => {
                 if (header.name.endsWith(path.join('bin', 'java'))) {
-                    binJavaPath = path.join(extractPath, header.name);
+                    // binJavaPath = path.join(extractPath, header.name);
                 }
                 return header;
             }
         }),
     );
+    if (!binJavaPath) {
+        const jdkDir = fs.readdirSync(extractPath).filter(fn => fn.startsWith('jdk')); // e.g. jdk17.0.7_7
+        if (jdkDir.length === 1) {
+            binJavaPath = path.join(extractPath, jdkDir[0], 'bin', 'java');
+        }
+    }
     return Promise.resolve(binJavaPath);
 }
 
