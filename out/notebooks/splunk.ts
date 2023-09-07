@@ -196,15 +196,17 @@ function handleErrorPayloads(data: any, statusCode: number) {
         case 401:
             data = {
                 code: statusCode,
-                message: 'Unauthenticated, make sure the Token and Splunk Rest \n' +
+                message: 'Unauthenticated, make sure the Token and Splunk Rest\n' +
                     'Url settings are correct in the Splunk Extension Settings',
             };
             break;
         case 404:
             data = {
                 code: statusCode,
-                message: 'Endpoint not found, ensure that the Splunk deployment \n' +
-                    'specified in Splunk Rest Url supports SPL2',
+                message: 'Endpoint not found, ensure that the Splunk deployment\n' +
+                    'specified in Splunk Rest Url supports SPL2 and the namespace\n' +
+                    'specified for the module is of the form apps.<myapp> where\n' +
+                    '<myapp> is an app that has been created on the deployment.',
             }
             break;
     }
