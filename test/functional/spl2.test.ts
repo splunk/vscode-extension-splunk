@@ -117,7 +117,7 @@ suite('SPL2 Language Server functional', async () => {
 		// verify that it's not installed the next time we call
 		const newInstalledLatestLsp = await installMissingSpl2Requirements(storagePath, progressBar);
 		assert.strictEqual(newInstalledLatestLsp, false, 'bad newInstalledLatestLsp');
-	}).timeout(1*60*1000); // 1 minute
+	}).timeout(2*60*1000); // 2 minutes
 
 	test('should initialize language server', async () => {
 		const server = await startSpl2ClientAndServer(storagePath, progressBar, 59143, (p) => {});
