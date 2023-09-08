@@ -1,0 +1,52 @@
+name: Build and test
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  unit-test:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+      # Without this a failure in one OS will cancel jobs running for others
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16
+    - run: npm install
+    - run: xvfb-run -a npm test
+      if: runner.os == 'Linux'
+    - run: npm test
+      if: runner.os != 'Linux'
+  functional-test:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+      # Without this a failure in one OS will cancel jobs running for others
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16
+    - run: npm install
+    - run: npm run compile-tests
+    - run: echo "Run acceptance tests" && node ./out/test/runFunctionalTests.js
+      if: runner.os == 'macOS'
+    - run: echo "Run acceptance tests" && xvfb-run -a node ./out/test/runFunctionalTests.js
+      if: runner.os == 'Linux'
+    - run: echo "Run acceptance tests" && node .\out\test\runFunctionalTests.js
+      if: runner.os == 'Windows'

@@ -7,7 +7,7 @@ import * as path from 'path';
 import { pipeline } from 'stream';
 import * as tar from 'tar-fs';
 import * as util from 'util';
-import { env, ExtensionContext, StatusBarItem, Uri, window, workspace } from 'vscode';
+import { env, StatusBarItem, Uri, window, workspace } from 'vscode';
 import * as zlib from 'zlib';
 
 // Keys used to store/retrieve state related to this extension
@@ -28,20 +28,20 @@ export enum TermsAcceptanceStatus {
     Accepted = 'accepted',
 }
 
+const optOutMessage = `User opted out of SPL2. To reset this adjust the '${configKeyAcceptedTerms}' ` +
+    `setting to = '${TermsAcceptanceStatus.DeclinedOnce}' in the Splunk Extension Settings.`;
+
 /**
  * Provide a guided install experience for installing Java and SPL2 Language Server including
  * accepting Splunk General terms. If compatible Java and Language Server is already installed
  * this will be a no-op.
  */
-export async function installMissingSpl2Requirements(context: ExtensionContext, progressBar: StatusBarItem): Promise<boolean> {
+export async function installMissingSpl2Requirements(globalStoragePath: string, progressBar: StatusBarItem): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
         // If the user has already opted-out for good then stop here
         const termsStatus: TermsAcceptanceStatus = workspace.getConfiguration().get(configKeyAcceptedTerms);
         if (termsStatus === TermsAcceptanceStatus.DeclinedForever) {
-            reject(
-                `User opted out of SPL2. To reset this adjust the '${configKeyAcceptedTerms}' ` +
-                `setting to = '${TermsAcceptanceStatus.DeclinedOnce}' in the Splunk Extension Settings.`
-            );
+            reject(optOutMessage);
             return Promise.resolve();
         }
         // Check for compatible Java version installed already
@@ -53,6 +53,7 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
             }
         } catch (err) {
             reject(`Error retrieving configuration '${configKeyJavaPath}', err: ${err}`);
+            return Promise.resolve();
         }
         // If java hasn't been set up, check $JAVA_HOME before downloading a JDK
         if (!javaLoc && process.env.JAVA_HOME) {
@@ -66,6 +67,7 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
                     await workspace.getConfiguration().update(configKeyJavaPath, javaHomeBin, true);
                 } catch (err) {
                     reject(`Error updating configuration '${configKeyJavaPath}', err: ${err}`);
+                    return Promise.resolve();
                 }
             }
         }
@@ -78,22 +80,25 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
                 lspVersion = lspVersionSetting;
             }
             if (!workspace.getConfiguration().get(configKeyLspDirectory)) {
-                const localLspDefault = path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
+                const localLspDefault = path.join(globalStoragePath, 'spl2', 'lsp');
                 await workspace.getConfiguration().update(configKeyLspDirectory, localLspDefault, true);
             }
         } catch (err) {
             reject(`Error retrieving configuration '${configKeyLspVersion}', err: ${err}`);
+            return Promise.resolve();
         }
         if (javaLoc && lspVersion) {
             // Already set up, no need to continue
             // TODO: make sure the jar files are still in the expected location
             resolve(false);
+            return Promise.resolve();
         }
         // Setup local storage directory for downloads and installs
         try {
-            makeLocalStorage(context);
+            makeLocalStorage(globalStoragePath);
         } catch (err) {
             reject(`Error creating local artifact storage for SPL2, err: ${err}`);
+            return Promise.resolve();
         }
         
         let installedLatestLsp = false;
@@ -101,25 +106,30 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
             // If we haven't set up a Language Server version prompt use to accept terms
             // and also confirm install of java if needed
             try {
-                const accepted = await promptToDownloadLsp(!javaLoc);
-                if (!accepted) {
-                    return;
+                if (termsStatus !== TermsAcceptanceStatus.Accepted) {
+                    const accepted = await promptToDownloadLsp(!javaLoc);
+                    if (!accepted) {
+                        reject(optOutMessage);
+                        return Promise.resolve();
+                    }
                 }
                 // Remove any existing LSP artifacts first
-                const localLspDir = getLocalLspDir(context);
+                const localLspDir = getLocalLspDir(globalStoragePath);
                 fs.rmdirSync(localLspDir, { recursive: true });
-                makeLocalStorage(context); // recreate directory
+                makeLocalStorage(globalStoragePath); // recreate directory
             
-                await getLatestSpl2Release(context, progressBar);
+                await getLatestSpl2Release(globalStoragePath, progressBar);
                 installedLatestLsp = true;
             } catch (err) {
                 reject(`Error retrieving latest SPL2 release, err: ${err}`);
+                return Promise.resolve();
             }
-        } else if (!javaLoc) {
+        } else if (!javaLoc && termsStatus !== TermsAcceptanceStatus.Accepted) {
             // Ask user to confirm download, cancel, or opt-out of SPL2 altogether
             try {
                 const accepted = await promptToDownloadJava();
                 if (!accepted) {
+                    reject(optOutMessage);
                     return Promise.resolve();
                 }
             } catch (err) {
@@ -129,10 +139,10 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
         // We already prompted the user to confirm this download, proceed
         if (!javaLoc) {
             // Remove any old artifacts first
-            const localJdkDir = path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
+            const localJdkDir = path.join(globalStoragePath, 'spl2', 'jdk');
             try {
                 fs.rmdirSync(localJdkDir, { recursive: true });
-                makeLocalStorage(context); // recreate directory
+                makeLocalStorage(globalStoragePath); // recreate directory
 
                 javaLoc = await installJDK(localJdkDir, progressBar);
                 await workspace.getConfiguration().update(configKeyJavaPath, javaLoc, true);
@@ -152,16 +162,18 @@ export async function installMissingSpl2Requirements(context: ExtensionContext, 
  *          meets out minimum Java major version
  */
 function isJavaVersionCompatible(javaLoc: string): boolean {
+    let output;
     try {
         const javaVerCmd = child_process.spawnSync(javaLoc, ['-version'], { encoding : 'utf8' });
         if (!javaVerCmd || javaVerCmd.stdout) {
             return false;
         }
         // java -version actually writes to stderr so check for a match there
-        const match = javaVerCmd.stderr.toString().match(/version \"([0-9]+)\.[0-9]+\.[0-9]\"/m);
+        output = javaVerCmd.stderr.toString();
+        const match = output.match(/version \"([0-9]+)\.[0-9]+\.[0-9].*\"/m);
         return (match && match.length > 1 && (parseInt(match[1]) >= minimumMajorJavaVersion));
     } catch (err) {
-        console.warn(`Error checking for java version via '${javaLoc} -version', err: ${err}`);
+        console.warn(`Error checking for java version via '${javaLoc} -version' output: '${output}' could not find 'version "A.B.C[.D]"', err: ${err}`);
     }
     return false;
 }
@@ -170,39 +182,37 @@ function isJavaVersionCompatible(javaLoc: string): boolean {
  * Create the local storage directory struture for storing SPL2 artifacts
  * if they haven't already been created
  */
-function makeLocalStorage(context: ExtensionContext): void {
-    // We are guaranteed to have read/write access to this directory
-    const localSplunkArtifacts = context.globalStorageUri.fsPath;
+function makeLocalStorage(globalStoragePath: string): void {
     // Create this directory structure with globalStorage which will be somewhere like this locally:
     // Windows: C:\Users\<User>\AppData\Roaming\Code\User\globalStorage\splunk.splunk\spl2
     // MacOS: /Users/<User>/Library/Application Support/Code/User/globalStorage/splunk.splunk/spl2
     // └── spl2
     //     ├── jdk
     //     └── lsp
-    const spl2Artifacts = getLocalSpl2Dir(context);
-    const jdkArtifacts = getLocalJdkDir(context);
-    const lspArtifacts = getLocalLspDir(context);
-    [localSplunkArtifacts, spl2Artifacts, jdkArtifacts, lspArtifacts].forEach((path) => {
+    const spl2Artifacts = getLocalSpl2Dir(globalStoragePath);
+    const jdkArtifacts = getLocalJdkDir(globalStoragePath);
+    const lspArtifacts = getLocalLspDir(globalStoragePath);
+    [globalStoragePath, spl2Artifacts, jdkArtifacts, lspArtifacts].forEach((path) => {
         if (!fs.existsSync(path)) {
             fs.mkdirSync(path);
         }
     });
 }
 
-function getLocalSpl2Dir(context: ExtensionContext): string {
-    return path.join(context.globalStorageUri.fsPath, 'spl2');
+function getLocalSpl2Dir(globalStoragePath: string): string {
+    return path.join(globalStoragePath, 'spl2');
 }
 
-function getLocalJdkDir(context: ExtensionContext): string {
-    return path.join(context.globalStorageUri.fsPath, 'spl2', 'jdk');
+function getLocalJdkDir(globalStoragePath: string): string {
+    return path.join(globalStoragePath, 'spl2', 'jdk');
 }
 
-export function getLocalLspDir(context: ExtensionContext): string {
+export function getLocalLspDir(globalStoragePath: string): string {
     const configuredDir: string = workspace.getConfiguration().get(configKeyLspDirectory);
     if (configuredDir) {
         return configuredDir;
     }
-    return path.join(context.globalStorageUri.fsPath, 'spl2', 'lsp');
+    return path.join(globalStoragePath, 'spl2', 'lsp');
 }
 
 export function getLspFilename(lspVersion: string): string {
@@ -299,7 +309,7 @@ async function installJDK(installDir: string, progressBar: StatusBarItem): Promi
         if (!binJavaPath) {
             // If not found during unpacking, search for bin/java[.exe] and check that file
             let pathSuffix = path.join('bin', 'java');
-            if (true || process.platform === 'win32') {
+            if (process.platform === 'win32') {
                 pathSuffix = `${pathSuffix}.exe`;
             }
             const matches = getFilesInDirectory(installDir)
@@ -397,10 +407,10 @@ async function extractZipWithProgress(
     let nextUpdate = 1;
     // For now hardcode the expected path - we've seen issues trying to
     // infer this from the read/unzip stream
-    let binJavaPath = path.join(extractPath, 'jdk17.0.7_7', 'bin', 'java.exe');
+    let binJavaPath = '';
     progressBar.text = `${progressBarText}...`;
     await extract(zipfilePath, { dir: extractPath, onEntry: (entry, zipfile) => {
-        if (entry.fileName.endsWith(path.join('bin', 'java.exe'))) {
+        if (entry.fileName.endsWith('bin/java.exe') || entry.fileName.endsWith('bin\\java.exe')) {
             binJavaPath = path.join(extractPath, entry.fileName);
         }
         readCompressedSize += entry.compressedSize;
@@ -410,6 +420,15 @@ async function extractZipWithProgress(
             nextUpdate = pct + 1;
         }
     }});
+    if (!binJavaPath) {
+        const jdkDir = fs.readdirSync(extractPath).filter(fn => fn.startsWith('jdk')); // e.g. jdk17.0.7_7
+        if (jdkDir.length === 1) {
+            binJavaPath = path.join(extractPath, jdkDir[0], 'bin', 'java.exe');
+        }
+        if (!fs.existsSync(binJavaPath)) {
+            binJavaPath = '';
+        }
+    }
     return Promise.resolve(binJavaPath);
 }
 
@@ -446,6 +465,12 @@ async function extractTgzWithProgress(
             }
         }),
     );
+    if (!binJavaPath) {
+        binJavaPath = path.join(extractPath, `amazon-corretto-${minimumMajorJavaVersion}.jdk`, 'Contents', 'Home', 'bin', 'java');
+        if (!fs.existsSync(binJavaPath)) {
+            binJavaPath = '';
+        }
+    }
     return Promise.resolve(binJavaPath);
 }
 
@@ -496,12 +521,12 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
  * Checks if the installed SPL2 Language Server version is the latest and prompt for
  * upgrade if not, or automatically upgrade if user has that setting enabled.
  */
-export async function getLatestSpl2Release(context: ExtensionContext, progressBar: StatusBarItem): Promise<void> {
+export async function getLatestSpl2Release(globalStoragePath: string, progressBar: StatusBarItem): Promise<void> {
     return new Promise(async (resolve, reject) => {
-        const lspArtifactPath =  getLocalLspDir(context);
+        const lspArtifactPath = getLocalLspDir(globalStoragePath);
         // TODO: Remove this hardcoded version/update time and check for updates
-        let latestLspVersion: string = '2.0.366'; // context.globalState.get(stateKeyLatestLspVersion) || "";
-        const lastUpdateMs: number = Date.now(); // context.globalState.get(stateKeyLastLspCheck) || 0;
+        let latestLspVersion: string = '2.0.375';
+        const lastUpdateMs: number = Date.now();
         // Don't check for new version of SPL2 Language Server if less than 24 hours since last check
         if (Date.now() - lastUpdateMs > 24 * 60 * 60 * 1000) {
             const metaPath = path.join(lspArtifactPath, 'maven-metadata.xml');
@@ -523,15 +548,15 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
         const currentLspVersion = workspace.getConfiguration().get(configKeyLspVersion);
         if (currentLspVersion === latestLspVersion) {
             resolve();
-            return;
+            return Promise.resolve();
         }
         // Check if latest version has already been downloaded
         const lspFilename = getLspFilename(latestLspVersion);
-        const localLspPath = path.join(getLocalLspDir(context), lspFilename);
+        const localLspPath = path.join(getLocalLspDir(globalStoragePath), lspFilename);
         // Check if local file exists before downloading
         if (fs.existsSync(localLspPath)) {
             resolve();
-            return;
+            return Promise.resolve();
         }
         try {
             await downloadWithProgress(
@@ -542,12 +567,14 @@ export async function getLatestSpl2Release(context: ExtensionContext, progressBa
             );
         } catch (err) {
             reject(`Error downloading SPL2 Language Server, err: ${err}`);
+            return Promise.resolve();
         }
         // Update this setting to indicate that this version is ready-to-use
         try {
             await workspace.getConfiguration().update(configKeyLspVersion, latestLspVersion, true);
         } catch (err) {
             reject(`Error updating configuration '${configKeyLspVersion}', err: ${err}`);
+            return Promise.resolve();
         }
         resolve();
     });

@@ -105,7 +105,7 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
                 || data.definition === undefined
                 || data.updatedAt === undefined
             ) {
-                handleErrorPayloads(data);
+                handleErrorPayloads(data, response.statusCode);
                 return;
             }
             // This is in the expected successful response format
@@ -177,7 +177,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
         .then((response) => {
             const data = response.body;
             if (response.statusCode >= 400 || !Array.prototype.isPrototypeOf(data) || data.length < 1) {
-                handleErrorPayloads(data);
+                handleErrorPayloads(data, response.statusCode);
                 return;
             }
             // This is in the expected successful response format
@@ -186,10 +186,30 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
         });
 }
 
-function handleErrorPayloads(data: any) {
+function handleErrorPayloads(data: any, statusCode: number) {
     // Response is not in expected successful format, let's handle a
     // few different error cases and raise as expected messages format
+    console.warn(`Error making request: ${JSON.stringify(data)}`);
     let messages:SplunkMessage[] = [];
+    // Override error messages for common scenarios
+    switch(statusCode) {
+        case 401:
+            data = {
+                code: statusCode,
+                message: 'Unauthenticated, make sure the Token and Splunk Rest\n' +
+                    'Url settings are correct in the Splunk Extension Settings',
+            };
+            break;
+        case 404:
+            data = {
+                code: statusCode,
+                message: 'Endpoint not found, ensure that the Splunk deployment\n' +
+                    'specified in Splunk Rest Url supports SPL2 and the namespace\n' +
+                    'specified for the module is of the form apps.<myapp> where\n' +
+                    '<myapp> is an app that has been created on the deployment.',
+            }
+            break;
+    }
     if (Object.prototype.isPrototypeOf(data)) {
         if (data.name === 'response'
             && Array.prototype.isPrototypeOf(data.children)) {

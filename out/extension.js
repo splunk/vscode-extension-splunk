@@ -254,7 +254,7 @@ async function activate(context) {
   
     // Notebook
     context.subscriptions.push(vscode.workspace.registerNotebookSerializer('splunk-notebook', new SplunkNotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
-	  context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new Spl2NotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
+	context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new Spl2NotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
     const controller = new SplunkController();
     context.subscriptions.push(controller);
     const spl2Controller = new Spl2Controller();
@@ -340,9 +340,10 @@ async function handleSpl2Document(context, progressBar) {
         return;
     }
     try {
-        const installedLatestLsp = await installMissingSpl2Requirements(context, progressBar);
+        const globalStoragePath = context.globalStorageUri.fsPath;
+        const installedLatestLsp = await installMissingSpl2Requirements(globalStoragePath, progressBar);
         if (!installedLatestLsp) {
-            await getLatestSpl2Release(context, progressBar);
+            await getLatestSpl2Release(globalStoragePath, progressBar);
         }
         const onSpl2Restart = async (nextPort) => {
             await spl2Client.deactivate();

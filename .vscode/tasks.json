@@ -19,6 +19,15 @@
 				"kind": "build",
 				"isDefault": true
 			}
-		}	
+		},
+		{
+			"type": "npm",
+			"script": "compile-tests",
+			"problemMatcher": ["$tsc"],
+			"isBackground": false,
+			"group": {
+				"kind": "build"
+			}
+		}
 	]
 }
