@@ -1,4 +1,4 @@
-name: Package .vsix and run acceptance tests
+name: Package and acceptance tests
 
 on:
   push:
