@@ -473,6 +473,11 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
                         settingSnippet = settingSnippet.replace("true | false", "${1|true,false|}")
                     }
 
+                    // Convert '[<integer>|<integer>[KB|MB|GB]|auto]' to ${1|<integer>,auto|}}
+                    if(settingSnippet.indexOf("[<integer>|<integer>[KB|MB|GB]|auto]") > -1) {
+                        settingSnippet = settingSnippet.replace("[<integer>|<integer>[KB|MB|GB]|auto]", "${1|integer,auto|}")
+                    }
+
                     // Convert <foo> <bar> type things to placeholders
                     // ${1:<foo>} ${2:<bar>}
                     if(PLACEHOLDER_REGEX.test(settingSnippet)) {

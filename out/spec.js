@@ -556,7 +556,8 @@ function isValueValid(specValue, settingValue) {
             isValid = FLOAT_REGEX.test(settingValue)
             break
         }
-        case "<positive integer>[KB|MB|GB]|auto": {
+        case "<positive integer>[KB|MB|GB]|auto": 
+        case "[<integer>|<integer>[KB|MB|GB]|auto]": {
             testDropdown = false
 
             if(settingValue.toLowerCase() == "auto") {
