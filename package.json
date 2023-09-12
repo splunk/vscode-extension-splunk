@@ -352,19 +352,23 @@
             },
             {
                 "command": "splunk.notebooks.addVisualizationPreference",
-                "title": "Add Visualization Preference"
+                "title": "Add Visualization Preference",
+                "category": "Splunk"
             },
             {
                 "command": "splunk.notebooks.openJobInspector",
-                "title": "Open Job Inspector"
+                "title": "Open Job Inspector",
+                "category": "Splunk"
             },
             {
                 "command": "splunk.notebooks.openSearchLog",
-                "title": "Open Search Log"
+                "title": "Open Search Log",
+                "category": "Splunk"
             },
             {
                 "command": "splunk.notebooks.copyJobIdToClipboard",
-                "title": "Copy Job ID to Clipboard"
+                "title": "Copy Job ID to Clipboard",
+                "category": "Splunk"
             },
             {
                 "command": "splunk.notebooks.copyDetection",
@@ -372,7 +376,8 @@
             },
             {
                 "command": "splunk.restartSpl2LanguageServer",
-                "title": "Restart SPL2 Language Server"
+                "title": "Restart SPL2 Language Server",
+                "category": "Splunk"
             }
         ],
         "notebooks": [
