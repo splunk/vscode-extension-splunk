@@ -257,6 +257,7 @@ async function activate(context) {
 	context.subscriptions.push(vscode.workspace.registerNotebookSerializer('spl2-notebook', new Spl2NotebookSerializer(), {transientCellMetadata: {inputCollapsed: true, outputCollapsed: true}, transientOutputs: false}));
     const controller = new SplunkController();
     context.subscriptions.push(controller);
+    console.log(`Setting up Spl2Controller ...`);
     const spl2Controller = new Spl2Controller();
     context.subscriptions.push(spl2Controller);
     context.subscriptions.push(vscode.notebooks.registerNotebookCellStatusBarItemProvider('splunk-notebook', new CellResultCountStatusBarProvider(splunkOutputChannel)));
@@ -329,7 +330,9 @@ function isSpl2Document(document) {
 }
 
 async function handleSpl2Document(context, progressBar) {
+    console.log(`handleSpl2Document`);
     if (spl2Client) {
+        console.log(`spl2Client detected`);
         // Client and server are already running, try refreshing for case of new document
         const range = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 1));
         const text = vscode.window.activeTextEditor.document.getText(range) || " ";
@@ -341,17 +344,23 @@ async function handleSpl2Document(context, progressBar) {
     }
     try {
         const globalStoragePath = context.globalStorageUri.fsPath;
+        console.log(`no spl2Client detected, attempting install to ${globalStoragePath}`);
         const installedLatestLsp = await installMissingSpl2Requirements(globalStoragePath, progressBar);
         if (!installedLatestLsp) {
+            console.log(`installedLatestLsp=${installedLatestLsp}, calling getLatestSpl2Release`);
             await getLatestSpl2Release(globalStoragePath, progressBar);
         }
         const onSpl2Restart = async (nextPort) => {
+            console.log(`onSpl2Restart called for nextPort=${nextPort}`);
             await spl2Client.deactivate();
             spl2PortToAttempt = nextPort;
+            console.log(`re-calling startSpl2ClientAndServer for spl2PortToAttempt=${spl2PortToAttempt} ...`);
             spl2Client = await startSpl2ClientAndServer(context, progressBar, spl2PortToAttempt, onSpl2Restart);
         };
+        console.log(`calling startSpl2ClientAndServer for spl2PortToAttempt=${spl2PortToAttempt} ...`);
         spl2Client = await startSpl2ClientAndServer(context, progressBar, spl2PortToAttempt, onSpl2Restart);
     } catch (err) {
+        console.log(`Issue setting up SPL2 environment: ${err}`);
         vscode.window.showErrorMessage(`Issue setting up SPL2 environment: ${err}`);
     }
 }
