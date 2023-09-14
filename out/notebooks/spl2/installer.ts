@@ -115,7 +115,7 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
                 }
                 // Remove any existing LSP artifacts first
                 const localLspDir = getLocalLspDir(globalStoragePath);
-                fs.rmdirSync(localLspDir, { recursive: true });
+                fs.rmSync(localLspDir, { recursive: true, force: true });
                 makeLocalStorage(globalStoragePath); // recreate directory
             
                 await getLatestSpl2Release(globalStoragePath, progressBar);
@@ -141,7 +141,7 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
             // Remove any old artifacts first
             const localJdkDir = path.join(globalStoragePath, 'spl2', 'jdk');
             try {
-                fs.rmdirSync(localJdkDir, { recursive: true });
+                fs.rmSync(localJdkDir, { recursive: true, force: true });
                 makeLocalStorage(globalStoragePath); // recreate directory
 
                 javaLoc = await installJDK(localJdkDir, progressBar);
