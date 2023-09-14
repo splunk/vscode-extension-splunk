@@ -80,6 +80,13 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
     // The Splunk SDK for Javascript doesn't currently support the spl2/modules endpoints
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
+    console.log(`Request: [PUT] to ${service.prefix}/services/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`);
+    console.log(`Request Body: \n'${JSON.stringify({
+        'name': moduleName,
+        'namespace': namespace,
+        'definition': module,
+    })}'`);
+    console.log(`Request Headers: ${JSON.stringify(makeHeaders(service))}`);
     return needle(
         'PUT',
         // example: https://myhost.splunkcloud.com:8089/services/spl2/modules/apps.search._default
@@ -97,6 +104,8 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
             'rejectUnauthorized' : false,
         })
         .then((response) => {
+            console.log(`Response status code: ${response.statusCode}`);
+            console.log(`Response body: \n'${JSON.stringify(response.body)}'`);
             const data = response.body;
             if (response.statusCode >= 400 ||
                 !Object.prototype.isPrototypeOf(data)
@@ -157,6 +166,15 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     // The Splunk SDK for Javascript doesn't currently support the spl2-module-dispatch endpoint
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
+    console.log(`Request: [POST] to ${service.prefix}/services/${encodeURIComponent(app)}/spl2-module-dispatch`);
+    console.log(`Request Body: \n'${JSON.stringify({
+        'module': spl2Module,
+        'namespace': namespace,
+        'queryParameters': {
+            [statementIdentifier]: params
+        }
+    })}'`);
+    console.log(`Request Headers: ${JSON.stringify(makeHeaders(service))}`);
     return needle(
         'POST',
         `${service.prefix}/services/${encodeURIComponent(app)}/spl2-module-dispatch`,
@@ -172,9 +190,11 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
             'followAllRedirects': true,
             'timeout': 0,
             'strictSSL': false,
-            'rejectUnauthorized' : false,
+            'rejectUnauthorized': false,
         })
         .then((response) => {
+            console.log(`Response status code: ${response.statusCode}`);
+            console.log(`Response body: \n'${JSON.stringify(response.body)}'`);
             const data = response.body;
             if (response.statusCode >= 400 || !Array.prototype.isPrototypeOf(data) || data.length < 1) {
                 handleErrorPayloads(data, response.statusCode);
