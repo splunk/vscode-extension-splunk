@@ -10,7 +10,7 @@ export function getClient() {
 
     let url = new URL(restUrl);
     const scheme = url.protocol.replace(':', '');
-    const port = url.port || protocol == 'https' ? 443 : 80;
+    const port = url.port || scheme === 'https' ? 443 : 80;
     const host = url.hostname;
 
     let service = new splunk.Service({
