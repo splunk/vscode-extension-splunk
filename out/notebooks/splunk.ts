@@ -123,10 +123,10 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
 }
 
 /**
- * Dispatch a module to create a job using the POST /services/<app>/spl2-module-dispatch endpoint
+ * Dispatch a module to create a job using the POST /servicesNS/-/<app>/search/spl2-module-dispatch endpoint
  * @param service Instance of the Javascript SDK Service
  * @param spl2Module Full text of the SPL2 module to run (contents of a SPL2 notebook cell, for example)
- * @param app App namespace to run within, this will determine /services/<app>/spl2-module-dispatch endpoint
+ * @param app App namespace to run within, this will determine /servicesNS/-/<app>/search/spl2-module-dispatch endpoint
  * @param namespace Namespace _within_ the apps.<app> to run, this will be used directly in the body of the request
  * @param earliest Earliest time to be included in the body of the request
  * @param latest Latest time to be included in the body of the request
@@ -166,7 +166,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     // The Splunk SDK for Javascript doesn't currently support the spl2-module-dispatch endpoint
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
-    console.log(`Request: [POST] to ${service.prefix}/services/${encodeURIComponent(app)}/spl2-module-dispatch`);
+    console.log(`Request: [POST] to ${service.prefix}/servicesNS/-/${encodeURIComponent(app)}/search/spl2-module-dispatch`);
     console.log(`Request Body: \n'${JSON.stringify({
         'module': spl2Module,
         'namespace': namespace,
@@ -177,7 +177,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     console.log(`Request Headers: ${JSON.stringify(makeHeaders(service))}`);
     return needle(
         'POST',
-        `${service.prefix}/services/${encodeURIComponent(app)}/spl2-module-dispatch`,
+        `${service.prefix}/servicesNS/-/${encodeURIComponent(app)}/search/spl2-module-dispatch`,
         {
             'module': spl2Module,
             'namespace': namespace,
