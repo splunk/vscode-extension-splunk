@@ -6,6 +6,11 @@ Complete documentation is available at the [extension wiki](https://github.com/s
 ### Issues fixed
 - Updated type handler for `outpus.conf`.  Issue [#99](https://github.com/splunk/vscode-extension-splunk/issues/99) 
 - Updated URL for globalConfig.json file
+- Fix issue preventing Windows installation of SPL2 Java requirements
+- Fixes for various SPL2 installation issues across platforms
+- Improved error messaging for commond SPL2 scenarios
+- Fix port behavior for `443` in SPL2 calls
+- Fix to support executing SPL2 cells for apps other than `search`
 
 ## [0.3.1]
 Minor updates to SPL language server handling.
