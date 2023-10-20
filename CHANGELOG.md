@@ -2,6 +2,11 @@
 
 Complete documentation is available at the [extension wiki](https://github.com/splunk/vscode-extension-splunk/wiki)
 
+## [0.3.2]
+### Issues fixed
+- Updated type handler for `outpus.conf`.  Issue [#99](https://github.com/splunk/vscode-extension-splunk/issues/99) 
+- Updated URL for globalConfig.json file
+
 ## [0.3.1]
 Minor updates to SPL language server handling.
 
