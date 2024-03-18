@@ -12,7 +12,7 @@ const splunkCustomCommand = require('./customCommand.js');
 const globalConfigPreview = require('./globalConfigPreview')
 const splunkCustomRESTHandler = require('./customRESTHandler.js')
 const splunkSpec = require("./spec.js");
-const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g
+const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g;
 let specConfigs = {};
 let timeout;
 let diagnosticCollection;

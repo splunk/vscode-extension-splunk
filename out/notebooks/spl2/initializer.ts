@@ -77,8 +77,7 @@ export async function startSpl2ClientAndServer(globalStoragePath: string, progre
                 return;
             }
             const lspPath = path.join(getLocalLspDir(globalStoragePath), getLspFilename(lspVersion));
-            
-            const server = new Spl2ClientServer(progressBar, javaPath, lspPath, portToAttempt, onClose);
+            const server = new Spl2ClientServer(progressBar, javaPath, lspVersion, lspPath, portToAttempt, onClose);
             await server.initialize();
             resolve(server);
         } catch (err) {
@@ -90,6 +89,7 @@ export async function startSpl2ClientAndServer(globalStoragePath: string, progre
 export class Spl2ClientServer {
     progressBar: StatusBarItem;
     javaPath: string;
+    lspVersion: string;
     lspPath: string;
     retries: number;
     restarting: boolean;
@@ -101,9 +101,10 @@ export class Spl2ClientServer {
     serverProcess: child_process.ChildProcess;
     socket: Socket;
 
-    constructor(progressBar: StatusBarItem, javaPath: string, lspPath: string, portToAttempt: number, onClose: (nextPort: number) => void) {
+    constructor(progressBar: StatusBarItem, javaPath: string, lspVersion: string, lspPath: string, portToAttempt: number, onClose: (nextPort: number) => void) {
         this.progressBar = progressBar;
         this.javaPath = javaPath;
+        this.lspVersion = lspVersion;
         this.lspPath = lspPath;
         this.retries = 0;
         this.restarting = false;
@@ -116,15 +117,15 @@ export class Spl2ClientServer {
     }
 
     async initialize(): Promise<void> {
-        this.progressBar.text = 'Starting SPL2 Language Server';
+        this.progressBar.text = `Starting SPL2 Language Server v${this.lspVersion}`;
         this.progressBar.show();
         return new Promise(async (resolve, reject) => {
             this.lspPort = await getNextAvailablePort(this.portToAttempt, 10)
                 .catch((err) => {
-                    reject(`Unable to find available port for SPL2 language server, err: ${err}`);
+                    reject(`Unable to find available port for SPL2 language server v${this.lspVersion}, err: ${err}`);
                 }) || -1;
             if (this.lspPort === -1) {
-                reject(`Unable to find available port for SPL2 language server`);
+                reject(`Unable to find available port for SPL2 language server v${this.lspVersion}`);
                 return;
             }
 
@@ -159,11 +160,11 @@ export class Spl2ClientServer {
                         // TODO: implement module resolution
                         return;
                     });
-                    this.progressBar.text = 'SPL2 Language Server Running';
+                    this.progressBar.text = `SPL2 Language Server v${this.lspVersion} Running`;
                 } else if (event.newState === State.Starting) {
-                    this.progressBar.text = 'SPL2 Language Server Starting';
+                    this.progressBar.text = `SPL2 Language Server v${this.lspVersion} Starting`;
                 } else {
-                    this.progressBar.text = 'SPL2 Language Server Stopped';
+                    this.progressBar.text = `SPL2 Language Server v${this.lspVersion} Stopped`;
                 }
                 this.progressBar.show();
             });
