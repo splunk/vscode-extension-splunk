@@ -192,10 +192,10 @@ export class Spl2ClientServer {
                 ];
                 this.serverProcess = child_process.spawn(this.javaPath, javaArgs);
                 if (!this.serverProcess || !this.serverProcess.pid) {
-                    reject(`Launching server with ${this.javaPath} ${javaArgs.join(' ')} failed.`);
+                    reject(`Launching language server v${this.lspVersion} with ${this.javaPath} ${javaArgs.join(' ')} failed.`);
                     return;
                 } else {
-                    console.log(`SPL2 Language Server launched with pid: ${this.serverProcess.pid} and listening on port: ${this.lspPort}`);
+                    console.log(`SPL2 Language Server v${this.lspVersion} launched with pid: ${this.serverProcess.pid} and listening on port: ${this.lspPort}`);
                 }
                 this.serverProcess.stderr.on('data', stderr => {
                     console.warn(`[SPL2 Server]: ${stderr}`);
@@ -218,7 +218,7 @@ export class Spl2ClientServer {
                     console.log(`[SPL2 Server]: ${stdout}`);
                     const lspLog: LSPLog = JSON.parse(stdout);
                     if (lspLog.message.includes('started listening on port')) {
-                        console.log('SPL2 Server is up, starting client...');
+                        console.log(`SPL2 Server v${this.lspVersion} is up, starting client...`);
                         // Ready for client
                         this.socket = new Socket();
     
