@@ -62,6 +62,7 @@ const rendererConfig = {
         alias: {
             process: 'process/browser',
         },
+        fallback: { 'querystring': require.resolve('querystring-es3') },
     },
     experiments: {
         outputModule: true,
@@ -98,6 +99,12 @@ const rendererConfig = {
                 exclude: /node_modules/,
                 use: { loader: 'babel-loader' },
             },
+            {
+                test: /\.(js|jsx)$/,
+                exclude: /(node_modules|bower_components)/,
+                loader: 'babel-loader',
+                options: { presets: ['@babel/env','@babel/preset-react'] },
+            }
         ],
     },
 };
