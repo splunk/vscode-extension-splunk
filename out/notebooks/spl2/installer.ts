@@ -524,7 +524,7 @@ export async function getLatestSpl2Release(globalStoragePath: string, progressBa
         const lspArtifactPath = getLocalLspDir(globalStoragePath);
         const shouldDownloadLatest = workspace.getConfiguration().get(configKeyDownloadLatestSPL2);
         // Used as backup if latest version can't be determined or current version is invalid
-        let lspVersionToInstall = '2.0.401'
+        let lspVersionToInstall = '2.0.402'
         // If user has unchecked the option to always download the latest LSP then
         // check if the current specified version is installed, if not then download it
         const currentLspVersion: string = workspace.getConfiguration().get(configKeyLspVersion);
