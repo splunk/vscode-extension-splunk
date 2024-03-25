@@ -134,6 +134,7 @@ export class Spl2ClientServer {
             const clientOptions: LanguageClientOptions = {
                 documentSelector: [
                     { language: 'splunk_spl2' },
+                    { language: 'splunk_spl2', pattern: '**∕*.spl2'},
                 ],
                 initializationOptions: { profile: null },
             };
