@@ -191,24 +191,31 @@
                 },
                 "splunk.spl2.javaPath": {
                     "type": "string",
-                    "scope": "resource",
+                    "scope": "machine",
                     "default": "",
                     "order": 11,
                     "description": "[SPL2] Java Path\nSpecify the full path to a Java executable (./java for Mac/Linux or java.exe for Windows). For example, the full path of $JAVA_HOME/bin/java."
                 },
                 "splunk.spl2.languageServerDirectory": {
                     "type": "string",
-                    "scope": "resource",
+                    "scope": "machine",
                     "default": "",
                     "order": 12,
                     "description": "[SPL2] Language Server Directory\nSpecify the full path of the directory containing SPL2 (Websockets) Langauge Server. Trailing slash not required. Example:\n/Users/<User>/Library/Application Support/Code/User/globalStorage/splunk.splunk/spl2/lsp"
                 },
                 "splunk.spl2.languageServerVersion": {
                     "type": "string",
-                    "scope": "resource",
+                    "scope": "machine",
                     "default": "",
                     "order": 13,
                     "description": "[SPL2] Language Server Version\nSpecify the version of the SPL2 language server which will be used to create the path to invoke the server. Example, a value of '2.0.362' will invoke spl-lang-server-sockets-2.0.362-all.jar"
+                },
+                "splunk.spl2.downloadLatestSPL2": {
+                    "type": "boolean",
+                    "scope": "machine",
+                    "default": true,
+                    "order": 14,
+                    "description": "[SPL2] Automatically update to the latest version of the SPL2 language server."
                 }
             }
         },

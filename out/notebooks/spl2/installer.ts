@@ -15,9 +15,7 @@ export const configKeyAcceptedTerms = 'splunk.spl2.acceptedTerms';
 export const configKeyJavaPath = 'splunk.spl2.javaPath';
 export const configKeyLspDirectory = 'splunk.spl2.languageServerDirectory';
 export const configKeyLspVersion = 'splunk.spl2.languageServerVersion';
-
-export const stateKeyLatestLspVersion = 'splunk.spl2.latestLspVersion';
-export const stateKeyLastLspCheck = 'splunk.spl2.lastLspCheck';
+export const configKeyDownloadLatestSPL2 = 'splunk.spl2.downloadLatestSPL2';
 
 // Minimum version of Java needed for SPL2 Language Server
 const minimumMajorJavaVersion = 17;
@@ -518,17 +516,28 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
 }
 
 /**
- * Checks if the installed SPL2 Language Server version is the latest and prompt for
- * upgrade if not, or automatically upgrade if user has that setting enabled.
+ * Checks if the installed SPL2 Language Server version is the latest and
+ * automatically upgrade if user has that setting enabled.
  */
 export async function getLatestSpl2Release(globalStoragePath: string, progressBar: StatusBarItem): Promise<void> {
     return new Promise(async (resolve, reject) => {
         const lspArtifactPath = getLocalLspDir(globalStoragePath);
-        // TODO: Remove this hardcoded version/update time and check for updates
-        let latestLspVersion: string = '2.0.385';
-        const lastUpdateMs: number = Date.now();
-        // Don't check for new version of SPL2 Language Server if less than 24 hours since last check
-        if (Date.now() - lastUpdateMs > 24 * 60 * 60 * 1000) {
+        const shouldDownloadLatest = workspace.getConfiguration().get(configKeyDownloadLatestSPL2);
+        // Used as backup if latest version can't be determined or current version is invalid
+        let lspVersionToInstall = '2.0.402'
+        // If user has unchecked the option to always download the latest LSP then
+        // check if the current specified version is installed, if not then download it
+        const currentLspVersion: string = workspace.getConfiguration().get(configKeyLspVersion);
+        const parsedCurrentVersion = parseLspVersion(currentLspVersion);
+
+        if (!shouldDownloadLatest && (parsedCurrentVersion.length >= 3)) {
+            // If the current version is valid and the user has elected not to download a new one
+            // then we are done
+            lspVersionToInstall = currentLspVersion;
+        }
+        // If not using current version, determine latest available
+        if (lspVersionToInstall !== currentLspVersion) {
+            // Determine the latest LSP version using maven metadata from jfrog
             const metaPath = path.join(lspArtifactPath, 'maven-metadata.xml');
             try {
                 await downloadWithProgress(
@@ -540,27 +549,35 @@ export async function getLatestSpl2Release(globalStoragePath: string, progressBa
                 const parser = new XMLParser();
                 const metadata = fs.readFileSync(metaPath);
                 const metaParsed = parser.parse(metadata);
-                latestLspVersion = metaParsed?.metadata?.versioning?.release;
+                let latestCandidate = metaParsed?.metadata?.versioning?.release;
+                const parsedCandidate = parseLspVersion(latestCandidate);
+                if (parsedCandidate.length >= 3) {
+                    // Valid latest version found, update to use this
+                    lspVersionToInstall = latestCandidate;
+                }
             } catch (err) {
                 console.warn(`Error retrieving latest SPL2 version, err: ${err}`);
             }
         }
-        const currentLspVersion = workspace.getConfiguration().get(configKeyLspVersion);
-        if (currentLspVersion === latestLspVersion) {
-            resolve();
-            return Promise.resolve();
-        }
         // Check if latest version has already been downloaded
-        const lspFilename = getLspFilename(latestLspVersion);
+        const lspFilename = getLspFilename(lspVersionToInstall);
         const localLspPath = path.join(getLocalLspDir(globalStoragePath), lspFilename);
         // Check if local file exists before downloading
         if (fs.existsSync(localLspPath)) {
+            if (lspVersionToInstall !== currentLspVersion) {
+                try {
+                    await workspace.getConfiguration().update(configKeyLspVersion, lspVersionToInstall, true);
+                } catch (err) {
+                    reject(`Error updating configuration '${configKeyLspVersion}', err: ${err}`);
+                    return Promise.resolve();
+                }
+            }
             resolve();
             return Promise.resolve();
         }
         try {
             await downloadWithProgress(
-                `https://splunk.jfrog.io/splunk/maven-splunk/spl2/com/splunk/spl/spl-lang-server-sockets/${latestLspVersion}/${lspFilename}`,
+                `https://splunk.jfrog.io/splunk/maven-splunk/spl2/com/splunk/spl/spl-lang-server-sockets/${lspVersionToInstall}/${lspFilename}`,
                 localLspPath,
                 progressBar,
                 'Downloading SPL2 Language Server',
@@ -571,13 +588,31 @@ export async function getLatestSpl2Release(globalStoragePath: string, progressBa
         }
         // Update this setting to indicate that this version is ready-to-use
         try {
-            await workspace.getConfiguration().update(configKeyLspVersion, latestLspVersion, true);
+            await workspace.getConfiguration().update(configKeyLspVersion, lspVersionToInstall, true);
         } catch (err) {
             reject(`Error updating configuration '${configKeyLspVersion}', err: ${err}`);
             return Promise.resolve();
         }
         resolve();
     });
+}
+
+/**
+ * Helper function to parse language server version to array of nums.
+ * Example: '2.0.401' -> [2, 0, 401]
+ * @param ver Expected format: X.Y.Z[-*] which returns [X,Y,Z] and ignores [-*]
+ */
+function parseLspVersion(ver: string): Number[] {
+    const regex = /^\s*([0-9]+)\.([0-9]+)\.([0-9]+)\.?([0-9]+)?(?:\-.*)?$/gm;
+    const match = regex.exec(ver);
+    if (match && match.length === 5) {
+        if (match[4] !== undefined) {
+            return [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4])];
+        } else {
+            return [Number(match[1]), Number(match[2]), Number(match[3])];
+        }
+    }
+    return [];
 }
 
 /**
