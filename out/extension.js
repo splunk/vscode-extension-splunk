@@ -316,6 +316,9 @@ function handleSplunkDocument(context) {
         // Register Setting completion items for this spec
         let trimWhitespace = vscode.workspace.getConfiguration().get('splunk.spec.trimEqualSignWhitespace')
         context.subscriptions.push(provideSettingCompletionItems(specConfig, trimWhitespace));
+
+        // Register Hovers
+        context.subscriptions.push(provideHovers(specConfig));
     }
 
     // Set up diagnostics (linting)
@@ -394,6 +397,50 @@ function checkSpecFilePath(specFilePath) {
         return null
     }
     return specFilePath;
+}
+
+function provideHovers(specConfig) {
+
+    let enableHover = vscode.workspace.getConfiguration().get('splunk.showDocumentationOnHover');
+    if(!enableHover) {
+        return;
+    }
+
+    // Get the currently open document
+    let currentDocument = path.basename(vscode.window.activeTextEditor.document.uri.fsPath);
+
+    vscode.languages.registerHoverProvider({ language: 'splunk', pattern: `**/${currentDocument}`}, {
+
+        provideHover(document, position, token) {
+
+            const range = document.getWordRangeAtPosition(position, /\w[-\w\.]*/g);
+            const word = document.getText(range);
+
+            if((document.lineAt(position.line).text.startsWith('['))) {
+                // This is a stanza
+
+                // Get stanzas for this .spec file
+                // Find the hovered word
+                // Add a hover for the value
+                return
+            } else {
+                // This might be a setting
+                let parentStanza = getParentStanza(document, position.line);
+                if(parentStanza) {
+                    let stanzaSettings = splunkSpec.getStanzaSettings(specConfig, parentStanza)
+                    let setting = stanzaSettings.find(item => item.name === word)
+                    if(setting) {
+                        let hoverContent = new vscode.MarkdownString(setting["docString"])
+                        hoverContent.isTrusted = true;
+                        return new vscode.Hover(hoverContent);
+                    }
+                }
+            }
+        }
+
+    })
+
+    return null
 }
 
 function provideStanzaCompletionItems(specConfig) {
