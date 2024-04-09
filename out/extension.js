@@ -333,13 +333,20 @@ async function handleSpl2Document(context, progressBar) {
     console.log(`handleSpl2Document`);
     if (spl2Client) {
         console.log(`spl2Client detected`);
-        // Client and server are already running, try refreshing for case of new document
-        const range = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 1));
-        const text = vscode.window.activeTextEditor.document.getText(range) || " ";
-        vscode.window.activeTextEditor.edit((editBuilder) => {
-            // To refresh language server make a harmless edit by replacing the first character
-            editBuilder.replace(range, text);
-        });
+        // send new didOpen message to refresh language server (even if already open)
+        // this workaround is needed as SPL2 language server doesn't currently cache
+        // all open documents and will only re-parse when new documents are opened
+        spl2Client.client.sendRequest(
+            'textDocument/didOpen',
+            {
+                textDocument: {
+                    uri: vscode.window.activeTextEditor.document.uri.toString(),
+                    languageId: vscode.window.activeTextEditor.document.languageId,
+                    version: vscode.window.activeTextEditor.document.version,
+                    text: vscode.window.activeTextEditor.document.getText(),
+                }
+            }
+        );
         return;
     }
     try {
