@@ -334,13 +334,15 @@ async function handleSpl2Document(context, progressBar) {
     if (spl2Client) {
         console.log(`spl2Client detected`);
         // send new didOpen message to refresh language server (even if already open)
+        // this workaround is needed as SPL2 language server doesn't currently cache
+        // all open documents and will only re-parse when new documents are opened
         spl2Client.client.sendRequest(
             'textDocument/didOpen',
             {
                 textDocument: {
                     uri: vscode.window.activeTextEditor.document.uri.toString(),
                     languageId: vscode.window.activeTextEditor.document.languageId,
-                    version: 1,
+                    version: vscode.window.activeTextEditor.document.version,
                     text: vscode.window.activeTextEditor.document.getText(),
                 }
             }
