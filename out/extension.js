@@ -422,7 +422,12 @@ function provideHovers(specConfig) {
                 // Get stanzas for this .spec file
                 // Find the hovered word
                 // Add a hover for the value
-                return
+                let stanza = specConfig["stanzas"].find(item => item.stanzaName === word)
+                if(stanza) {
+                    let hoverContent = new vscode.MarkdownString(stanza["docString"])
+                    hoverContent.isTrusted = true;
+                    return new vscode.Hover(hoverContent);
+                }
             } else {
                 // This might be a setting
                 let parentStanza = getParentStanza(document, position.line);
