@@ -103,11 +103,13 @@
                         "8.0",
                         "8.1",
                         "8.2",
-                        "9.0"
+                        "9.0",
+                        "9.1",
+                        "9.2"
                     ],
                     "order": 0,
                     "scope": "resource",
-                    "default": "9.0",
+                    "default": "9.2",
                     "description": "Specifies the version of spec files to use.\nNote: this setting is ignored if you specify a Spec File Path."
                 },
                 "splunk.spec.FilePath": {
