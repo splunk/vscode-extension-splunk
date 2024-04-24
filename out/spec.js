@@ -419,6 +419,15 @@ function getStanzaType(stanza) {
     return stanzaType
 }
 
+function addDefaultsAndGlobals(settings, defaults) {
+    // Add [default] or [global] settings to a stanza if they do not already exist
+    for(let i=0; i < defaults.length; i++) {
+        if(!settings.find(o => o.name === defaults[i].name && o.value === defaults[i].value)) {
+            settings.push(defaults[i])
+        }
+    }
+}
+
 function getStanzaSettings(specConfig, stanzaName) {
     // Given a stanzaName, return its settings
     // Stanzas could follow one of these syntaxes:
@@ -439,6 +448,7 @@ function getStanzaSettings(specConfig, stanzaName) {
     }
 
     let defaultSettings = getStanzaSettingsByStanzaName(specConfig, "[default]")
+    let globalSettings = getStanzaSettingsByStanzaName(specConfig, "[global]")
     let stanzaType = getStanzaType(stanzaName)
     if((stanzaName == "[default]") && (!specConfig.allowsFreeformStanzas)) { return defaultSettings }
 
@@ -465,6 +475,7 @@ function getStanzaSettings(specConfig, stanzaName) {
 
             if(settings) {
                 settings.push(...defaultSettings)
+                addDefaultsAndGlobals(settings, globalSettings)
                 return settings
             }
             break
