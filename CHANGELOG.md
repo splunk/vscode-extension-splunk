@@ -2,6 +2,13 @@
 
 Complete documentation is available at the [extension wiki](https://github.com/splunk/vscode-extension-splunk/wiki)
 
+## [0.3.3]
+### New features
+- Added a hover provider to provide documenation on `hover` for .conf file stanzas and settings
+
+### Issues fixed
+- Included .spec files for 9.1 and 9.1. Issue [#103](https://github.com/splunk/vscode-extension-splunk/issues/103) 
+
 ## [0.3.2]
 ### Issues fixed
 - Updated type handler for `outpus.conf`.  Issue [#99](https://github.com/splunk/vscode-extension-splunk/issues/99) 
