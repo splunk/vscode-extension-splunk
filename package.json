@@ -75,6 +75,9 @@
                 ]
             }
         ],
+        "capabilities": {
+            "hoverProvider": "true"
+        },
         "grammars": [
             {
                 "language": "splunk",
@@ -218,6 +221,13 @@
                     "default": true,
                     "order": 14,
                     "description": "[SPL2] Automatically update to the latest version of the SPL2 language server."
+                },
+                "splunk.showDocumentationOnHover": {
+                    "type": "boolean",
+                    "scope": "machine",
+                    "default": true,
+                    "order": 15,
+                    "description": "Show .conf file documentation when hovering over settings."
                 }
             }
         },
