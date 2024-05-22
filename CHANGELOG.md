@@ -5,9 +5,12 @@ Complete documentation is available at the [extension wiki](https://github.com/s
 ## [0.3.3]
 ### New features
 - Added a hover provider to provide documenation on `hover` for .conf file stanzas and settings
+- Add SPL2 language server support (hover documentation, autocomplete, code suggestions, etc) for `.spl2` files 
+- Provide automatic updates for downloading latest SPL2 language server
 
 ### Issues fixed
-- Included .spec files for 9.1 and 9.1. Issue [#103](https://github.com/splunk/vscode-extension-splunk/issues/103) 
+- Included .spec files for 9.1 and 9.1. Issue [#103](https://github.com/splunk/vscode-extension-splunk/issues/103)
+- Fix SPL2 Notebook workaround resulting in notebook files inserting (" ") character when new cells/notebooks are opened, causing notebooks to always appear to have unsaved changes
 
 ## [0.3.2]
 ### Issues fixed
