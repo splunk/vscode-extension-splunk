@@ -35,7 +35,7 @@ class SearchProvider {
         await axios(
             {
                 method: "POST",
-                url: `${this.splunkUrl}/services/search/jobs/export?output_mode=${this.outputMode}`,
+                url: `${this.splunkUrl}/services/search/v2/jobs/export?output_mode=${this.outputMode}`,
                 data: "search=" + encodeURIComponent(`search ${search}`)
             })
             .then(response => {
@@ -120,7 +120,7 @@ class SavedSearchProvider {
         await axios(
             {
                 method: "POST",
-                url: `${this.splunkUrl}/servicesNS/${savedSearchItem.owner}/${savedSearchItem.app}/search/jobs/export?output_mode=${this.outputMode}`,
+                url: `${this.splunkUrl}/servicesNS/${savedSearchItem.owner}/${savedSearchItem.app}/search/v2/jobs/export?output_mode=${this.outputMode}`,
                 data: "search=" + encodeURIComponent(`| savedsearch "${savedSearchItem.label}"`)
             })
             .then(response => {
