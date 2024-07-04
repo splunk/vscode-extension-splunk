@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const vscode = require("vscode");
 const axios = require("axios");
+const { getClient } = require('./notebooks/splunk');
 
 class SearchProvider {
     constructor() {
@@ -32,10 +33,15 @@ class SearchProvider {
         }
 
         let searchResults = "No results";
+        
+        const exportUrl = await shouldUseDeprecatedSearchAPIs()
+            ? `${this.splunkUrl}/services/search/jobs/export?output_mode=${this.outputMode}`
+            : `${this.splunkUrl}/services/search/v2/jobs/export?output_mode=${this.outputMode}`;
+
         await axios(
             {
                 method: "POST",
-                url: `${this.splunkUrl}/services/search/v2/jobs/export?output_mode=${this.outputMode}`,
+                url: exportUrl,
                 data: "search=" + encodeURIComponent(`search ${search}`)
             })
             .then(response => {
@@ -117,10 +123,15 @@ class SavedSearchProvider {
         }
 
         let searchResults = "No results";
+
+        const exportUrl = await shouldUseDeprecatedSearchAPIs()
+            ? `${this.splunkUrl}/servicesNS/${savedSearchItem.owner}/${savedSearchItem.app}/search/jobs/export?output_mode=${this.outputMode}`
+            : `${this.splunkUrl}/servicesNS/${savedSearchItem.owner}/${savedSearchItem.app}/search/v2/jobs/export?output_mode=${this.outputMode}`;
+
         await axios(
             {
                 method: "POST",
-                url: `${this.splunkUrl}/servicesNS/${savedSearchItem.owner}/${savedSearchItem.app}/search/v2/jobs/export?output_mode=${this.outputMode}`,
+                url: exportUrl,
                 data: "search=" + encodeURIComponent(`| savedsearch "${savedSearchItem.label}"`)
             })
             .then(response => {
@@ -148,3 +159,18 @@ class SavedSearch extends vscode.TreeItem {
     }
 }
 exports.SavedSearch = SavedSearch;
+
+let cachedDisableV2SearchApi = null; // avoid multiple calls
+async function shouldUseDeprecatedSearchAPIs() {
+    if (cachedDisableV2SearchApi !== null) {
+        return cachedDisableV2SearchApi;
+    }
+    // retrieve Splunk version and deployment info for disableV2SearchApi()
+    const service = getClient();
+    await service.getInfo().catch(error => {
+        console.warn("error retrieving Splunk version with service.getInfo():");
+        console.warn(error);
+    });
+    cachedDisableV2SearchApi = service.disableV2SearchApi();
+    return cachedDisableV2SearchApi;
+}
