@@ -163,6 +163,7 @@ exports.SavedSearch = SavedSearch;
 let cachedDisableV2SearchApi = null; // avoid multiple calls
 async function shouldUseDeprecatedSearchAPIs() {
     if (cachedDisableV2SearchApi !== null) {
+        console.log(`shouldUseDeprecatedSearchAPIs found cachedDisableV2SearchApi=${cachedDisableV2SearchApi}`);
         return cachedDisableV2SearchApi;
     }
     // retrieve Splunk version and deployment info for disableV2SearchApi()
@@ -172,5 +173,6 @@ async function shouldUseDeprecatedSearchAPIs() {
         console.warn(error);
     });
     cachedDisableV2SearchApi = service.disableV2SearchApi();
+    console.log(`shouldUseDeprecatedSearchAPIs service.disableV2SearchApi()=${cachedDisableV2SearchApi}`);
     return cachedDisableV2SearchApi;
 }
