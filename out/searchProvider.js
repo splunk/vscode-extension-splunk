@@ -168,10 +168,12 @@ async function shouldUseDeprecatedSearchAPIs() {
     }
     // retrieve Splunk version and deployment info for disableV2SearchApi()
     const service = getClient();
-    await service.getInfo().catch(error => {
+    try {
+        await service.getInfo();
+    } catch (error) {
         console.warn("error retrieving Splunk version with service.getInfo():");
         console.warn(error);
-    });
+    };
     cachedDisableV2SearchApi = service.disableV2SearchApi();
     console.log(`shouldUseDeprecatedSearchAPIs service.disableV2SearchApi()=${cachedDisableV2SearchApi}`);
     return cachedDisableV2SearchApi;
