@@ -489,9 +489,10 @@
     },
     "scripts": {
         "lint": "eslint .",
-        "pretest": "npm run lint",
+        "pretest": "npm run compile",
         "test": "mocha",
-        "compile": "webpack --mode=production",
+        "package": "webpack --mode=production",
+        "compile": "tsc -p tsconfig.json",
         "compile-tests": "tsc -p tsconfig-test.json",
         "watch": "webpack --watch --mode none"
     }

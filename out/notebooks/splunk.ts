@@ -1,7 +1,8 @@
 import * as splunk from 'splunk-sdk';
 import * as needle from 'needle'; // transitive dependency of splunk-sdk
 import * as vscode from 'vscode';
-import { SplunkMessage } from './utils';
+import { SplunkMessage } from './utils/messages';
+import { getModuleStatements } from './utils/parsing';
 
 export function getClient() {
     const config = vscode.workspace.getConfiguration();
@@ -138,7 +139,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     namespace = '';
     app = app || 'search'; // default to search app
     // Get last statement assignment '$my_statement = ...' -> 'my_statement' 
-    const statementMatches = [...spl2Module.matchAll(/^\s*\$([a-zA-Z0-9_]+)[\s]*=/gm)];
+    const statementMatches = getModuleStatements(spl2Module);
     if (!statementMatches
         || statementMatches.length < 1
         || statementMatches[statementMatches.length - 1].length < 2) {

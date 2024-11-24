@@ -20,5 +20,5 @@ out/package.json
 .vscode-test
 **/out/notebooks/*.js
 **/out/notebooks/*.map
-**/out/notebooks/spl2/*.js
-**/out/notebooks/spl2/*.map
+**/out/notebooks/**/*.js
+**/out/notebooks/**/*.map
