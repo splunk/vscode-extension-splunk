@@ -139,16 +139,14 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     namespace = '';
     app = app || 'search'; // default to search app
     // Get last statement assignment '$my_statement = ...' -> 'my_statement' 
-    const statementMatches = getModuleStatements(spl2Module);
-    if (!statementMatches
-        || statementMatches.length < 1
-        || statementMatches[statementMatches.length - 1].length < 2) {
+    const statements = getModuleStatements(spl2Module);
+    if (!statements || (statements.length < 1)) {
         throw new Error(
             'No statements found in SPL2. Please assign at least one statement name ' +
             'using "$". For example: `$my_statement = from _internal`'
         );
     }
-    const statementIdentifier = statementMatches[statementMatches.length - 1][1];
+    const statementIdentifier = statements[statements.length - 1];
     const params = {
         'timezone': 'Etc/UTC',
         'collectFieldSummary': true,
