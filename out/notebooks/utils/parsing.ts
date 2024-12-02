@@ -17,10 +17,9 @@ export function getModuleStatements(spl2Module: string): string[] {
     
     let newModule = '';
     let prev = '';
-    while (spl2Module.length > 0) {
-        let indx = 0;
-        let next = spl2Module.charAt(indx++);
-        let peeked = peek(spl2Module);
+    for (let indx = 0; indx < spl2Module.length; indx++) {
+        let next = spl2Module[indx];
+        let peeked = peek(spl2Module, indx + 1);
         let crlf = (next === '\r' && peeked === '\n');
         let newLine = crlf || (next === '\n');
         if (inBlockComment) {
@@ -84,7 +83,7 @@ export function getModuleStatements(spl2Module: string): string[] {
                 newModule += next;
             }
         }
-        spl2Module = spl2Module.substring(indx, spl2Module.length);
+        prev = next;
     }
     
     // Match anything that looks like `$statement_1 = ...` and return the statement names
@@ -93,6 +92,6 @@ export function getModuleStatements(spl2Module: string): string[] {
         .filter(val => (val !== null));
 }
 
-function peek(str: string): string {
-    return (str.length > 1) ? str.charAt(1) : "";
+function peek(str: string, i: number): string {
+    return (str.length > i) ? str.charAt(i) : "";
 }
