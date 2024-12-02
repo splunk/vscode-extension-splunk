@@ -47,7 +47,8 @@ describe('splunk', () => {
             const module = `
                 $out1 = from [{s:1}] | eval '
                   $fieldtemp1 = ' = value1 | eval ' \\'
-                  $fieldtemp2 = ' = value2
+                  $fieldtemp2 = ' = value2 | eval field1 = 
+                  " \\" $stringtemp1 = value3"
                 | eval foo = map([1,2], $it -> {
                     $lp1 = 1;
                     return $f;
