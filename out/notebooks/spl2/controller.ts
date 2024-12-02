@@ -5,7 +5,7 @@ import {
     getClient,
 } from '../splunk';
 import { SplunkController } from '../controller';
-import { splunkMessagesToOutputItems } from '../utils';
+import { splunkMessagesToOutputItems } from '../utils/messages';
 import { getAppSubNamespace } from './serializer';
 
 export class Spl2Controller extends SplunkController {

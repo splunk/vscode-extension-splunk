@@ -8,7 +8,7 @@ import {
     getSearchJobResults,
     wait,
 } from './splunk';
-import { splunkMessagesToOutputItems } from './utils';
+import { splunkMessagesToOutputItems } from './utils/messages';
 
 export class SplunkController {
     public notebookType: string;

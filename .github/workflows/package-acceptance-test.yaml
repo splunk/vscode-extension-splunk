@@ -22,7 +22,7 @@ jobs:
     - run: node --version
     - run: npm install
     - run: npm list
-    - run: npm run compile
+    - run: npm run package
     - run: npm install -g @vscode/vsce
     - run: vsce package
     - uses: actions/upload-artifact@v3
