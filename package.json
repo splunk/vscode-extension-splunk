@@ -452,7 +452,7 @@
         "@splunk/react-ui": "^4.17.0",
         "@splunk/visualizations": "^25.9.0",
         "@types/vscode-notebook-renderer": "^1.72.0",
-        "axios": "^0.27.2",
+        "axios": "^0.28.0",
         "babel-loader": "^9.1.0",
         "extract-zip": "^2.0.1",
         "fast-xml-parser": "^4.4.1",
