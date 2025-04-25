@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as child_process from 'child_process';
-import { XMLParser} from 'fast-xml-parser';
+import { XMLParser } from 'fast-xml-parser';
 import * as extract from 'extract-zip';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -98,7 +98,7 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
             reject(`Error creating local artifact storage for SPL2, err: ${err}`);
             return Promise.resolve();
         }
-        
+
         let installedLatestLsp = false;
         if (!lspVersion) {
             // If we haven't set up a Language Server version prompt use to accept terms
@@ -115,7 +115,7 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
                 const localLspDir = getLocalLspDir(globalStoragePath);
                 fs.rmSync(localLspDir, { recursive: true, force: true });
                 makeLocalStorage(globalStoragePath); // recreate directory
-            
+
                 await getLatestSpl2Release(globalStoragePath, progressBar);
                 installedLatestLsp = true;
             } catch (err) {
@@ -162,7 +162,7 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
 function isJavaVersionCompatible(javaLoc: string): boolean {
     let output;
     try {
-        const javaVerCmd = child_process.spawnSync(javaLoc, ['-version'], { encoding : 'utf8' });
+        const javaVerCmd = child_process.spawnSync(javaLoc, ['-version'], { encoding: 'utf8' });
         if (!javaVerCmd || javaVerCmd.stdout) {
             return false;
         }
@@ -223,16 +223,16 @@ async function promptToDownloadJava(): Promise<boolean> {
     );
     const downloadAndInstallChoice = 'Download and Install';
     const turnOffSPL2Choice = 'Turn off SPL2 support';
-  
+
     const popup = window.showInformationMessage(
         promptMessage,
         { modal: true },
         downloadAndInstallChoice,
         turnOffSPL2Choice,
     );
-  
+
     const userSelection = (await popup) || null;
-    switch(userSelection) {
+    switch (userSelection) {
         case downloadAndInstallChoice:
             return Promise.resolve(true);
         case turnOffSPL2Choice:
@@ -255,7 +255,7 @@ async function installJDK(installDir: string, progressBar: StatusBarItem): Promi
     let os = '';
     let ext = 'tar.gz';
     // Determine architecture
-    switch(process.arch) {
+    switch (process.arch) {
         case 'x64':
             arch = process.arch;
             break;
@@ -270,7 +270,7 @@ async function installJDK(installDir: string, progressBar: StatusBarItem): Promi
             );
     }
     // Determine OS/extension
-    switch(process.platform) {
+    switch (process.platform) {
         case 'darwin':
             os = 'macos';
             break;
@@ -281,10 +281,10 @@ async function installJDK(installDir: string, progressBar: StatusBarItem): Promi
         default:
             os = 'linux';
     }
-    
+
     const filename = `amazon-corretto-${minimumMajorJavaVersion}-${arch}-${os}-jdk.${ext}`;
     const url = `https://corretto.aws/downloads/latest/${filename}`;
-    
+
     // Download to installDir
     const downloadedArchive = path.join(installDir, filename);
     let compressedSize = 0;
@@ -351,9 +351,7 @@ async function downloadWithProgress(
     const fileWriter = fs.createWriteStream(destinationPath);
 
     return new Promise(async (resolve, reject) => {
-        const { data, headers } = await axios({
-            url,
-            method: 'GET',
+        const { data, headers } = await axios.get(url, {
             responseType: 'stream',
             transformRequest: (data, headers) => {
                 // Override defaults set elsewhere for splunkd communication
@@ -364,7 +362,7 @@ async function downloadWithProgress(
                 delete headers?.get['Authorization'];
                 delete headers?.get['Accept'];
                 return data;
-              },
+            },
         });
         const totalSize = parseInt(headers['content-length']);
         let totalDownloaded = 0;
@@ -395,7 +393,7 @@ async function downloadWithProgress(
 }
 
 async function extractZipWithProgress(
-    zipfilePath:string,
+    zipfilePath: string,
     extractPath: string,
     compressedSize: number,
     progressBar: StatusBarItem,
@@ -407,17 +405,19 @@ async function extractZipWithProgress(
     // infer this from the read/unzip stream
     let binJavaPath = '';
     progressBar.text = `${progressBarText}...`;
-    await extract(zipfilePath, { dir: extractPath, onEntry: (entry, zipfile) => {
-        if (entry.fileName.endsWith('bin/java.exe') || entry.fileName.endsWith('bin\\java.exe')) {
-            binJavaPath = path.join(extractPath, entry.fileName);
+    await extract(zipfilePath, {
+        dir: extractPath, onEntry: (entry, zipfile) => {
+            if (entry.fileName.endsWith('bin/java.exe') || entry.fileName.endsWith('bin\\java.exe')) {
+                binJavaPath = path.join(extractPath, entry.fileName);
+            }
+            readCompressedSize += entry.compressedSize;
+            let pct = Math.floor(readCompressedSize * 100 / compressedSize);
+            if (pct >= nextUpdate) {
+                progressBar.text = `${progressBarText} ${pct}%`;
+                nextUpdate = pct + 1;
+            }
         }
-        readCompressedSize += entry.compressedSize;
-        let pct = Math.floor(readCompressedSize * 100 / compressedSize);
-        if (pct >= nextUpdate) {
-            progressBar.text = `${progressBarText} ${pct}%`;
-            nextUpdate = pct + 1;
-        }
-    }});
+    });
     if (!binJavaPath) {
         const jdkDir = fs.readdirSync(extractPath).filter(fn => fn.startsWith('jdk')); // e.g. jdk17.0.7_7
         if (jdkDir.length === 1) {
@@ -431,19 +431,19 @@ async function extractZipWithProgress(
 }
 
 async function extractTgzWithProgress(
-        tgzPath:string,
-        extractPath: string,
-        compressedSize: number,
-        progressBar: StatusBarItem,
-        progressBarText: string,
-    ): Promise<string> {
+    tgzPath: string,
+    extractPath: string,
+    compressedSize: number,
+    progressBar: StatusBarItem,
+    progressBarText: string,
+): Promise<string> {
     // Create read and unzip streams and listen for individual entry to find bin\java.exe
     let binJavaPath;
     let readCompressedSize = 0;
     let nextUpdate = 1;
 
     const pipe = util.promisify(pipeline);
-    
+
     await pipe(
         fs.createReadStream(tgzPath).on('data', (chunk) => {
             readCompressedSize += chunk.length;
@@ -493,9 +493,9 @@ async function promptToDownloadLsp(alsoInstallJava: boolean): Promise<boolean> {
         viewTermsChoice,
         turnOffSPL2Choice,
     );
-    
+
     const userSelection = (await popup) || null;
-    switch(userSelection) {
+    switch (userSelection) {
         case agreeAndContinueChoice:
             // Record preference so user is not asked again
             await workspace.getConfiguration().update(configKeyAcceptedTerms, TermsAcceptanceStatus.Accepted, true);

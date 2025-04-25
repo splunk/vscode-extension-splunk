@@ -15,7 +15,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Install Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: 18
     - run: npm --version
@@ -25,7 +25,7 @@ jobs:
     - run: npm run package
     - run: npm install -g @vscode/vsce
     - run: vsce package
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
         name: vsix-package
         path: splunk-*.vsix
@@ -43,7 +43,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Download package
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: vsix-package
     - run: pwd
@@ -52,7 +52,7 @@ jobs:
     - run: dir *.vsix
       if: runner.os == 'Windows'
     - name: Install Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: 18
     - run: npm --version
