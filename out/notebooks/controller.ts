@@ -4,6 +4,7 @@ import {
     cancelSearchJob,
     createSearchJob,
     getClient,
+    getSearchHeadClusterMemberClient,
     getSearchJob,
     getSearchJobResults,
     wait,
@@ -18,6 +19,7 @@ export class SplunkController {
     protected supportedLanguages: string[];
 
     protected _controller: vscode.NotebookController;
+    protected _service; // Splunk Javascript SDK Client
     private _executionOrder = 0;
     private _interrupted = false;
     private _tokens = {};
@@ -55,6 +57,8 @@ export class SplunkController {
             this.notebookType,
             this.label
         );
+        // Attempt to connect to individual search head if part of a search head cluster
+        this.refreshService();
 
         this._controller.supportedLanguages = this.supportedLanguages;
         this._controller.supportsExecutionOrder = true;
@@ -68,6 +72,20 @@ export class SplunkController {
     async runCell(cell: vscode.NotebookCell) {
         const notebookDocument = await vscode.workspace.openNotebookDocument(cell.document.uri)
         this._execute([cell], notebookDocument, this._controller);
+    }
+
+    async refreshService() {
+        const config = vscode.workspace.getConfiguration();
+        const restUrl = config.get<string>('splunk.commands.splunkRestUrl');
+        const token = config.get<string>('splunk.commands.token');
+        // Create a new SDK client if one hasn't been created or token / url settings have been changed
+        if (!this._service || (this._service._originalURL !== restUrl) || (this._service.sessionKey !== token)) {
+            this._service = getClient();
+            // Check to see if the splunk deployment is part of a search head cluster, choose a single search head
+            // to target if so to ensure that adhoc jobs are immediately available (without replication)
+            const newService = await getSearchHeadClusterMemberClient(this._service);
+            this._service = newService;
+        }
     }
 
     protected _execute(
@@ -145,9 +163,8 @@ export class SplunkController {
 
         let query = cell.document.getText().trim().replace(/^\s+|\s+$/g, '');
 
-        const service = getClient()
-    
-        let jobs = service.jobs();
+        await this.refreshService();
+        let jobs = this._service.jobs();
 
         const tokenRegex = /\$([a-zA-Z0-9_.|]*?)\$/g;
 

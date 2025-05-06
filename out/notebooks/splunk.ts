@@ -9,27 +9,25 @@ export function getClient() {
     const restUrl = config.get<string>('splunk.commands.splunkRestUrl');
     const token = config.get<string>('splunk.commands.token');
 
-    let url = new URL(restUrl);
+    const url = new URL(restUrl);
     const scheme = url.protocol.replace(':', '');
     const port = url.port || (scheme === 'https' ? '443' : '80');
     const host = url.hostname;
 
-    let service = new splunk.Service({
+    const service = new splunk.Service({
         scheme: scheme,
         host: host,
         port: port,
         sessionKey: token,
-        version: '8',
         authorization: 'Bearer',
     });
+    service._originalURL = restUrl;
 
     return service;
 }
 
 export function splunkLogin(service) {
-
     return new Promise(function(resolve, reject) {
-        
         service.login(function(err, wasSuccessful) {
             if (err !== null || !wasSuccessful) {
                 reject(err);
@@ -37,10 +35,7 @@ export function splunkLogin(service) {
                 resolve(null);
             }
         });
-
     });
-
-
 }
 
 
@@ -53,7 +48,6 @@ export function createSearchJob(jobs, query, options) {
                 resolve(data);
             }
         });
-
     });
 }
 
@@ -70,6 +64,61 @@ function makeHeaders(service: any): object {
 }
 
 /**
+ * Check to see if the SDK client is part of a search head cluster, if so return a new
+ * client pointing to an individual search head member, such that any search ids created
+ * will be immediately available for results rather than waiting for artifact replication
+ * across the search head cluster.
+ * @param service Instance of the Javascript SDK Service
+ * 
+ * @returns Promise<void> 
+ */
+export function getSearchHeadClusterMemberClient(service: any): Promise<any> {
+    const shcUrl = `${service.prefix}/services/shcluster/member/members?output_mode=json`;
+    console.log(`Attempting to determine SHC info if present using ${shcUrl}`);
+    return needle(
+        "GET",
+        shcUrl,
+        {
+            'headers': makeHeaders(service),
+            'followAllRedirects': true,
+            'timeout': 0,
+            'strictSSL': false,
+            'rejectUnauthorized' : false,
+        })
+        .then((response) => {
+            console.log(`Response from shcUrl status code: ${response.statusCode}`);
+            console.log(`Response from shcUrl body: \n'${JSON.stringify(response.body)}'`);
+            const data = response.body;
+            if (response.statusCode >= 400 ||
+                !Object.prototype.isPrototypeOf(data)
+                || data.entry === undefined
+                || !Array.isArray(data.entry)
+                || data.entry.length === 0
+                || data.entry[0].content === undefined
+                || data.entry[0].content.mgmt_uri === undefined
+            ) {
+                console.warn("Unsuccessful response from /services/shcluster/member/members endpoint encountered, reverting to original service client.")
+                return service;
+            }
+            // This is in the expected successful response format
+            vscode.window.showInformationMessage(`Discovered search head cluster members. Attempting to communicate directly with SH ${data.entry[0].content.mgmt_uri}`);
+            const url = new URL(data.entry[0].content.mgmt_uri);
+            const scheme = url.protocol.replace(':', '');
+            const port = url.port || (scheme === 'https' ? '443' : '80');
+            const host = url.hostname;
+            const newService = new splunk.Service({
+                scheme: scheme,
+                host: host,
+                port: port,
+                sessionKey: service.sessionKey,
+                authorization: 'Bearer',
+            });
+            newService._originalURL = service._originalURL;
+            return newService;
+        });
+}
+
+/**
  * Update a module by calling the PUT /services/spl2/modules/<namespace>.<moduleName>
  * @param service Instance of the Javascript SDK Service
  * @param moduleName Name of the module to append to the namespace to form the request path
@@ -77,7 +126,7 @@ function makeHeaders(service: any): object {
  * @param module Full contents of the module to update with
  * @returns Promise<void> (or throw Error containing data.messages[])
  */
-export function updateSpl2Module(service: any, moduleName: string, namespace: string, module: string) {
+export function updateSpl2Module(service: any, moduleName: string, namespace: string, module: string): Promise<void> {
     // The Splunk SDK for Javascript doesn't currently support the spl2/modules endpoints
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
@@ -131,9 +180,9 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
  * @param namespace Namespace _within_ the apps.<app> to run, this will be used directly in the body of the request
  * @param earliest Earliest time to be included in the body of the request
  * @param latest Latest time to be included in the body of the request
- * @returns A Promise containing the job id created (or throw an Error containing data.messages[])
+ * @returns A Promise containing the job information including sid created (or throw an Error containing data.messages[])
  */
-export function dispatchSpl2Module(service: any, spl2Module: string, app: string, namespace: string, earliest: string, latest: string) {
+export function dispatchSpl2Module(service: any, spl2Module: string, app: string, namespace: string, earliest: string, latest: string): Promise<any>  {
     // For now we're using /services/<app> which doesn't respect relative namespaces,
     // so for now hardcode this to '' but if/when /servicesNS/<app>
     namespace = '';
@@ -194,6 +243,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
         .then((response) => {
             console.log(`Response status code: ${response.statusCode}`);
             console.log(`Response body: \n'${JSON.stringify(response.body)}'`);
+            console.log(`Response headers: \n'${JSON.stringify(response.headers)}'`);
             const data = response.body;
             if (response.statusCode >= 400 || !Array.prototype.isPrototypeOf(data) || data.length < 1) {
                 handleErrorPayloads(data, response.statusCode);
@@ -267,7 +317,7 @@ function handleErrorPayloads(data: any, statusCode: number) {
     });
 }
 
-export function getSearchJobBySid(service, sid) {
+export function getSearchJobBySid(service, sid): Promise<any> {
     return new Promise(function(resolve, reject) {
         service.getJob(sid, function(err, data) {
             if (err != null) {
@@ -280,7 +330,7 @@ export function getSearchJobBySid(service, sid) {
 }
 
 
-export function getSearchJob(job) {
+export function getSearchJob(job): Promise<any> {
     return new Promise(function(resolve, reject) {
         job.fetch(function(err, job) {
             if (err !== null) {
@@ -293,7 +343,7 @@ export function getSearchJob(job) {
     });
 }
 
-export function getJobSearchLog(job) {
+export function getJobSearchLog(job): Promise<any> {
     return new Promise(function(resolve, reject) {
         job.searchlog(function(err, log) {
             if (err !== null) {
@@ -306,7 +356,7 @@ export function getJobSearchLog(job) {
     });
 }
 
-export function getSearchJobResults(job) {
+export function getSearchJobResults(job): Promise<any> {
     return new Promise(function(resolve, reject) {
         job.get("results", {"output_mode": "json_cols"},function(err, results) {
             if (err !== null) {
@@ -319,7 +369,7 @@ export function getSearchJobResults(job) {
     });
 }
 
-export function cancelSearchJob(job) {
+export function cancelSearchJob(job): Promise<any> {
     return new Promise(function(resolve, reject) {
         job.cancel(function(err, results) {
             if (err !== null) {
@@ -332,7 +382,7 @@ export function cancelSearchJob(job) {
     });
 }
 
-export function wait(ms = 1000) {
+export function wait(ms = 1000): Promise<void> {
     return new Promise(resolve => {
       setTimeout(resolve, ms);
     });
