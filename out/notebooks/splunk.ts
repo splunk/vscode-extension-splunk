@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { SplunkMessage } from './utils/messages';
 import { getModuleStatements } from './utils/parsing';
 
-export function getClient() {
+export function getClient(): any {
     const config = vscode.workspace.getConfiguration();
     const restUrl = config.get<string>('splunk.commands.splunkRestUrl');
     const token = config.get<string>('splunk.commands.token');
@@ -26,12 +26,12 @@ export function getClient() {
     return service;
 }
 
-export function splunkLogin(service) {
+export function splunkLogin(service): Promise<any> {
     let request = service.login();
     return request;
 }
 
-export function createSearchJob(jobs, query, options) {
+export function createSearchJob(jobs, query, options): Promise<any> {
     let request = jobs.create(query, options);
     return request;
 }
@@ -57,7 +57,7 @@ function makeHeaders(service: any): object {
  * 
  * @returns Promise<void> 
  */
-export function getSearchHeadClusterMemberClient(service: any) {
+export function getSearchHeadClusterMemberClient(service: any): Promise<any> {
     const shcUrl = `${service.prefix}/services/shcluster/member/members?output_mode=json`;
     console.log(`Attempting to determine SHC info if present using ${shcUrl}`);
     return needle(
@@ -111,7 +111,7 @@ export function getSearchHeadClusterMemberClient(service: any) {
  * @param module Full contents of the module to update with
  * @returns Promise<void> (or throw Error containing data.messages[])
  */
-export function updateSpl2Module(service: any, moduleName: string, namespace: string, module: string) {
+export function updateSpl2Module(service: any, moduleName: string, namespace: string, module: string): Promise<void> {
     // The Splunk SDK for Javascript doesn't currently support the spl2/modules endpoints
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
@@ -165,9 +165,9 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
  * @param namespace Namespace _within_ the apps.<app> to run, this will be used directly in the body of the request
  * @param earliest Earliest time to be included in the body of the request
  * @param latest Latest time to be included in the body of the request
- * @returns A Promise containing the job id created (or throw an Error containing data.messages[])
+ * @returns A Promise containing the job information including sid created (or throw an Error containing data.messages[])
  */
-export function dispatchSpl2Module(service: any, spl2Module: string, app: string, namespace: string, earliest: string, latest: string) {
+export function dispatchSpl2Module(service: any, spl2Module: string, app: string, namespace: string, earliest: string, latest: string): Promise<any>  {
     // For now we're using /services/<app> which doesn't respect relative namespaces,
     // so for now hardcode this to '' but if/when /servicesNS/<app>
     namespace = '';
@@ -237,10 +237,6 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
             // This is in the expected successful response format
             const sid = data[0]['sid'];
             return getSearchJobBySid(service, sid);
-        })
-        .then((info) => {
-            console.log(`Retrieved job info: ${JSON.stringify(info)}`);
-            return info;
         });
 }
 
@@ -306,33 +302,33 @@ function handleErrorPayloads(data: any, statusCode: number) {
     });
 }
 
-export function getSearchJobBySid(service, sid) {
+export function getSearchJobBySid(service, sid): Promise<any> {
     let request = service.getJob(sid);
     return request;
 }
 
 
-export function getSearchJob(job) {
+export function getSearchJob(job): Promise<any> {
     let request = job.fetch();
     return request;
 }
 
-export function getJobSearchLog(job) {
+export function getJobSearchLog(job): Promise<any> {
     let request = job.searchlog();
     return request;
 }
 
-export function getSearchJobResults(job) {
+export function getSearchJobResults(job): Promise<any> {
     let request = job.get("results", {"output_mode": "json_cols"});
     return request;
 }
 
-export function cancelSearchJob(job) {
+export function cancelSearchJob(job): Promise<any> {
     let request = job.cancel();
     return request;
 }
 
-export function wait(ms = 1000) {
+export function wait(ms = 1000): Promise<void> {
     return new Promise(resolve => {
       setTimeout(resolve, ms);
     });
