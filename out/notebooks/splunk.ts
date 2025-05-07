@@ -9,12 +9,12 @@ export function getClient() {
     const restUrl = config.get<string>('splunk.commands.splunkRestUrl');
     const token = config.get<string>('splunk.commands.token');
 
-    const url = new URL(restUrl);
+    let url = new URL(restUrl);
     const scheme = url.protocol.replace(':', '');
     const port = url.port || (scheme === 'https' ? '443' : '80');
     const host = url.hostname;
 
-    const service = new splunk.Service({
+    let service = new splunk.Service({
         scheme: scheme,
         host: host,
         port: port,
@@ -27,28 +27,13 @@ export function getClient() {
 }
 
 export function splunkLogin(service) {
-    return new Promise(function(resolve, reject) {
-        service.login(function(err, wasSuccessful) {
-            if (err !== null || !wasSuccessful) {
-                reject(err);
-            } else {
-                resolve(null);
-            }
-        });
-    });
+    let request = service.login();
+    return request;
 }
 
-
 export function createSearchJob(jobs, query, options) {
-    return new Promise(function(resolve, reject) {
-        jobs.create(query, options, function(err, data) {
-            if (err !== null) {
-                reject(err);
-            } else {
-                resolve(data);
-            }
-        });
-    });
+    let request = jobs.create(query, options);
+    return request;
 }
 
 /**
@@ -72,7 +57,7 @@ function makeHeaders(service: any): object {
  * 
  * @returns Promise<void> 
  */
-export function getSearchHeadClusterMemberClient(service: any): Promise<any> {
+export function getSearchHeadClusterMemberClient(service: any) {
     const shcUrl = `${service.prefix}/services/shcluster/member/members?output_mode=json`;
     console.log(`Attempting to determine SHC info if present using ${shcUrl}`);
     return needle(
@@ -126,7 +111,7 @@ export function getSearchHeadClusterMemberClient(service: any): Promise<any> {
  * @param module Full contents of the module to update with
  * @returns Promise<void> (or throw Error containing data.messages[])
  */
-export function updateSpl2Module(service: any, moduleName: string, namespace: string, module: string): Promise<void> {
+export function updateSpl2Module(service: any, moduleName: string, namespace: string, module: string) {
     // The Splunk SDK for Javascript doesn't currently support the spl2/modules endpoints
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
@@ -180,9 +165,9 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
  * @param namespace Namespace _within_ the apps.<app> to run, this will be used directly in the body of the request
  * @param earliest Earliest time to be included in the body of the request
  * @param latest Latest time to be included in the body of the request
- * @returns A Promise containing the job information including sid created (or throw an Error containing data.messages[])
+ * @returns A Promise containing the job id created (or throw an Error containing data.messages[])
  */
-export function dispatchSpl2Module(service: any, spl2Module: string, app: string, namespace: string, earliest: string, latest: string): Promise<any>  {
+export function dispatchSpl2Module(service: any, spl2Module: string, app: string, namespace: string, earliest: string, latest: string) {
     // For now we're using /services/<app> which doesn't respect relative namespaces,
     // so for now hardcode this to '' but if/when /servicesNS/<app>
     namespace = '';
@@ -252,6 +237,10 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
             // This is in the expected successful response format
             const sid = data[0]['sid'];
             return getSearchJobBySid(service, sid);
+        })
+        .then((info) => {
+            console.log(`Retrieved job info: ${JSON.stringify(info)}`);
+            return info;
         });
 }
 
@@ -317,72 +306,33 @@ function handleErrorPayloads(data: any, statusCode: number) {
     });
 }
 
-export function getSearchJobBySid(service, sid): Promise<any> {
-    return new Promise(function(resolve, reject) {
-        service.getJob(sid, function(err, data) {
-            if (err != null) {
-                reject(err);
-            } else {
-                resolve(data);
-            }
-        });
-    });
+export function getSearchJobBySid(service, sid) {
+    let request = service.getJob(sid);
+    return request;
 }
 
 
-export function getSearchJob(job): Promise<any> {
-    return new Promise(function(resolve, reject) {
-        job.fetch(function(err, job) {
-            if (err !== null) {
-                reject(err);
-            } else {
-                resolve(job);
-            }
-        });
-
-    });
+export function getSearchJob(job) {
+    let request = job.fetch();
+    return request;
 }
 
-export function getJobSearchLog(job): Promise<any> {
-    return new Promise(function(resolve, reject) {
-        job.searchlog(function(err, log) {
-            if (err !== null) {
-                reject(err);
-            } else {
-                resolve(log);
-            }
-        });
-
-    });
+export function getJobSearchLog(job) {
+    let request = job.searchlog();
+    return request;
 }
 
-export function getSearchJobResults(job): Promise<any> {
-    return new Promise(function(resolve, reject) {
-        job.get("results", {"output_mode": "json_cols"},function(err, results) {
-            if (err !== null) {
-                reject(err);
-            } else {
-                resolve(results);
-            }
-        });
-
-    });
+export function getSearchJobResults(job) {
+    let request = job.get("results", {"output_mode": "json_cols"});
+    return request;
 }
 
-export function cancelSearchJob(job): Promise<any> {
-    return new Promise(function(resolve, reject) {
-        job.cancel(function(err, results) {
-            if (err !== null) {
-                reject(err);
-            } else {
-                resolve(results);
-            }
-
-        });
-    });
+export function cancelSearchJob(job) {
+    let request = job.cancel();
+    return request;
 }
 
-export function wait(ms = 1000): Promise<void> {
+export function wait(ms = 1000) {
     return new Promise(resolve => {
       setTimeout(resolve, ms);
     });
