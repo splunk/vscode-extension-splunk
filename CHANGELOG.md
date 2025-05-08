@@ -2,6 +2,19 @@
 
 Complete documentation is available at the [extension wiki](https://github.com/splunk/vscode-extension-splunk/wiki)
 
+## [0.3.4]
+### New features
+- Pick a single search head when search head cluster is detected to prevent replication delay issues
+- Improve parsing of SPL2 modules for statement names to handle strings, fields, functions, comments
+- Bump fast-xml-parser from 4.3.6 to 4.4.1 
+- Bump axios from 0.28.0 to 0.30.0
+- Bump braces from 3.0.2 to 3.0.3 
+
+### Issues fixed
+- Fix to update GitHub actions as they were failing
+- Add support for V2 search endpoints 
+- Updated version of search endpoint /search/v2/jobs/export
+
 ## [0.3.3]
 ### New features
 - Added a hover provider to provide documenation on `hover` for .conf file stanzas and settings
