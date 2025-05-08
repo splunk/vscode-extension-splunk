@@ -79,12 +79,21 @@ export class SplunkController {
         const restUrl = config.get<string>('splunk.commands.splunkRestUrl');
         const token = config.get<string>('splunk.commands.token');
         // Create a new SDK client if one hasn't been created or token / url settings have been changed
-        if (!this._service || (this._service._originalURL !== restUrl) || (this._service.sessionKey !== token)) {
+        if ((this._service === undefined)
+            || (this._service === null)
+            || (this._service._originalURL !== restUrl)
+            || (this._service.sessionKey !== token)
+        ) {
             this._service = getClient();
             // Check to see if the splunk deployment is part of a search head cluster, choose a single search head
             // to target if so to ensure that adhoc jobs are immediately available (without replication)
-            const newService = await getSearchHeadClusterMemberClient(this._service);
-            this._service = newService;
+            try {
+                const newService = await getSearchHeadClusterMemberClient(this._service);
+                this._service = newService;
+            } catch (err) {
+                console.warn(`Error retrieving search head cluster information:`);
+                console.warn(err);
+            }
         }
     }
 
