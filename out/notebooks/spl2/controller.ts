@@ -1,9 +1,6 @@
 import * as vscode from 'vscode';
 
-import {
-    dispatchSpl2Module,
-    getClient,
-} from '../splunk';
+import { dispatchSpl2Module } from '../splunk';
 import { SplunkController } from '../controller';
 import { splunkMessagesToOutputItems } from '../utils/messages';
 import { getAppSubNamespace } from './serializer';
@@ -30,7 +27,6 @@ export class Spl2Controller extends SplunkController {
         const execution = super._startExecution(cell);
 
         const spl2Module = cell.document.getText().trim();
-        const service = getClient();
         let fullNamespace: string = cell?.metadata?.splunk?.namespace || '';
         // Get apps.<app>[.optional.sub.namespaces] from fullNamespace
         const [app, subNamespace] = getAppSubNamespace(fullNamespace);
@@ -39,8 +35,9 @@ export class Spl2Controller extends SplunkController {
     
         let job;
         try {
+            await this.refreshService();
             job = await dispatchSpl2Module(
-                service,
+                this._service,
                 spl2Module,
                 app,
                 subNamespace,
