@@ -26,11 +26,6 @@ export function getClient(): any {
     return service;
 }
 
-export function splunkLogin(service): Promise<any> {
-    let request = service.login();
-    return request;
-}
-
 export function createSearchJob(jobs, query, options): Promise<any> {
     let request = jobs.create(query, options);
     return request;
