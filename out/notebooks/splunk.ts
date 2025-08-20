@@ -99,7 +99,7 @@ export function getSearchHeadClusterMemberClient(service: any): Promise<any> {
 }
 
 /**
- * Update a module by calling the PUT /services/spl2/modules/<namespace>.<moduleName>
+ * Update a module by calling the PUT /services/orchestrator/v1/spl2/modules/<namespace>.<moduleName>
  * @param service Instance of the Javascript SDK Service
  * @param moduleName Name of the module to append to the namespace to form the request path
  * @param namespace Full namespace to be used directly to form the request path
@@ -110,7 +110,7 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
     // The Splunk SDK for Javascript doesn't currently support the spl2/modules endpoints
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
-    console.log(`Request: [PUT] to ${service.prefix}/services/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`);
+    console.log(`Request: [PUT] to ${service.prefix}/services/orchestrator/v1/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`);
     console.log(`Request Body: \n'${JSON.stringify({
         'name': moduleName,
         'namespace': namespace,
@@ -119,8 +119,8 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
     console.log(`Request Headers: ${JSON.stringify(makeHeaders(service))}`);
     return needle(
         'PUT',
-        // example: https://myhost.splunkcloud.com:8089/services/spl2/modules/apps.search._default
-        `${service.prefix}/services/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`,
+        // example: https://myhost.splunkcloud.com:8089/services/orchestrator/v1/spl2/modules/apps.search._default
+        `${service.prefix}/services/orchestrator/v1/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`,
         {
             'name': moduleName,
             'namespace': namespace,
@@ -194,7 +194,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     // The Splunk SDK for Javascript doesn't currently support the spl2-module-dispatch endpoint
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
-    console.log(`Request: [POST] to ${service.prefix}/servicesNS/-/${encodeURIComponent(app)}/search/spl2-module-dispatch`);
+    console.log(`Request: [POST] to ${service.prefix}/services/orchestrator/v1/spl2/modules/dispatch`);
     console.log(`Request Body: \n'${JSON.stringify({
         'module': spl2Module,
         'namespace': namespace,
@@ -205,7 +205,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     console.log(`Request Headers: ${JSON.stringify(makeHeaders(service))}`);
     return needle(
         'POST',
-        `${service.prefix}/servicesNS/-/${encodeURIComponent(app)}/search/spl2-module-dispatch`,
+        `${service.prefix}/services/orchestrator/v1/spl2/modules/dispatch`,
         {
             'module': spl2Module,
             'namespace': namespace,
