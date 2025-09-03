@@ -7,6 +7,7 @@ on:
     branches:
       - main
       - master
+      - tpavlik/stage-v0.3.5-beta1
 
 jobs:
   package:
