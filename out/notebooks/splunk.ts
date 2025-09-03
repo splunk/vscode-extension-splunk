@@ -60,7 +60,7 @@ export function getSearchHeadClusterMemberClient(service: any): Promise<any> {
         shcUrl,
         {
             'headers': makeHeaders(service),
-            'followAllRedirects': true,
+            'follow_max': 5,
             'timeout': 0,
             'strictSSL': false,
             'rejectUnauthorized' : false,
@@ -128,7 +128,7 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
         },
         {
             'headers': makeHeaders(service),
-            'followAllRedirects': true,
+            'follow_max': 5,
             'timeout': 0,
             'strictSSL': false,
             'rejectUnauthorized' : false,
@@ -153,10 +153,10 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
 }
 
 /**
- * Dispatch a module to create a job using the POST /servicesNS/-/<app>/search/spl2-module-dispatch endpoint
+ * Dispatch a module to create a job using the POST /services/orchestrator/v1/spl2/modules/dispatch endpoint
  * @param service Instance of the Javascript SDK Service
  * @param spl2Module Full text of the SPL2 module to run (contents of a SPL2 notebook cell, for example)
- * @param app App namespace to run within, this will determine /servicesNS/-/<app>/search/spl2-module-dispatch endpoint
+ * @param app App namespace to run within, this will determine /services/orchestrator/v1/spl2/modules/dispatch endpoint
  * @param namespace Namespace _within_ the apps.<app> to run, this will be used directly in the body of the request
  * @param earliest Earliest time to be included in the body of the request
  * @param latest Latest time to be included in the body of the request
@@ -215,7 +215,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
         },
         {
             'headers': makeHeaders(service),
-            'followAllRedirects': true,
+            'follow_max': 5,
             'timeout': 0,
             'strictSSL': false,
             'rejectUnauthorized': false,
@@ -225,12 +225,12 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
             console.log(`Response body: \n'${JSON.stringify(response.body)}'`);
             console.log(`Response headers: \n'${JSON.stringify(response.headers)}'`);
             const data = response.body;
-            if (response.statusCode >= 400 || !Array.prototype.isPrototypeOf(data) || data.length < 1) {
+            if ((response.statusCode >= 400) || !Object.prototype.isPrototypeOf(data) || !Object.prototype.isPrototypeOf(data.queryParameters) || !Object.prototype.isPrototypeOf(data.queryParameters[statementIdentifier])) {
                 handleErrorPayloads(data, response.statusCode);
                 return;
             }
             // This is in the expected successful response format
-            const sid = data[0]['sid'];
+            const sid = data.queryParameters[statementIdentifier]['sid'];
             return getSearchJobBySid(service, sid);
         });
 }
