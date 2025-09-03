@@ -4,7 +4,7 @@
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.75.0",
-        "node": "18.x"
+        "node": "22.x"
     },
     "license": "MIT",
     "displayName": "Splunk Extension",
