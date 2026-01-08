@@ -2,6 +2,10 @@
 
 Complete documentation is available at the [extension wiki](https://github.com/splunk/vscode-extension-splunk/wiki)
 
+## [0.3.5]
+### New features
+- Fix Spl2 notebook experience to match new splunkd endpoints for GA of SPL2
+
 ## [0.3.4]
 ### New features
 - Pick a single search head when search head cluster is detected to prevent replication delay issues
