@@ -1,6 +1,6 @@
 {
     "name": "splunk",
-    "version": "0.3.5",
+    "version": "0.3.5-rc1",
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.75.0",
