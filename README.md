@@ -11,6 +11,8 @@ The Visual Studio Code Extension for Splunk helps developers create, test, and d
 * IntelliSense for stanzas and parameters
 * Stanza folding
 * Linting
+* Semantic linting with context-aware best practice suggestions
+* Cross-file validation (validates references between props.conf, transforms.conf, inputs.conf, etc.)
 
 ## Splunk Notebooks
 Splunk Notebooks provide the ability to author SPL Notes, execute SPL Notes as search jobs, and view results in Visual Studio Code.  Splunk Notebooks works for both SPL and SPL2.
