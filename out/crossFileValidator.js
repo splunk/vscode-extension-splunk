@@ -791,8 +791,13 @@ function getDefinedSourcetypes(confPath) {
     const stanzas = workspaceScanner.parseStanzaNames(propsFile);
 
     for (const stanza of stanzas) {
-      // Skip special stanzas - only include simple sourcetype stanzas
-      if (!isSpecialPropsStanza(stanza)) {
+      // Handle [sourcetype::name] format - extract the actual sourcetype name
+      if (stanza.startsWith("sourcetype::")) {
+        const actualName = stanza.substring("sourcetype::".length);
+        sourcetypes.add(actualName);
+      }
+      // Skip other special stanzas - only include simple sourcetype stanzas
+      else if (!isSpecialPropsStanza(stanza)) {
         sourcetypes.add(stanza);
       }
     }
