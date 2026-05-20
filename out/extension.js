@@ -16,12 +16,12 @@ const semanticRules = require("./semanticRules.js");
 const { SplunkCodeActionProvider } = require("./codeActionProvider.js");
 const crossFileValidator = require("./crossFileValidator.js");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g;
-let extensionPath = null;
 let specConfigs = {};
 let timeout;
 let diagnosticCollection;
 let specConfig;
 let snippets = {};
+let extensionPath = null;
 
 const reload = require("./commands/reload.js");
 const { SplunkNotebookSerializer } = require("./notebooks/serializers");
@@ -83,9 +83,14 @@ function getDocumentItems(document, PATTERN) {
 
 async function activate(context) {
   let splunkOutputChannel = vscode.window.createOutputChannel("Splunk");
+
+  // Store extension path for semantic rules
   extensionPath = context.extensionPath;
 
-  // Register code action provider for semantic linting quick fixes
+  // Setup globalConfig.json preview
+  globalConfigPreview.init(context);
+
+  // Register CodeActionProvider for semantic linting quick fixes
   const semanticLintingEnabled = vscode.workspace
     .getConfiguration("splunk")
     .get("semanticLinting.enabled", true);
@@ -101,9 +106,6 @@ async function activate(context) {
       ),
     );
   }
-
-  // Setup globalConfig.json preview
-  globalConfigPreview.init(context);
 
   // Set up Splunk report viewer
   const embeddedReportProvider =
@@ -882,11 +884,11 @@ function triggerDiagnostics(specConfig, document, diagnosticCollection) {
 }
 
 function updateDiagnostics(specConfig, document, diagnosticCollection) {
-  let diagnostics = getDiagnostics(specConfig, document);
+  let diagnostics = getDiagnostics(specConfig, document, extensionPath);
   diagnosticCollection.set(document.uri, diagnostics);
 }
 
-function getDiagnostics(specConfig, document) {
+function getDiagnostics(specConfig, document, extensionPath) {
   let diagnostics = [];
 
   // Make sure stanzas are valid
