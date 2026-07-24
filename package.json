@@ -4,7 +4,7 @@
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.75.0",
-        "node": "22.x"
+        "node": "^22.18.0 || >=24.11.0"
     },
     "license": "MIT",
     "displayName": "Splunk Extension",
@@ -524,7 +524,7 @@
         "@types/react": "^16.9.38"
     },
     "devDependencies": {
-        "@babel/core": "^7.29.7",
+        "@babel/core": "^8.0.1",
         "@babel/preset-env": "^8.0.2",
         "@babel/preset-react": "^8.0.1",
         "@types/glob": "^7.1.1",
