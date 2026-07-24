@@ -502,7 +502,7 @@
     "icon": "images/icon.png",
     "extensionDependencies": [],
     "dependencies": {
-        "@splunk/react-ui": "^4.17.0",
+        "@splunk/react-ui": "^5.12.0",
         "@splunk/visualizations": "^28.8.0",
         "@types/vscode-notebook-renderer": "^1.72.0",
         "axios": "^1.18.1",
