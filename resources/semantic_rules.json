@@ -225,25 +225,6 @@
               "message": "Both crcSalt and initCrcLength are configured. crcSalt=<SOURCE> is typically sufficient for handling files with identical content. Using both may be unnecessary.",
               "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Handleduplicatedata"
             }
-          },
-          {
-            "id": "monitor_wildcard_no_crcsalt",
-            "trigger": {
-              "stanza_pattern": "^\\[monitor://.*\\*\\]$",
-              "without": ["crcSalt"]
-            },
-            "suggestion": {
-              "severity": "hint",
-              "title": "Consider adding crcSalt for wildcard monitor",
-              "message": "This monitor path ends with a wildcard and may match multiple files with similar content (e.g., access_log, access_log.1). Adding crcSalt = <SOURCE> ensures each file has a unique CRC, preventing Splunk from treating files with identical headers as duplicates.",
-              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Inputsconf"
-            },
-            "fix": {
-              "type": "add",
-              "changes": [
-                { "action": "add", "setting": "crcSalt", "value": "<SOURCE>" }
-              ]
-            }
           }
         ]
       },

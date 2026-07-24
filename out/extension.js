@@ -14,13 +14,14 @@ const splunkCustomRESTHandler = require("./customRESTHandler.js");
 const splunkSpec = require("./spec.js");
 const semanticRules = require("./semanticRules.js");
 const { SplunkCodeActionProvider } = require("./codeActionProvider.js");
+const crossFileValidator = require("./crossFileValidator.js");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g;
-let extensionPath = null;
 let specConfigs = {};
 let timeout;
 let diagnosticCollection;
 let specConfig;
 let snippets = {};
+let extensionPath = null;
 
 const reload = require("./commands/reload.js");
 const { SplunkNotebookSerializer } = require("./notebooks/serializers");
@@ -82,9 +83,14 @@ function getDocumentItems(document, PATTERN) {
 
 async function activate(context) {
   let splunkOutputChannel = vscode.window.createOutputChannel("Splunk");
+
+  // Store extension path for semantic rules
   extensionPath = context.extensionPath;
 
-  // Register code action provider for semantic linting quick fixes
+  // Setup globalConfig.json preview
+  globalConfigPreview.init(context);
+
+  // Register CodeActionProvider for semantic linting quick fixes
   const semanticLintingEnabled = vscode.workspace
     .getConfiguration("splunk")
     .get("semanticLinting.enabled", true);
@@ -100,9 +106,6 @@ async function activate(context) {
       ),
     );
   }
-
-  // Setup globalConfig.json preview
-  globalConfigPreview.init(context);
 
   // Set up Splunk report viewer
   const embeddedReportProvider =
@@ -881,11 +884,11 @@ function triggerDiagnostics(specConfig, document, diagnosticCollection) {
 }
 
 function updateDiagnostics(specConfig, document, diagnosticCollection) {
-  let diagnostics = getDiagnostics(specConfig, document);
+  let diagnostics = getDiagnostics(specConfig, document, extensionPath);
   diagnosticCollection.set(document.uri, diagnostics);
 }
 
-function getDiagnostics(specConfig, document) {
+function getDiagnostics(specConfig, document, extensionPath) {
   let diagnostics = [];
 
   // Make sure stanzas are valid
@@ -933,6 +936,68 @@ function getDiagnostics(specConfig, document) {
       diagnostic.source = "splunk-semantic";
       diagnostics.push(diagnostic);
     });
+  }
+
+  // Cross-file validation
+  const crossFileConfig = vscode.workspace.getConfiguration(
+    "splunk.crossFileValidation",
+  );
+  const crossFileEnabled = crossFileConfig.get("enabled", true);
+
+  if (crossFileEnabled) {
+    const splunkHome = crossFileConfig.get("splunkHome", "") || null;
+    const fileName = path.basename(document.uri.fsPath);
+
+    // Validate transform references in props.conf
+    if (
+      crossFileConfig.get("validateTransformReferences", true) &&
+      fileName === "props.conf"
+    ) {
+      const transformDiags =
+        crossFileValidator.validateTransformReferences(document);
+      diagnostics.push(...transformDiags);
+    }
+
+    // Validate lookup files in transforms.conf
+    if (
+      crossFileConfig.get("validateLookupFiles", true) &&
+      fileName === "transforms.conf"
+    ) {
+      const lookupDiags = crossFileValidator.validateLookupFiles(document, {
+        splunkHome,
+      });
+      diagnostics.push(...lookupDiags);
+    }
+
+    // Detect orphaned transforms in transforms.conf
+    if (
+      crossFileConfig.get("detectOrphanedTransforms", true) &&
+      fileName === "transforms.conf"
+    ) {
+      const orphanDiags = crossFileValidator.findOrphanedTransforms(document);
+      diagnostics.push(...orphanDiags);
+    }
+
+    // Validate index references in inputs.conf and props.conf
+    if (
+      crossFileConfig.get("validateIndexReferences", true) &&
+      (fileName === "inputs.conf" || fileName === "props.conf")
+    ) {
+      const indexDiags = crossFileValidator.validateIndexReferences(document, {
+        splunkHome,
+      });
+      diagnostics.push(...indexDiags);
+    }
+
+    // Validate sourcetype consistency in inputs.conf
+    if (
+      crossFileConfig.get("validateSourcetypeConsistency", true) &&
+      fileName === "inputs.conf"
+    ) {
+      const sourcetypeDiags =
+        crossFileValidator.validateSourcetypeConsistency(document);
+      diagnostics.push(...sourcetypeDiags);
+    }
   }
 
   return diagnostics;

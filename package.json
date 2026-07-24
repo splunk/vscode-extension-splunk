@@ -228,6 +228,62 @@
                     "default": true,
                     "order": 15,
                     "description": "Show .conf file documentation when hovering over settings."
+                },
+                "splunk.semanticLinting.enabled": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 16,
+                    "description": "Enable context-aware linting suggestions that recommend optimal configurations based on Splunk best practices."
+                },
+                "splunk.crossFileValidation.enabled": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 17,
+                    "description": "Enable cross-file validation for Splunk .conf files (validates references between props.conf, transforms.conf, inputs.conf, etc.)."
+                },
+                "splunk.crossFileValidation.splunkHome": {
+                    "type": "string",
+                    "scope": "machine",
+                    "default": "",
+                    "order": 18,
+                    "description": "Path to SPLUNK_HOME directory. When set, enables validation of system-level lookups and indexes."
+                },
+                "splunk.crossFileValidation.validateTransformReferences": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 19,
+                    "description": "Validate that REPORT-/TRANSFORMS-/LOOKUP- references in props.conf point to existing transforms.conf stanzas."
+                },
+                "splunk.crossFileValidation.validateLookupFiles": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 20,
+                    "description": "Validate that lookup filenames in transforms.conf exist in the lookups/ directory."
+                },
+                "splunk.crossFileValidation.validateIndexReferences": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 21,
+                    "description": "Validate that index references in inputs.conf and props.conf exist in indexes.conf."
+                },
+                "splunk.crossFileValidation.validateSourcetypeConsistency": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 22,
+                    "description": "Check that sourcetypes defined in inputs.conf have corresponding stanzas in props.conf."
+                },
+                "splunk.crossFileValidation.detectOrphanedTransforms": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 23,
+                    "description": "Detect transform stanzas in transforms.conf that are not referenced by any props.conf file."
                 }
             }
         },

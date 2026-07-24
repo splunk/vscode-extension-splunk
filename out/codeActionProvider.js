@@ -32,6 +32,114 @@ class SplunkCodeActionProvider {
           actions.push(learnMoreAction);
         }
       }
+
+      // Handle cross-file validation diagnostics
+      if (diagnostic.source === "splunk-crossfile") {
+        const crossFileActions = this.createCrossFileActions(
+          document,
+          diagnostic,
+        );
+        actions.push(...crossFileActions);
+      }
+    }
+
+    return actions;
+  }
+
+  createCrossFileActions(document, diagnostic) {
+    const actions = [];
+    const code = diagnostic.code;
+
+    switch (code) {
+      case "missing-transform-stanza": {
+        // Offer to create the missing stanza in transforms.conf
+        const data = diagnostic.data;
+        if (data && data.missingStanza) {
+          const action = new vscode.CodeAction(
+            `Create [${data.missingStanza}] stanza in transforms.conf`,
+            vscode.CodeActionKind.QuickFix,
+          );
+          action.diagnostics = [diagnostic];
+          action.command = {
+            command: "splunk.createTransformStanza",
+            title: "Create Transform Stanza",
+            arguments: [data.missingStanza, document.uri],
+          };
+          actions.push(action);
+        }
+        break;
+      }
+
+      case "missing-lookup-file": {
+        // Show info about where to place the lookup file
+        const data = diagnostic.data;
+        if (data && data.filename) {
+          const action = new vscode.CodeAction(
+            `Info: Create '${data.filename}' in lookups/ directory`,
+            vscode.CodeActionKind.Empty,
+          );
+          action.diagnostics = [diagnostic];
+          actions.push(action);
+        }
+        break;
+      }
+
+      case "missing-index": {
+        // Offer to create the index in indexes.conf
+        const data = diagnostic.data;
+        if (data && data.indexName) {
+          const action = new vscode.CodeAction(
+            `Create [${data.indexName}] stanza in indexes.conf`,
+            vscode.CodeActionKind.QuickFix,
+          );
+          action.diagnostics = [diagnostic];
+          action.command = {
+            command: "splunk.createIndexStanza",
+            title: "Create Index Stanza",
+            arguments: [data.indexName, document.uri],
+          };
+          actions.push(action);
+        }
+        break;
+      }
+
+      case "missing-sourcetype-definition": {
+        // Offer to create the sourcetype stanza in props.conf
+        const data = diagnostic.data;
+        if (data && data.sourcetypeName) {
+          const action = new vscode.CodeAction(
+            `Create [${data.sourcetypeName}] stanza in props.conf`,
+            vscode.CodeActionKind.QuickFix,
+          );
+          action.diagnostics = [diagnostic];
+          action.command = {
+            command: "splunk.createSourcetypeStanza",
+            title: "Create Sourcetype Stanza",
+            arguments: [data.sourcetypeName, document.uri],
+          };
+          actions.push(action);
+        }
+        break;
+      }
+
+      case "orphaned-transform": {
+        // Offer to remove the orphaned stanza
+        const data = diagnostic.data;
+        if (data && data.stanzaName) {
+          const action = new vscode.CodeAction(
+            `Remove unused [${data.stanzaName}] stanza`,
+            vscode.CodeActionKind.QuickFix,
+          );
+          action.diagnostics = [diagnostic];
+          action.command = {
+            command: "splunk.removeStanza",
+            title: "Remove Stanza",
+            arguments: [data.stanzaName, diagnostic.range, document.uri],
+          };
+          actions.push(action);
+        }
+        break;
+      }
     }
 
     return actions;

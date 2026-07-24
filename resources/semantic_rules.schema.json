@@ -1,0 +1,203 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/splunk/vscode-extension-splunk/blob/main/resources/semantic_rules.schema.json",
+  "title": "Splunk Semantic Linting Rules",
+  "description": "Schema for defining context-aware linting rules for Splunk .conf files",
+  "type": "object",
+  "required": ["version", "rules"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema file"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the rules file"
+    },
+    "rules": {
+      "type": "object",
+      "description": "Rules organized by conf file name",
+      "additionalProperties": {
+        "$ref": "#/definitions/confFileRules"
+      }
+    }
+  },
+  "definitions": {
+    "confFileRules": {
+      "type": "object",
+      "description": "Rules for a specific conf file",
+      "additionalProperties": {
+        "$ref": "#/definitions/ruleCategory"
+      }
+    },
+    "ruleCategory": {
+      "type": "object",
+      "description": "Category of related rules",
+      "required": ["description", "patterns"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Description of this rule category"
+        },
+        "patterns": {
+          "type": "array",
+          "description": "List of rule patterns in this category",
+          "items": {
+            "$ref": "#/definitions/rulePattern"
+          }
+        }
+      }
+    },
+    "rulePattern": {
+      "type": "object",
+      "required": ["id", "trigger", "suggestion"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Unique identifier for this rule (snake_case)"
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this rule is enabled"
+        },
+        "trigger": {
+          "$ref": "#/definitions/trigger",
+          "description": "Conditions that trigger this rule"
+        },
+        "suggestion": {
+          "$ref": "#/definitions/suggestion",
+          "description": "The suggestion to show when triggered"
+        },
+        "fix": {
+          "$ref": "#/definitions/fix",
+          "description": "Optional automatic fix for this rule"
+        }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "description": "Conditions that must be met to trigger the rule",
+      "properties": {
+        "stanza_pattern": {
+          "type": "string",
+          "description": "Regex pattern to match stanza names (e.g., '^\\[source::' or '^\\[(?!default)' for non-default)"
+        },
+        "settings": {
+          "type": "object",
+          "description": "Settings that must exist with specific values (key=value pairs)",
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "boolean" },
+              { "type": "number" }
+            ]
+          }
+        },
+        "settings_regex": {
+          "type": "object",
+          "description": "Settings that must match regex patterns",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "with_any": {
+          "type": "array",
+          "description": "At least one of these settings must exist",
+          "items": { "type": "string" }
+        },
+        "with_all": {
+          "type": "array",
+          "description": "All of these settings must exist",
+          "items": { "type": "string" }
+        },
+        "without": {
+          "type": "array",
+          "description": "None of these settings should exist",
+          "items": { "type": "string" }
+        },
+        "setting_exists": {
+          "type": "string",
+          "description": "A specific setting must exist (any value)"
+        },
+        "setting_missing": {
+          "type": "string",
+          "description": "A specific setting must NOT exist"
+        },
+        "value_less_than": {
+          "type": "object",
+          "description": "Setting value must be less than specified number",
+          "additionalProperties": { "type": "number" }
+        },
+        "value_greater_than": {
+          "type": "object",
+          "description": "Setting value must be greater than specified number",
+          "additionalProperties": { "type": "number" }
+        }
+      }
+    },
+    "suggestion": {
+      "type": "object",
+      "required": ["severity", "title", "message"],
+      "properties": {
+        "severity": {
+          "type": "string",
+          "enum": ["error", "warning", "information", "hint"],
+          "description": "VS Code diagnostic severity level"
+        },
+        "title": {
+          "type": "string",
+          "description": "Short title for the suggestion (shown in lightbulb menu)"
+        },
+        "message": {
+          "type": "string",
+          "description": "Detailed message explaining the suggestion"
+        },
+        "documentation": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to relevant Splunk documentation"
+        }
+      }
+    },
+    "fix": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["replace", "add", "remove", "multi"],
+          "description": "Type of fix to apply"
+        },
+        "changes": {
+          "type": "array",
+          "description": "List of changes to apply",
+          "items": {
+            "$ref": "#/definitions/fixChange"
+          }
+        }
+      }
+    },
+    "fixChange": {
+      "type": "object",
+      "required": ["action", "setting"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["set", "remove", "add"],
+          "description": "Action to perform"
+        },
+        "setting": {
+          "type": "string",
+          "description": "Setting name to modify"
+        },
+        "value": {
+          "type": "string",
+          "description": "New value for the setting (for set/add actions)"
+        }
+      }
+    }
+  }
+}
