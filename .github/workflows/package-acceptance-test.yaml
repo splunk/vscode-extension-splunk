@@ -26,7 +26,7 @@ jobs:
     - run: npm run package
     - run: npm install -g @vscode/vsce
     - run: vsce package
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: vsix-package
         path: splunk-*.vsix
@@ -44,7 +44,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v7
     - name: Download package
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: vsix-package
     - run: pwd
