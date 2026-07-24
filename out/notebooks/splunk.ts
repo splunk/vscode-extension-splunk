@@ -4,7 +4,7 @@ import * as vscode from 'vscode';
 import { SplunkMessage } from './utils/messages';
 import { getModuleStatements } from './utils/parsing';
 
-export function getClient() {
+export function getClient(): any {
     const config = vscode.workspace.getConfiguration();
     const restUrl = config.get<string>('splunk.commands.splunkRestUrl');
     const token = config.get<string>('splunk.commands.token');
@@ -19,42 +19,16 @@ export function getClient() {
         host: host,
         port: port,
         sessionKey: token,
-        version: '8',
         authorization: 'Bearer',
     });
+    service._originalURL = restUrl;
 
     return service;
 }
 
-export function splunkLogin(service) {
-
-    return new Promise(function(resolve, reject) {
-        
-        service.login(function(err, wasSuccessful) {
-            if (err !== null || !wasSuccessful) {
-                reject(err);
-            } else {
-                resolve(null);
-            }
-        });
-
-    });
-
-
-}
-
-
-export function createSearchJob(jobs, query, options) {
-    return new Promise(function(resolve, reject) {
-        jobs.create(query, options, function(err, data) {
-            if (err !== null) {
-                reject(err);
-            } else {
-                resolve(data);
-            }
-        });
-
-    });
+export function createSearchJob(jobs, query, options): Promise<any> {
+    let request = jobs.create(query, options);
+    return request;
 }
 
 /**
@@ -70,18 +44,73 @@ function makeHeaders(service: any): object {
 }
 
 /**
- * Update a module by calling the PUT /services/spl2/modules/<namespace>.<moduleName>
+ * Check to see if the SDK client is part of a search head cluster, if so return a new
+ * client pointing to an individual search head member, such that any search ids created
+ * will be immediately available for results rather than waiting for artifact replication
+ * across the search head cluster.
+ * @param service Instance of the Javascript SDK Service
+ * 
+ * @returns Promise<void> 
+ */
+export function getSearchHeadClusterMemberClient(service: any): Promise<any> {
+    const shcUrl = `${service.prefix}/services/shcluster/member/members?output_mode=json`;
+    console.log(`Attempting to determine SHC info if present using ${shcUrl}`);
+    return needle(
+        "GET",
+        shcUrl,
+        {
+            'headers': makeHeaders(service),
+            'follow_max': 5,
+            'timeout': 0,
+            'strictSSL': false,
+            'rejectUnauthorized' : false,
+        })
+        .then((response) => {
+            console.log(`Response from shcUrl status code: ${response.statusCode}`);
+            console.log(`Response from shcUrl body: \n'${JSON.stringify(response.body)}'`);
+            const data = response.body;
+            if (response.statusCode >= 400 ||
+                !Object.prototype.isPrototypeOf(data)
+                || data.entry === undefined
+                || !Array.isArray(data.entry)
+                || data.entry.length === 0
+                || data.entry[0].content === undefined
+                || data.entry[0].content.mgmt_uri === undefined
+            ) {
+                console.warn("Unsuccessful response from /services/shcluster/member/members endpoint encountered, reverting to original service client.")
+                return service;
+            }
+            // This is in the expected successful response format
+            vscode.window.showInformationMessage(`Discovered search head cluster members. Attempting to communicate directly with SH ${data.entry[0].content.mgmt_uri}`);
+            const url = new URL(data.entry[0].content.mgmt_uri);
+            const scheme = url.protocol.replace(':', '');
+            const port = url.port || (scheme === 'https' ? '443' : '80');
+            const host = url.hostname;
+            const newService = new splunk.Service({
+                scheme: scheme,
+                host: host,
+                port: port,
+                sessionKey: service.sessionKey,
+                authorization: 'Bearer',
+            });
+            newService._originalURL = service._originalURL;
+            return newService;
+        });
+}
+
+/**
+ * Update a module by calling the PUT /services/orchestrator/v1/spl2/modules/<namespace>.<moduleName>
  * @param service Instance of the Javascript SDK Service
  * @param moduleName Name of the module to append to the namespace to form the request path
  * @param namespace Full namespace to be used directly to form the request path
  * @param module Full contents of the module to update with
  * @returns Promise<void> (or throw Error containing data.messages[])
  */
-export function updateSpl2Module(service: any, moduleName: string, namespace: string, module: string) {
+export function updateSpl2Module(service: any, moduleName: string, namespace: string, module: string): Promise<void> {
     // The Splunk SDK for Javascript doesn't currently support the spl2/modules endpoints
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
-    console.log(`Request: [PUT] to ${service.prefix}/services/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`);
+    console.log(`Request: [PUT] to ${service.prefix}/services/orchestrator/v1/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`);
     console.log(`Request Body: \n'${JSON.stringify({
         'name': moduleName,
         'namespace': namespace,
@@ -90,8 +119,8 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
     console.log(`Request Headers: ${JSON.stringify(makeHeaders(service))}`);
     return needle(
         'PUT',
-        // example: https://myhost.splunkcloud.com:8089/services/spl2/modules/apps.search._default
-        `${service.prefix}/services/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`,
+        // example: https://myhost.splunkcloud.com:8089/services/orchestrator/v1/spl2/modules/apps.search._default
+        `${service.prefix}/services/orchestrator/v1/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`,
         {
             'name': moduleName,
             'namespace': namespace,
@@ -99,7 +128,7 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
         },
         {
             'headers': makeHeaders(service),
-            'followAllRedirects': true,
+            'follow_max': 5,
             'timeout': 0,
             'strictSSL': false,
             'rejectUnauthorized' : false,
@@ -115,7 +144,7 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
                 || data.definition === undefined
                 || data.updatedAt === undefined
             ) {
-                handleErrorPayloads(data, response.statusCode);
+                handleErrorPayloads(data, response.statusCode, `[${response.statusCode}] response code`);
                 return;
             }
             // This is in the expected successful response format
@@ -124,16 +153,16 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
 }
 
 /**
- * Dispatch a module to create a job using the POST /servicesNS/-/<app>/search/spl2-module-dispatch endpoint
+ * Dispatch a module to create a job using the POST /services/orchestrator/v1/spl2/modules/dispatch endpoint
  * @param service Instance of the Javascript SDK Service
  * @param spl2Module Full text of the SPL2 module to run (contents of a SPL2 notebook cell, for example)
- * @param app App namespace to run within, this will determine /servicesNS/-/<app>/search/spl2-module-dispatch endpoint
+ * @param app App namespace to run within, this will determine /services/orchestrator/v1/spl2/modules/dispatch endpoint
  * @param namespace Namespace _within_ the apps.<app> to run, this will be used directly in the body of the request
  * @param earliest Earliest time to be included in the body of the request
  * @param latest Latest time to be included in the body of the request
- * @returns A Promise containing the job id created (or throw an Error containing data.messages[])
+ * @returns A Promise containing the job information including sid created (or throw an Error containing data.messages[])
  */
-export function dispatchSpl2Module(service: any, spl2Module: string, app: string, namespace: string, earliest: string, latest: string) {
+export function dispatchSpl2Module(service: any, spl2Module: string, app: string, namespace: string, earliest: string, latest: string): Promise<any>  {
     // For now we're using /services/<app> which doesn't respect relative namespaces,
     // so for now hardcode this to '' but if/when /servicesNS/<app>
     namespace = '';
@@ -165,7 +194,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     // The Splunk SDK for Javascript doesn't currently support the spl2-module-dispatch endpoint
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
-    console.log(`Request: [POST] to ${service.prefix}/servicesNS/-/${encodeURIComponent(app)}/search/spl2-module-dispatch`);
+    console.log(`Request: [POST] to ${service.prefix}/services/orchestrator/v1/spl2/modules/dispatch`);
     console.log(`Request Body: \n'${JSON.stringify({
         'module': spl2Module,
         'namespace': namespace,
@@ -176,7 +205,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     console.log(`Request Headers: ${JSON.stringify(makeHeaders(service))}`);
     return needle(
         'POST',
-        `${service.prefix}/servicesNS/-/${encodeURIComponent(app)}/search/spl2-module-dispatch`,
+        `${service.prefix}/services/orchestrator/v1/spl2/modules/dispatch`,
         {
             'module': spl2Module,
             'namespace': namespace,
@@ -186,7 +215,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
         },
         {
             'headers': makeHeaders(service),
-            'followAllRedirects': true,
+            'follow_max': 5,
             'timeout': 0,
             'strictSSL': false,
             'rejectUnauthorized': false,
@@ -194,21 +223,29 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
         .then((response) => {
             console.log(`Response status code: ${response.statusCode}`);
             console.log(`Response body: \n'${JSON.stringify(response.body)}'`);
+            console.log(`Response headers: \n'${JSON.stringify(response.headers)}'`);
             const data = response.body;
-            if (response.statusCode >= 400 || !Array.prototype.isPrototypeOf(data) || data.length < 1) {
-                handleErrorPayloads(data, response.statusCode);
+            if (response.statusCode >= 400) {
+                handleErrorPayloads(data, response.statusCode, `[${response.statusCode}] response code`);
                 return;
             }
             // This is in the expected successful response format
-            const sid = data[0]['sid'];
-            return getSearchJobBySid(service, sid);
+            try {
+                console.log(`Attempting to retrieve sid from statementIdentifier: '${statementIdentifier}'`);
+                const sid = data.queryParameters[statementIdentifier]['sid'];
+                return getSearchJobBySid(service, sid);
+            } catch (err) {
+                console.warn("Error retrieving sid from response.");
+                console.warn(err);
+                handleErrorPayloads(data, response.statusCode, `Unable to retrieve sid from /dispatch response. Error: ${err.message}`);
+            }
         });
 }
 
-function handleErrorPayloads(data: any, statusCode: number) {
+function handleErrorPayloads(data: any, statusCode: number, details: string) {
     // Response is not in expected successful format, let's handle a
     // few different error cases and raise as expected messages format
-    console.warn(`Error making request: ${JSON.stringify(data)}`);
+    console.warn(`Error making request: data='${JSON.stringify(data)}' statusCode=${statusCode} details='${details}'`);
     let messages:SplunkMessage[] = [];
     // Override error messages for common scenarios
     switch(statusCode) {
@@ -240,6 +277,7 @@ function handleErrorPayloads(data: any, statusCode: number) {
                         'type': msg?.attributes?.type,
                         'code': msg.name,
                         'text': msg.value,
+                        'details': details,
                 }));
         } else if (data.code !== undefined && data.message !== undefined) {
             // Reformat if returns a `code` and `message for errors such
@@ -248,6 +286,7 @@ function handleErrorPayloads(data: any, statusCode: number) {
                 'type': 'error',
                 'code': data.code,
                 'text': data.message,
+                'details': details,
             }];
         }
     }
@@ -258,6 +297,7 @@ function handleErrorPayloads(data: any, statusCode: number) {
             'type': 'error',
             'code': '',
             'text': `Error making request: ${JSON.stringify(data)}`,
+            'details': details,
         }];
     }
     throw new Object({
@@ -267,72 +307,33 @@ function handleErrorPayloads(data: any, statusCode: number) {
     });
 }
 
-export function getSearchJobBySid(service, sid) {
-    return new Promise(function(resolve, reject) {
-        service.getJob(sid, function(err, data) {
-            if (err != null) {
-                reject(err);
-            } else {
-                resolve(data);
-            }
-        });
-    });
+export function getSearchJobBySid(service, sid): Promise<any> {
+    let request = service.getJob(sid);
+    return request;
 }
 
 
-export function getSearchJob(job) {
-    return new Promise(function(resolve, reject) {
-        job.fetch(function(err, job) {
-            if (err !== null) {
-                reject(err);
-            } else {
-                resolve(job);
-            }
-        });
-
-    });
+export function getSearchJob(job): Promise<any> {
+    let request = job.fetch();
+    return request;
 }
 
-export function getJobSearchLog(job) {
-    return new Promise(function(resolve, reject) {
-        job.searchlog(function(err, log) {
-            if (err !== null) {
-                reject(err);
-            } else {
-                resolve(log);
-            }
-        });
-
-    });
+export function getJobSearchLog(job): Promise<any> {
+    let request = job.searchlog();
+    return request;
 }
 
-export function getSearchJobResults(job) {
-    return new Promise(function(resolve, reject) {
-        job.get("results", {"output_mode": "json_cols"},function(err, results) {
-            if (err !== null) {
-                reject(err);
-            } else {
-                resolve(results);
-            }
-        });
-
-    });
+export function getSearchJobResults(job): Promise<any> {
+    let request = job.get("results", {"output_mode": "json_cols"});
+    return request;
 }
 
-export function cancelSearchJob(job) {
-    return new Promise(function(resolve, reject) {
-        job.cancel(function(err, results) {
-            if (err !== null) {
-                reject(err);
-            } else {
-                resolve(results);
-            }
-
-        });
-    });
+export function cancelSearchJob(job): Promise<any> {
+    let request = job.cancel();
+    return request;
 }
 
-export function wait(ms = 1000) {
+export function wait(ms = 1000): Promise<void> {
     return new Promise(resolve => {
       setTimeout(resolve, ms);
     });
