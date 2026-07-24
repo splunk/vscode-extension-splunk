@@ -60,7 +60,7 @@ export function getSearchHeadClusterMemberClient(service: any): Promise<any> {
         shcUrl,
         {
             'headers': makeHeaders(service),
-            'followAllRedirects': true,
+            'follow_max': 5,
             'timeout': 0,
             'strictSSL': false,
             'rejectUnauthorized' : false,
@@ -99,7 +99,7 @@ export function getSearchHeadClusterMemberClient(service: any): Promise<any> {
 }
 
 /**
- * Update a module by calling the PUT /services/spl2/modules/<namespace>.<moduleName>
+ * Update a module by calling the PUT /services/orchestrator/v1/spl2/modules/<namespace>.<moduleName>
  * @param service Instance of the Javascript SDK Service
  * @param moduleName Name of the module to append to the namespace to form the request path
  * @param namespace Full namespace to be used directly to form the request path
@@ -110,7 +110,7 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
     // The Splunk SDK for Javascript doesn't currently support the spl2/modules endpoints
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
-    console.log(`Request: [PUT] to ${service.prefix}/services/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`);
+    console.log(`Request: [PUT] to ${service.prefix}/services/orchestrator/v1/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`);
     console.log(`Request Body: \n'${JSON.stringify({
         'name': moduleName,
         'namespace': namespace,
@@ -119,8 +119,8 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
     console.log(`Request Headers: ${JSON.stringify(makeHeaders(service))}`);
     return needle(
         'PUT',
-        // example: https://myhost.splunkcloud.com:8089/services/spl2/modules/apps.search._default
-        `${service.prefix}/services/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`,
+        // example: https://myhost.splunkcloud.com:8089/services/orchestrator/v1/spl2/modules/apps.search._default
+        `${service.prefix}/services/orchestrator/v1/spl2/modules/${encodeURIComponent(namespace)}.${encodeURIComponent(moduleName)}`,
         {
             'name': moduleName,
             'namespace': namespace,
@@ -128,7 +128,7 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
         },
         {
             'headers': makeHeaders(service),
-            'followAllRedirects': true,
+            'follow_max': 5,
             'timeout': 0,
             'strictSSL': false,
             'rejectUnauthorized' : false,
@@ -144,7 +144,7 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
                 || data.definition === undefined
                 || data.updatedAt === undefined
             ) {
-                handleErrorPayloads(data, response.statusCode);
+                handleErrorPayloads(data, response.statusCode, `[${response.statusCode}] response code`);
                 return;
             }
             // This is in the expected successful response format
@@ -153,10 +153,10 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
 }
 
 /**
- * Dispatch a module to create a job using the POST /servicesNS/-/<app>/search/spl2-module-dispatch endpoint
+ * Dispatch a module to create a job using the POST /services/orchestrator/v1/spl2/modules/dispatch endpoint
  * @param service Instance of the Javascript SDK Service
  * @param spl2Module Full text of the SPL2 module to run (contents of a SPL2 notebook cell, for example)
- * @param app App namespace to run within, this will determine /servicesNS/-/<app>/search/spl2-module-dispatch endpoint
+ * @param app App namespace to run within, this will determine /services/orchestrator/v1/spl2/modules/dispatch endpoint
  * @param namespace Namespace _within_ the apps.<app> to run, this will be used directly in the body of the request
  * @param earliest Earliest time to be included in the body of the request
  * @param latest Latest time to be included in the body of the request
@@ -194,7 +194,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     // The Splunk SDK for Javascript doesn't currently support the spl2-module-dispatch endpoint
     // nor does it support sending requests in JSON format (only receiving responses), so
     // for now use the underlying needle library that the SDK uses for requests/responses
-    console.log(`Request: [POST] to ${service.prefix}/servicesNS/-/${encodeURIComponent(app)}/search/spl2-module-dispatch`);
+    console.log(`Request: [POST] to ${service.prefix}/services/orchestrator/v1/spl2/modules/dispatch`);
     console.log(`Request Body: \n'${JSON.stringify({
         'module': spl2Module,
         'namespace': namespace,
@@ -205,7 +205,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
     console.log(`Request Headers: ${JSON.stringify(makeHeaders(service))}`);
     return needle(
         'POST',
-        `${service.prefix}/servicesNS/-/${encodeURIComponent(app)}/search/spl2-module-dispatch`,
+        `${service.prefix}/services/orchestrator/v1/spl2/modules/dispatch`,
         {
             'module': spl2Module,
             'namespace': namespace,
@@ -215,7 +215,7 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
         },
         {
             'headers': makeHeaders(service),
-            'followAllRedirects': true,
+            'follow_max': 5,
             'timeout': 0,
             'strictSSL': false,
             'rejectUnauthorized': false,
@@ -225,20 +225,27 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
             console.log(`Response body: \n'${JSON.stringify(response.body)}'`);
             console.log(`Response headers: \n'${JSON.stringify(response.headers)}'`);
             const data = response.body;
-            if (response.statusCode >= 400 || !Array.prototype.isPrototypeOf(data) || data.length < 1) {
-                handleErrorPayloads(data, response.statusCode);
+            if (response.statusCode >= 400) {
+                handleErrorPayloads(data, response.statusCode, `[${response.statusCode}] response code`);
                 return;
             }
             // This is in the expected successful response format
-            const sid = data[0]['sid'];
-            return getSearchJobBySid(service, sid);
+            try {
+                console.log(`Attempting to retrieve sid from statementIdentifier: '${statementIdentifier}'`);
+                const sid = data.queryParameters[statementIdentifier]['sid'];
+                return getSearchJobBySid(service, sid);
+            } catch (err) {
+                console.warn("Error retrieving sid from response.");
+                console.warn(err);
+                handleErrorPayloads(data, response.statusCode, `Unable to retrieve sid from /dispatch response. Error: ${err.message}`);
+            }
         });
 }
 
-function handleErrorPayloads(data: any, statusCode: number) {
+function handleErrorPayloads(data: any, statusCode: number, details: string) {
     // Response is not in expected successful format, let's handle a
     // few different error cases and raise as expected messages format
-    console.warn(`Error making request: ${JSON.stringify(data)}`);
+    console.warn(`Error making request: data='${JSON.stringify(data)}' statusCode=${statusCode} details='${details}'`);
     let messages:SplunkMessage[] = [];
     // Override error messages for common scenarios
     switch(statusCode) {
@@ -270,6 +277,7 @@ function handleErrorPayloads(data: any, statusCode: number) {
                         'type': msg?.attributes?.type,
                         'code': msg.name,
                         'text': msg.value,
+                        'details': details,
                 }));
         } else if (data.code !== undefined && data.message !== undefined) {
             // Reformat if returns a `code` and `message for errors such
@@ -278,6 +286,7 @@ function handleErrorPayloads(data: any, statusCode: number) {
                 'type': 'error',
                 'code': data.code,
                 'text': data.message,
+                'details': details,
             }];
         }
     }
@@ -288,6 +297,7 @@ function handleErrorPayloads(data: any, statusCode: number) {
             'type': 'error',
             'code': '',
             'text': `Error making request: ${JSON.stringify(data)}`,
+            'details': details,
         }];
     }
     throw new Object({
