@@ -364,7 +364,7 @@ async function downloadWithProgress(
                 return data;
             },
         });
-        const totalSize = parseInt(headers['content-length']);
+        const totalSize = parseInt(String(headers['content-length']));
         let totalDownloaded = 0;
         let nextUpdate = 1;
         let error;
