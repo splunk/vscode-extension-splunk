@@ -9,6 +9,7 @@
 []
 access = read : [ <comma-separated list of roles>], write : [<comma-separated list of roles>]
 export = <system|none>
+owner = <string>
 
 [<object_type>]
 access = read : [ <comma-separated list of roles>], write : [<comma-separated list of roles>]
