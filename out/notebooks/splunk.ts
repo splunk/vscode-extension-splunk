@@ -144,7 +144,7 @@ export function updateSpl2Module(service: any, moduleName: string, namespace: st
                 || data.definition === undefined
                 || data.updatedAt === undefined
             ) {
-                handleErrorPayloads(data, response.statusCode);
+                handleErrorPayloads(data, response.statusCode, `[${response.statusCode}] response code`);
                 return;
             }
             // This is in the expected successful response format
@@ -225,20 +225,27 @@ export function dispatchSpl2Module(service: any, spl2Module: string, app: string
             console.log(`Response body: \n'${JSON.stringify(response.body)}'`);
             console.log(`Response headers: \n'${JSON.stringify(response.headers)}'`);
             const data = response.body;
-            if ((response.statusCode >= 400) || !Object.prototype.isPrototypeOf(data) || !Object.prototype.isPrototypeOf(data.queryParameters) || !Object.prototype.isPrototypeOf(data.queryParameters[statementIdentifier])) {
-                handleErrorPayloads(data, response.statusCode);
+            if (response.statusCode >= 400) {
+                handleErrorPayloads(data, response.statusCode, `[${response.statusCode}] response code`);
                 return;
             }
             // This is in the expected successful response format
-            const sid = data.queryParameters[statementIdentifier]['sid'];
-            return getSearchJobBySid(service, sid);
+            try {
+                console.log(`Attempting to retrieve sid from statementIdentifier: '${statementIdentifier}'`);
+                const sid = data.queryParameters[statementIdentifier]['sid'];
+                return getSearchJobBySid(service, sid);
+            } catch (err) {
+                console.warn("Error retrieving sid from response.");
+                console.warn(err);
+                handleErrorPayloads(data, response.statusCode, `Unable to retrieve sid from /dispatch response. Error: ${err.message}`);
+            }
         });
 }
 
-function handleErrorPayloads(data: any, statusCode: number) {
+function handleErrorPayloads(data: any, statusCode: number, details: string) {
     // Response is not in expected successful format, let's handle a
     // few different error cases and raise as expected messages format
-    console.warn(`Error making request: ${JSON.stringify(data)}`);
+    console.warn(`Error making request: data='${JSON.stringify(data)}' statusCode=${statusCode} details='${details}'`);
     let messages:SplunkMessage[] = [];
     // Override error messages for common scenarios
     switch(statusCode) {
@@ -270,6 +277,7 @@ function handleErrorPayloads(data: any, statusCode: number) {
                         'type': msg?.attributes?.type,
                         'code': msg.name,
                         'text': msg.value,
+                        'details': details,
                 }));
         } else if (data.code !== undefined && data.message !== undefined) {
             // Reformat if returns a `code` and `message for errors such
@@ -278,6 +286,7 @@ function handleErrorPayloads(data: any, statusCode: number) {
                 'type': 'error',
                 'code': data.code,
                 'text': data.message,
+                'details': details,
             }];
         }
     }
@@ -288,6 +297,7 @@ function handleErrorPayloads(data: any, statusCode: number) {
             'type': 'error',
             'code': '',
             'text': `Error making request: ${JSON.stringify(data)}`,
+            'details': details,
         }];
     }
     throw new Object({
