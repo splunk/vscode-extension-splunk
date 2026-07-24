@@ -89,7 +89,7 @@ suite('SPL2 Language Server functional', async () => {
 
 	const storagePath = path.join(__dirname, '..', '..', '..', '.vscode-test', 'user-data', 'User', 'globalStorage', 'spl2-tests');
 	if (!fs.existsSync(storagePath)) {
-		fs.mkdirSync(storagePath);
+		fs.mkdirSync(storagePath, { recursive: true });
 	}
 	const progressBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 
