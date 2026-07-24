@@ -477,7 +477,7 @@
         "@types/mocha": "^10.0.1",
         "@types/node": "^16",
         "@types/vscode": "^1.72.0",
-        "@vscode/test-electron": "^2.3.9",
+        "@vscode/test-electron": "^2.5.2",
         "chai": "^4.3.6",
         "eslint": "^8.21.0",
         "glob": "^7.1.5",
