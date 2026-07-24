@@ -1,0 +1,459 @@
+{
+  "$schema": "./semantic_rules.schema.json",
+  "version": "1.0.0",
+  "rules": {
+    "props.conf": {
+      "line_breaking": {
+        "description": "Rules for optimal event line breaking configuration",
+        "patterns": [
+          {
+            "id": "linemerge_performance",
+            "trigger": {
+              "settings": { "SHOULD_LINEMERGE": "true" },
+              "with_any": ["BREAK_ONLY_BEFORE", "MUST_BREAK_AFTER"],
+              "without": ["LINE_BREAKER_LOOKBEHIND"]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider LINE_BREAKER for better performance",
+              "message": "Using LINE_BREAKER instead of SHOULD_LINEMERGE provides a significant boost to processing speed. SHOULD_LINEMERGE reassembles individual lines into events, while LINE_BREAKER directly delimits events.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Configureeventlinebreaking"
+            },
+            "fix": {
+              "type": "multi",
+              "changes": [
+                { "action": "set", "setting": "SHOULD_LINEMERGE", "value": "false" },
+                { "action": "add", "setting": "LINE_BREAKER", "value": "([\\r\\n]+)" }
+              ]
+            }
+          },
+          {
+            "id": "missing_linemerge_false",
+            "trigger": {
+              "setting_exists": "LINE_BREAKER",
+              "without": ["SHOULD_LINEMERGE"]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "Add SHOULD_LINEMERGE = false",
+              "message": "When using a custom LINE_BREAKER, you should explicitly set SHOULD_LINEMERGE = false to prevent Splunk from attempting to reassemble lines after breaking.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Configureeventlinebreaking"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                { "action": "add", "setting": "SHOULD_LINEMERGE", "value": "false" }
+              ]
+            }
+          },
+          {
+            "id": "linemerge_without_break",
+            "trigger": {
+              "settings": { "SHOULD_LINEMERGE": "true" },
+              "without": ["BREAK_ONLY_BEFORE", "MUST_BREAK_AFTER", "BREAK_ONLY_BEFORE_DATE", "LINE_BREAKER"]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding event boundary settings",
+              "message": "SHOULD_LINEMERGE is enabled but no event boundary pattern is defined. Consider adding BREAK_ONLY_BEFORE, MUST_BREAK_AFTER, or BREAK_ONLY_BEFORE_DATE to define how events should be merged.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Configureeventlinebreaking"
+            }
+          }
+        ]
+      },
+      "timestamp": {
+        "description": "Rules for timestamp extraction configuration",
+        "patterns": [
+          {
+            "id": "datetime_none_warning",
+            "trigger": {
+              "settings": { "DATETIME_CONFIG": "NONE" },
+              "without": ["LINE_BREAKER", "SHOULD_LINEMERGE", "BREAK_ONLY_BEFORE"]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "DATETIME_CONFIG = NONE without event boundaries",
+              "message": "When DATETIME_CONFIG is set to NONE, Splunk cannot use timestamps to determine event boundaries. Ensure you have configured LINE_BREAKER or other event boundary settings.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Configuretimestamprecognition"
+            }
+          },
+          {
+            "id": "time_format_without_prefix",
+            "trigger": {
+              "setting_exists": "TIME_FORMAT",
+              "without": ["TIME_PREFIX"]
+            },
+            "suggestion": {
+              "severity": "hint",
+              "title": "Consider adding TIME_PREFIX",
+              "message": "TIME_FORMAT is set but TIME_PREFIX is not defined. If your timestamp doesn't appear at the start of the event, adding TIME_PREFIX can improve timestamp extraction accuracy and performance.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Configuretimestamprecognition"
+            }
+          },
+          {
+            "id": "max_timestamp_lookahead_low",
+            "trigger": {
+              "value_less_than": { "MAX_TIMESTAMP_LOOKAHEAD": 10 }
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "MAX_TIMESTAMP_LOOKAHEAD may be too low",
+              "message": "MAX_TIMESTAMP_LOOKAHEAD is set to a very low value. This limits how far into each event Splunk looks for a timestamp. If timestamps are not being extracted correctly, consider increasing this value.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Configuretimestamprecognition"
+            }
+          }
+        ]
+      },
+      "truncation": {
+        "description": "Rules for event truncation settings",
+        "patterns": [
+          {
+            "id": "truncate_warning",
+            "trigger": {
+              "value_less_than": { "TRUNCATE": 10000 }
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "Low TRUNCATE value may cause data loss",
+              "message": "TRUNCATE is set below 10000 bytes. Events longer than this will be truncated, potentially losing important data. The default is 10000. Only lower this if you're certain your events are smaller.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Configureeventlinebreaking"
+            }
+          },
+          {
+            "id": "truncate_very_high",
+            "trigger": {
+              "value_greater_than": { "TRUNCATE": 100000 }
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "High TRUNCATE value may impact performance",
+              "message": "TRUNCATE is set above 100KB. Very large events can impact indexing performance and search speed. Ensure this is necessary for your data.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Configureeventlinebreaking"
+            }
+          }
+        ]
+      },
+      "field_extraction": {
+        "description": "Rules for field extraction configuration",
+        "patterns": [
+          {
+            "id": "kv_mode_json_with_indexed",
+            "trigger": {
+              "settings": { "KV_MODE": "json" },
+              "setting_exists": "INDEXED_EXTRACTIONS"
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "Duplicate JSON extraction",
+              "message": "Both KV_MODE = json and INDEXED_EXTRACTIONS are set. This causes JSON fields to be extracted twice: once at index time and again at search time, impacting performance.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Configureindex-timefieldextraction"
+            },
+            "fix": {
+              "type": "remove",
+              "changes": [
+                { "action": "remove", "setting": "KV_MODE" }
+              ]
+            }
+          },
+          {
+            "id": "extract_without_report",
+            "trigger": {
+              "setting_exists": "EXTRACT",
+              "without": ["REPORT"]
+            },
+            "suggestion": {
+              "severity": "hint",
+              "title": "Consider using REPORT for reusable extractions",
+              "message": "Inline EXTRACT is defined. For complex or reusable extractions, consider using REPORT-<class> with a transforms.conf stanza instead.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Knowledge/Configureadvancedextractionswithfieldtransforms"
+            }
+          }
+        ]
+      }
+    },
+    "inputs.conf": {
+      "file_monitoring": {
+        "description": "Rules for file and directory monitoring",
+        "patterns": [
+          {
+            "id": "recursive_no_filter",
+            "trigger": {
+              "stanza_pattern": "^\\[monitor://",
+              "without": ["whitelist", "blacklist", "allowlist", "denylist"]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding file filters",
+              "message": "This monitor input has no file filters (allowlist/denylist). For directories, consider adding filters to avoid indexing unwanted files like .gz, .tmp, or backup files.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Specifyinputpathswithwildcards"
+            }
+          },
+          {
+            "id": "missing_sourcetype",
+            "trigger": {
+              "stanza_pattern": "^\\[monitor://",
+              "without": ["sourcetype"]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider setting explicit sourcetype",
+              "message": "No sourcetype is defined for this input. Splunk will attempt to auto-detect the sourcetype, which may not always be accurate. Consider setting an explicit sourcetype.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Listofpretrainedsourcetypes"
+            }
+          },
+          {
+            "id": "missing_index",
+            "trigger": {
+              "stanza_pattern": "^\\[(monitor|tcp|udp|script)://",
+              "without": ["index"]
+            },
+            "suggestion": {
+              "severity": "hint",
+              "title": "Consider setting explicit index",
+              "message": "No index is specified. Data will go to the default index. For better data organization and access control, consider specifying an index.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Indexer/Setupmultipleindexes"
+            }
+          },
+          {
+            "id": "crcsalt_with_initcrclen",
+            "trigger": {
+              "with_all": ["crcSalt", "initCrcLength"]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "crcSalt and initCrcLength both set",
+              "message": "Both crcSalt and initCrcLength are configured. crcSalt=<SOURCE> is typically sufficient for handling files with identical content. Using both may be unnecessary.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Handleduplicatedata"
+            }
+          },
+          {
+            "id": "monitor_wildcard_no_crcsalt",
+            "trigger": {
+              "stanza_pattern": "^\\[monitor://.*\\*\\]$",
+              "without": ["crcSalt"]
+            },
+            "suggestion": {
+              "severity": "hint",
+              "title": "Consider adding crcSalt for wildcard monitor",
+              "message": "This monitor path ends with a wildcard and may match multiple files with similar content (e.g., access_log, access_log.1). Adding crcSalt = <SOURCE> ensures each file has a unique CRC, preventing Splunk from treating files with identical headers as duplicates.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Inputsconf"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                { "action": "add", "setting": "crcSalt", "value": "<SOURCE>" }
+              ]
+            }
+          }
+        ]
+      },
+      "network_inputs": {
+        "description": "Rules for TCP/UDP network inputs",
+        "patterns": [
+          {
+            "id": "tcp_no_connection_host",
+            "trigger": {
+              "stanza_pattern": "^\\[tcp://",
+              "without": ["connection_host"]
+            },
+            "suggestion": {
+              "severity": "hint",
+              "title": "Consider setting connection_host",
+              "message": "No connection_host is set for this TCP input. By default, the host field will be set to the IP address. Consider setting connection_host = dns to use DNS names instead.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Monitornetworkports"
+            }
+          },
+          {
+            "id": "udp_no_no_appending_timestamp",
+            "trigger": {
+              "stanza_pattern": "^\\[udp://",
+              "without": ["no_appending_timestamp"]
+            },
+            "suggestion": {
+              "severity": "hint",
+              "title": "Consider no_appending_timestamp setting",
+              "message": "For UDP inputs, Splunk appends a timestamp to each packet by default. If your data already has timestamps, consider setting no_appending_timestamp = true.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Monitornetworkports"
+            }
+          }
+        ]
+      }
+    },
+    "transforms.conf": {
+      "field_extraction": {
+        "description": "Rules for transform-based field extraction",
+        "patterns": [
+          {
+            "id": "regex_no_format",
+            "trigger": {
+              "setting_exists": "REGEX",
+              "without": ["FORMAT"]
+            },
+            "suggestion": {
+              "severity": "hint",
+              "title": "Consider adding FORMAT for explicit field naming",
+              "message": "REGEX is defined without FORMAT. Field names will be derived from named capture groups in the regex. Adding FORMAT explicitly documents the field names and can make the configuration clearer.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Knowledge/Configureadvancedextractionswithfieldtransforms"
+            }
+          },
+          {
+            "id": "lookup_no_default",
+            "trigger": {
+              "setting_exists": "filename",
+              "stanza_pattern": "^\\[(?!default)",
+              "without": ["default_match"]
+            },
+            "suggestion": {
+              "severity": "hint",
+              "title": "Consider adding default_match",
+              "message": "This lookup has no default_match configured. If a lookup key is not found, no fields will be added. Consider setting default_match to provide fallback values.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Knowledge/Configurealookup"
+            }
+          },
+          {
+            "id": "lookup_case_sensitive",
+            "trigger": {
+              "setting_exists": "filename",
+              "without": ["case_sensitive_match"]
+            },
+            "suggestion": {
+              "severity": "hint",
+              "title": "Consider case_sensitive_match setting",
+              "message": "Lookup case sensitivity is not explicitly set. By default, lookups are case-sensitive. If your data has inconsistent casing, consider setting case_sensitive_match = false.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Knowledge/Configurealookup"
+            }
+          }
+        ]
+      },
+      "routing": {
+        "description": "Rules for event routing configuration",
+        "patterns": [
+          {
+            "id": "dest_key_queue",
+            "trigger": {
+              "settings": { "DEST_KEY": "queue" },
+              "without": ["FORMAT"]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "DEST_KEY = queue requires FORMAT",
+              "message": "When routing events with DEST_KEY = queue, you must specify FORMAT to indicate the destination queue (indexQueue or nullQueue).",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Routeandfilterdatawithprops"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                { "action": "add", "setting": "FORMAT", "value": "nullQueue" }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "outputs.conf": {
+      "forwarding": {
+        "description": "Rules for data forwarding configuration",
+        "patterns": [
+          {
+            "id": "tcpout_no_server",
+            "trigger": {
+              "stanza_pattern": "^\\[tcpout:",
+              "without": ["server"]
+            },
+            "suggestion": {
+              "severity": "error",
+              "title": "Missing server setting",
+              "message": "This tcpout group has no server defined. At least one server must be specified for forwarding to work.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Forwarding/Configureforwardingwithoutputs.conf"
+            }
+          },
+          {
+            "id": "ssl_without_cert",
+            "trigger": {
+              "settings": { "useSSL": "true" },
+              "without": ["sslCertPath"]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "SSL enabled without certificate path",
+              "message": "SSL is enabled but no certificate path is specified. Ensure sslCertPath and related SSL settings are properly configured.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Security/ConfigureSplunkforwardingtousesignedcertificates"
+            }
+          }
+        ]
+      }
+    },
+    "server.conf": {
+      "clustering": {
+        "description": "Rules for clustering configuration",
+        "patterns": [
+          {
+            "id": "replication_factor_one",
+            "trigger": {
+              "settings": { "replication_factor": "1" }
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "Replication factor of 1 provides no redundancy",
+              "message": "With replication_factor = 1, there is no data redundancy. If a peer fails, data may be lost. Consider increasing this for production environments.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Indexer/Thereplicationfactor"
+            }
+          }
+        ]
+      }
+    },
+    "indexes.conf": {
+      "storage": {
+        "description": "Rules for index storage configuration",
+        "patterns": [
+          {
+            "id": "homepath_same_as_coldpath",
+            "trigger": {
+              "settings_regex": {
+                "homePath": ".*",
+                "coldPath": ".*"
+              }
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider separating hot/warm and cold storage",
+              "message": "For optimal performance, consider placing homePath (hot/warm) on faster storage (SSD) and coldPath on slower, cheaper storage.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Indexer/HowSplunkstoresindexes"
+            }
+          },
+          {
+            "id": "no_maxdatasize",
+            "trigger": {
+              "stanza_pattern": "^\\[(?!default|volume:)",
+              "without": ["maxDataSize"]
+            },
+            "suggestion": {
+              "severity": "hint",
+              "title": "Consider setting maxDataSize",
+              "message": "maxDataSize is not explicitly set. The default is 'auto' which sets bucket size to 750MB. For high-volume indexes, consider 'auto_high_volume' for 10GB buckets.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Indexer/Configureindexstorage"
+            }
+          }
+        ]
+      },
+      "retention": {
+        "description": "Rules for data retention configuration",
+        "patterns": [
+          {
+            "id": "no_retention_policy",
+            "trigger": {
+              "stanza_pattern": "^\\[(?!default|volume:)",
+              "without": ["frozenTimePeriodInSecs", "maxTotalDataSizeMB"]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider setting retention policy",
+              "message": "No explicit retention policy is set. Data will be retained based on default settings. Consider setting frozenTimePeriodInSecs or maxTotalDataSizeMB to manage storage.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Indexer/Setaretirementandarchivingpolicy"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
