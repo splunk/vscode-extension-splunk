@@ -525,7 +525,8 @@
     "overrides": {
         "react": "^16.14.0",
         "react-dom": "^16.14.0",
-        "styled-components": "^5.1.1"
+        "styled-components": "^5.1.1",
+        "@types/react": "^16.9.38"
     },
     "devDependencies": {
         "@types/glob": "^7.1.1",
