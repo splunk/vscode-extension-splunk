@@ -521,7 +521,10 @@
         "react": "^16.14.0",
         "react-dom": "^16.14.0",
         "styled-components": "^5.1.1",
-        "@types/react": "^16.9.38"
+        "@types/react": "^16.9.38",
+        "babel-preset-current-node-syntax": {
+            "@babel/core": "^7.0.0"
+        }
     },
     "devDependencies": {
         "@babel/core": "^8.0.1",
