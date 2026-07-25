@@ -192,7 +192,7 @@ function makeLocalStorage(globalStoragePath: string): void {
     const lspArtifacts = getLocalLspDir(globalStoragePath);
     [globalStoragePath, spl2Artifacts, jdkArtifacts, lspArtifacts].forEach((path) => {
         if (!fs.existsSync(path)) {
-            fs.mkdirSync(path);
+            fs.mkdirSync(path, { recursive: true });
         }
     });
 }
@@ -357,10 +357,6 @@ async function downloadWithProgress(
                 // Override defaults set elsewhere for splunkd communication
                 delete headers['Authorization'];
                 delete headers['Accept'];
-                delete headers?.common['Authorization'];
-                delete headers?.common['Accept'];
-                delete headers?.get['Authorization'];
-                delete headers?.get['Accept'];
                 return data;
             },
         });
