@@ -353,18 +353,14 @@ async function downloadWithProgress(
     return new Promise(async (resolve, reject) => {
         const { data, headers } = await axios.get(url, {
             responseType: 'stream',
-            transformRequest: (data, headers) => {
+            transformRequest: [(data, headers) => {
                 // Override defaults set elsewhere for splunkd communication
-                delete headers['Authorization'];
-                delete headers['Accept'];
-                delete headers?.common['Authorization'];
-                delete headers?.common['Accept'];
-                delete headers?.get['Authorization'];
-                delete headers?.get['Accept'];
+                headers.delete('Authorization');
+                headers.delete('Accept');
                 return data;
-            },
+            }],
         });
-        const totalSize = parseInt(headers['content-length']);
+        const totalSize = parseInt(headers['content-length'].toString());
         let totalDownloaded = 0;
         let nextUpdate = 1;
         let error;

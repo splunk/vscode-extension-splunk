@@ -50,7 +50,8 @@ class SearchProvider {
                 }
             })
             .catch(error => {
-                vscode.window.showErrorMessage(`Could not run saved searched. ${error.message}\n${error.response.data}`);
+                const details = error.response?.data ?? '';
+                vscode.window.showErrorMessage(`Could not run saved searched. ${error.message}\n${details}`);
             })
         return searchResults;
     }
@@ -101,7 +102,7 @@ class SavedSearchProvider {
                 });
             })
             .catch(error => {
-                if (error.code = 'ECONNREFUSED' ) {
+                if (error.code === 'ECONNREFUSED') {
                     vscode.window.showErrorMessage(`Could not connect to Splunk server. Please check extension settings. ${error.message}`);
                 } else {
                     vscode.window.showErrorMessage(`Could not enumerate saved searches. ${error.message}`);
@@ -140,7 +141,8 @@ class SavedSearchProvider {
                 }
             })
             .catch(error => {
-                vscode.window.showErrorMessage(`Could not run saved searched. ${error.message}\n${error.response.data}`);
+                const details = error.response?.data ?? '';
+                vscode.window.showErrorMessage(`Could not run saved searched. ${error.message}\n${details}`);
             })
         return searchResults;
     }
