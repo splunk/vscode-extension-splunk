@@ -12,10 +12,22 @@ async function main() {
     const vscodeExecutablePath = await downloadAndUnzipVSCode('stable');
 
     // Ensure the executable has correct permissions (macOS ARM runner fix)
-    try {
-      fs.chmodSync(vscodeExecutablePath, 0o755);
-    } catch (e) {
-      console.warn(`Could not chmod VS Code executable: ${e}`);
+    if (process.platform === 'darwin') {
+      const electronPath = path.join(
+        path.dirname(vscodeExecutablePath),
+        'Visual Studio Code.app',
+        'Contents',
+        'MacOS',
+        'Electron'
+      );
+      try {
+        if (fs.existsSync(electronPath)) {
+          fs.chmodSync(electronPath, 0o755);
+          console.log(`Set permissions on: ${electronPath}`);
+        }
+      } catch (e) {
+        console.warn(`Could not chmod VS Code executable: ${e}`);
+      }
     }
 
     await runTests({
