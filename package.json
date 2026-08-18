@@ -1,10 +1,10 @@
 {
     "name": "splunk",
-    "version": "0.3.5-rc1",
+    "version": "0.4.0",
     "publisher": "Splunk",
     "engines": {
         "vscode": "^1.75.0",
-        "node": "22.x"
+        "node": "^22.18.0 || >=24.11.0"
     },
     "license": "MIT",
     "displayName": "Splunk Extension",
@@ -233,6 +233,62 @@
                     "default": true,
                     "order": 15,
                     "description": "Show .conf file documentation when hovering over settings."
+                },
+                "splunk.semanticLinting.enabled": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 16,
+                    "description": "Enable context-aware linting suggestions that recommend optimal configurations based on Splunk best practices."
+                },
+                "splunk.crossFileValidation.enabled": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 17,
+                    "description": "Enable cross-file validation for Splunk .conf files (validates references between props.conf, transforms.conf, inputs.conf, etc.)."
+                },
+                "splunk.crossFileValidation.splunkHome": {
+                    "type": "string",
+                    "scope": "machine",
+                    "default": "",
+                    "order": 18,
+                    "description": "Path to SPLUNK_HOME directory. When set, enables validation of system-level lookups and indexes."
+                },
+                "splunk.crossFileValidation.validateTransformReferences": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 19,
+                    "description": "Validate that REPORT-/TRANSFORMS-/LOOKUP- references in props.conf point to existing transforms.conf stanzas."
+                },
+                "splunk.crossFileValidation.validateLookupFiles": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 20,
+                    "description": "Validate that lookup filenames in transforms.conf exist in the lookups/ directory."
+                },
+                "splunk.crossFileValidation.validateIndexReferences": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 21,
+                    "description": "Validate that index references in inputs.conf and props.conf exist in indexes.conf."
+                },
+                "splunk.crossFileValidation.validateSourcetypeConsistency": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 22,
+                    "description": "Check that sourcetypes defined in inputs.conf have corresponding stanzas in props.conf."
+                },
+                "splunk.crossFileValidation.detectOrphanedTransforms": {
+                    "type": "boolean",
+                    "scope": "resource",
+                    "default": true,
+                    "order": 23,
+                    "description": "Detect transform stanzas in transforms.conf that are not referenced by any props.conf file."
                 }
             }
         },
@@ -451,45 +507,50 @@
     "icon": "images/icon.png",
     "extensionDependencies": [],
     "dependencies": {
-        "@babel/core": "^7.22.8",
-        "@babel/preset-env": "^7.20.2",
-        "@babel/preset-react": "^7.18.6",
-        "@splunk/react-ui": "^4.17.0",
-        "@splunk/visualizations": "^25.9.0",
+        "@splunk/react-ui": "^5.12.0",
+        "@splunk/visualizations": "^28.8.0",
         "@types/vscode-notebook-renderer": "^1.72.0",
-        "axios": "^0.30.0",
-        "babel-loader": "^9.1.0",
+        "axios": "^1.18.1",
         "extract-zip": "^2.0.1",
-        "fast-xml-parser": "^4.4.1",
+        "fast-xml-parser": "^5.10.1",
         "konva": "^3.4.1",
         "querystring-es3": "^0.2.1",
         "react": "^16.14.0",
         "react-dom": "^16.14.0",
         "splunk-sdk": "^2.0.2",
         "styled-components": "^5.1.1",
-        "tar-fs": "^2.1.1",
-        "ts-loader": "^9.4.2",
-        "typescript": "^4.2.2",
+        "tar-fs": "^2.1.4",
         "vscode-languageclient": "^8.1.0"
     },
     "overrides": {
         "react": "^16.14.0",
         "react-dom": "^16.14.0",
-        "styled-components": "^5.1.1"
+        "styled-components": "^5.1.1",
+        "@types/react": "^16.9.38",
+        "babel-preset-current-node-syntax": {
+            "@babel/core": "^7.0.0"
+        }
     },
     "devDependencies": {
+        "@babel/core": "^8.0.1",
+        "@babel/preset-env": "^8.0.2",
+        "@babel/preset-react": "^8.0.1",
         "@types/glob": "^7.1.1",
         "@types/mocha": "^10.0.1",
-        "@types/node": "^16",
+        "@types/node": "^22.0.0",
         "@types/vscode": "^1.72.0",
-        "@vscode/test-electron": "^2.3.9",
+        "@vscode/test-electron": "^2.5.2",
+        "babel-loader": "^10.1.1",
         "chai": "^4.3.6",
+        "css-loader": "^7.1.4",
         "eslint": "^8.21.0",
         "glob": "^7.1.5",
-        "mocha": "^10.0.0",
+        "mocha": "^8.1.3",
         "process": "^0.11.10",
+        "style-loader": "^4.0.0",
+        "ts-loader": "^9.6.2",
         "typescript": "^4.2.2",
-        "webpack": "^5.76.0",
+        "webpack": "^5.109.0",
         "webpack-cli": "^5.0.1"
     },
     "scripts": {

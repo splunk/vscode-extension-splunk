@@ -2,6 +2,21 @@
 
 Complete documentation is available at the [extension wiki](https://github.com/splunk/vscode-extension-splunk/wiki)
 
+## [0.4.0]
+### New features
+- Add semantic linting for Splunk .conf files with context-aware best practice suggestions
+- Add JSON-based rule engine for defining semantic linting rules
+- Add quick fix code actions for common configuration issues
+- Add `splunk.semanticLinting.enabled` configuration setting
+- Add cross-file validation for Splunk .conf files
+- Validate transform references (props.conf → transforms.conf)
+- Validate lookup files (transforms.conf → lookups/)
+- Validate index references (inputs.conf/props.conf → indexes.conf)
+- Validate sourcetype consistency (inputs.conf → props.conf)
+- Detect orphaned transform stanzas
+- Add SPLUNK_HOME configuration for system-level validation
+- Add 70 unit tests for cross-file validators
+
 ## [0.3.5]
 ### New features
 - Fix Spl2 notebook experience to match new splunkd endpoints for GA of SPL2
