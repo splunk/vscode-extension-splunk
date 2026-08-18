@@ -12,21 +12,32 @@ async function main() {
     const vscodeExecutablePath = await downloadAndUnzipVSCode('stable');
 
     // Ensure the executable has correct permissions (macOS ARM runner fix)
+    // downloadAndUnzipVSCode returns path like: .../Visual Studio Code.app/Contents/MacOS/Electron
+    // or .../Visual Studio Code.app/Contents/Resources/app/bin/code on some versions
     if (process.platform === 'darwin') {
-      const electronPath = path.join(
-        path.dirname(vscodeExecutablePath),
-        'Visual Studio Code.app',
-        'Contents',
-        'MacOS',
-        'Electron'
-      );
+      console.log(`VS Code executable path: ${vscodeExecutablePath}`);
+      
+      // Try to chmod the returned path directly
       try {
-        if (fs.existsSync(electronPath)) {
-          fs.chmodSync(electronPath, 0o755);
-          console.log(`Set permissions on: ${electronPath}`);
+        if (fs.existsSync(vscodeExecutablePath)) {
+          fs.chmodSync(vscodeExecutablePath, 0o755);
+          console.log(`Set permissions on: ${vscodeExecutablePath}`);
         }
       } catch (e) {
         console.warn(`Could not chmod VS Code executable: ${e}`);
+      }
+
+      // Also try the Electron binary if the path is to the .app
+      if (vscodeExecutablePath.endsWith('.app')) {
+        const electronPath = path.join(vscodeExecutablePath, 'Contents', 'MacOS', 'Electron');
+        try {
+          if (fs.existsSync(electronPath)) {
+            fs.chmodSync(electronPath, 0o755);
+            console.log(`Set permissions on Electron: ${electronPath}`);
+          }
+        } catch (e) {
+          console.warn(`Could not chmod Electron: ${e}`);
+        }
       }
     }
 
