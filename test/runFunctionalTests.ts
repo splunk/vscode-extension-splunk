@@ -13,31 +13,35 @@ async function main() {
 
     // Ensure the executable has correct permissions (macOS ARM runner fix)
     // downloadAndUnzipVSCode returns path like: .../Visual Studio Code.app/Contents/MacOS/Electron
-    // or .../Visual Studio Code.app/Contents/Resources/app/bin/code on some versions
     if (process.platform === 'darwin') {
       console.log(`VS Code executable path: ${vscodeExecutablePath}`);
+      console.log(`File exists: ${fs.existsSync(vscodeExecutablePath)}`);
       
+      // Check file stats
+      try {
+        const stats = fs.statSync(vscodeExecutablePath);
+        console.log(`File mode before chmod: ${stats.mode.toString(8)}`);
+      } catch (e) {
+        console.log(`Could not stat file: ${e}`);
+      }
+
       // Try to chmod the returned path directly
       try {
-        if (fs.existsSync(vscodeExecutablePath)) {
-          fs.chmodSync(vscodeExecutablePath, 0o755);
-          console.log(`Set permissions on: ${vscodeExecutablePath}`);
-        }
+        fs.chmodSync(vscodeExecutablePath, 0o755);
+        console.log(`Set permissions on: ${vscodeExecutablePath}`);
+        const statsAfter = fs.statSync(vscodeExecutablePath);
+        console.log(`File mode after chmod: ${statsAfter.mode.toString(8)}`);
       } catch (e) {
         console.warn(`Could not chmod VS Code executable: ${e}`);
       }
 
-      // Also try the Electron binary if the path is to the .app
-      if (vscodeExecutablePath.endsWith('.app')) {
-        const electronPath = path.join(vscodeExecutablePath, 'Contents', 'MacOS', 'Electron');
-        try {
-          if (fs.existsSync(electronPath)) {
-            fs.chmodSync(electronPath, 0o755);
-            console.log(`Set permissions on Electron: ${electronPath}`);
-          }
-        } catch (e) {
-          console.warn(`Could not chmod Electron: ${e}`);
-        }
+      // List the directory contents to debug
+      try {
+        const dir = path.dirname(vscodeExecutablePath);
+        const files = fs.readdirSync(dir);
+        console.log(`Contents of ${dir}: ${files.join(', ')}`);
+      } catch (e) {
+        console.log(`Could not list directory: ${e}`);
       }
     }
 
