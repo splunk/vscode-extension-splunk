@@ -9,39 +9,30 @@ async function main() {
   try {
     const extensionDevelopmentPath = path.resolve(__dirname, '..');
     const functionalTestsPath = path.resolve(__dirname, './functional/index');
-    const vscodeExecutablePath = await downloadAndUnzipVSCode('stable');
+    let vscodeExecutablePath = await downloadAndUnzipVSCode('stable');
 
-    // Ensure the executable has correct permissions (macOS ARM runner fix)
-    // downloadAndUnzipVSCode returns path like: .../Visual Studio Code.app/Contents/MacOS/Electron
+    // Fix for macOS: VS Code renamed the binary from "Electron" to "Code"
+    // The @vscode/test-electron library may return the wrong path
     if (process.platform === 'darwin') {
-      console.log(`VS Code executable path: ${vscodeExecutablePath}`);
-      console.log(`File exists: ${fs.existsSync(vscodeExecutablePath)}`);
+      console.log(`VS Code executable path from library: ${vscodeExecutablePath}`);
       
-      // Check file stats
-      try {
-        const stats = fs.statSync(vscodeExecutablePath);
-        console.log(`File mode before chmod: ${stats.mode.toString(8)}`);
-      } catch (e) {
-        console.log(`Could not stat file: ${e}`);
+      // Check if the path exists, if not try "Code" instead of "Electron"
+      if (!fs.existsSync(vscodeExecutablePath) && vscodeExecutablePath.endsWith('Electron')) {
+        const codePath = vscodeExecutablePath.replace(/Electron$/, 'Code');
+        if (fs.existsSync(codePath)) {
+          vscodeExecutablePath = codePath;
+          console.log(`Using corrected path: ${vscodeExecutablePath}`);
+        }
       }
 
-      // Try to chmod the returned path directly
+      // Set permissions on the executable
       try {
-        fs.chmodSync(vscodeExecutablePath, 0o755);
-        console.log(`Set permissions on: ${vscodeExecutablePath}`);
-        const statsAfter = fs.statSync(vscodeExecutablePath);
-        console.log(`File mode after chmod: ${statsAfter.mode.toString(8)}`);
+        if (fs.existsSync(vscodeExecutablePath)) {
+          fs.chmodSync(vscodeExecutablePath, 0o755);
+          console.log(`Set permissions on: ${vscodeExecutablePath}`);
+        }
       } catch (e) {
         console.warn(`Could not chmod VS Code executable: ${e}`);
-      }
-
-      // List the directory contents to debug
-      try {
-        const dir = path.dirname(vscodeExecutablePath);
-        const files = fs.readdirSync(dir);
-        console.log(`Contents of ${dir}: ${files.join(', ')}`);
-      } catch (e) {
-        console.log(`Could not list directory: ${e}`);
       }
     }
 
