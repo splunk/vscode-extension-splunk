@@ -9,9 +9,16 @@
           {
             "id": "linemerge_performance",
             "trigger": {
-              "settings": { "SHOULD_LINEMERGE": "true" },
-              "with_any": ["BREAK_ONLY_BEFORE", "MUST_BREAK_AFTER"],
-              "without": ["LINE_BREAKER_LOOKBEHIND"]
+              "settings": {
+                "SHOULD_LINEMERGE": "true"
+              },
+              "with_any": [
+                "BREAK_ONLY_BEFORE",
+                "MUST_BREAK_AFTER"
+              ],
+              "without": [
+                "LINE_BREAKER_LOOKBEHIND"
+              ]
             },
             "suggestion": {
               "severity": "information",
@@ -22,8 +29,16 @@
             "fix": {
               "type": "multi",
               "changes": [
-                { "action": "set", "setting": "SHOULD_LINEMERGE", "value": "false" },
-                { "action": "add", "setting": "LINE_BREAKER", "value": "([\\r\\n]+)" }
+                {
+                  "action": "set",
+                  "setting": "SHOULD_LINEMERGE",
+                  "value": "false"
+                },
+                {
+                  "action": "add",
+                  "setting": "LINE_BREAKER",
+                  "value": "([\\r\\n]+)"
+                }
               ]
             }
           },
@@ -31,7 +46,9 @@
             "id": "missing_linemerge_false",
             "trigger": {
               "setting_exists": "LINE_BREAKER",
-              "without": ["SHOULD_LINEMERGE"]
+              "without": [
+                "SHOULD_LINEMERGE"
+              ]
             },
             "suggestion": {
               "severity": "warning",
@@ -42,15 +59,26 @@
             "fix": {
               "type": "add",
               "changes": [
-                { "action": "add", "setting": "SHOULD_LINEMERGE", "value": "false" }
+                {
+                  "action": "add",
+                  "setting": "SHOULD_LINEMERGE",
+                  "value": "false"
+                }
               ]
             }
           },
           {
             "id": "linemerge_without_break",
             "trigger": {
-              "settings": { "SHOULD_LINEMERGE": "true" },
-              "without": ["BREAK_ONLY_BEFORE", "MUST_BREAK_AFTER", "BREAK_ONLY_BEFORE_DATE", "LINE_BREAKER"]
+              "settings": {
+                "SHOULD_LINEMERGE": "true"
+              },
+              "without": [
+                "BREAK_ONLY_BEFORE",
+                "MUST_BREAK_AFTER",
+                "BREAK_ONLY_BEFORE_DATE",
+                "LINE_BREAKER"
+              ]
             },
             "suggestion": {
               "severity": "information",
@@ -67,8 +95,14 @@
           {
             "id": "datetime_none_warning",
             "trigger": {
-              "settings": { "DATETIME_CONFIG": "NONE" },
-              "without": ["LINE_BREAKER", "SHOULD_LINEMERGE", "BREAK_ONLY_BEFORE"]
+              "settings": {
+                "DATETIME_CONFIG": "NONE"
+              },
+              "without": [
+                "LINE_BREAKER",
+                "SHOULD_LINEMERGE",
+                "BREAK_ONLY_BEFORE"
+              ]
             },
             "suggestion": {
               "severity": "warning",
@@ -81,7 +115,9 @@
             "id": "time_format_without_prefix",
             "trigger": {
               "setting_exists": "TIME_FORMAT",
-              "without": ["TIME_PREFIX"]
+              "without": [
+                "TIME_PREFIX"
+              ]
             },
             "suggestion": {
               "severity": "hint",
@@ -93,7 +129,9 @@
           {
             "id": "max_timestamp_lookahead_low",
             "trigger": {
-              "value_less_than": { "MAX_TIMESTAMP_LOOKAHEAD": 10 }
+              "value_less_than": {
+                "MAX_TIMESTAMP_LOOKAHEAD": 10
+              }
             },
             "suggestion": {
               "severity": "warning",
@@ -110,7 +148,9 @@
           {
             "id": "truncate_warning",
             "trigger": {
-              "value_less_than": { "TRUNCATE": 10000 }
+              "value_less_than": {
+                "TRUNCATE": 10000
+              }
             },
             "suggestion": {
               "severity": "warning",
@@ -122,7 +162,9 @@
           {
             "id": "truncate_very_high",
             "trigger": {
-              "value_greater_than": { "TRUNCATE": 100000 }
+              "value_greater_than": {
+                "TRUNCATE": 100000
+              }
             },
             "suggestion": {
               "severity": "information",
@@ -139,7 +181,9 @@
           {
             "id": "kv_mode_json_with_indexed",
             "trigger": {
-              "settings": { "KV_MODE": "json" },
+              "settings": {
+                "KV_MODE": "json"
+              },
               "setting_exists": "INDEXED_EXTRACTIONS"
             },
             "suggestion": {
@@ -151,7 +195,10 @@
             "fix": {
               "type": "remove",
               "changes": [
-                { "action": "remove", "setting": "KV_MODE" }
+                {
+                  "action": "remove",
+                  "setting": "KV_MODE"
+                }
               ]
             }
           },
@@ -159,13 +206,73 @@
             "id": "extract_without_report",
             "trigger": {
               "setting_exists": "EXTRACT",
-              "without": ["REPORT"]
+              "without": [
+                "REPORT"
+              ]
             },
             "suggestion": {
               "severity": "hint",
               "title": "Consider using REPORT for reusable extractions",
               "message": "Inline EXTRACT is defined. For complex or reusable extractions, consider using REPORT-<class> with a transforms.conf stanza instead.",
               "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Knowledge/Configureadvancedextractionswithfieldtransforms"
+            }
+          }
+        ]
+      },
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "LB_CHUNK_BREAKER_deprecated",
+            "trigger": {
+              "setting_exists": "LB_CHUNK_BREAKER",
+              "without": [
+                "EVENT_BREAKER"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "LB_CHUNK_BREAKER deprecated in Splunk 9.3+",
+              "message": "LB_CHUNK_BREAKER is deprecated starting in Splunk 9.3. Add EVENT_BREAKER for forward compatibility. When both are set, EVENT_BREAKER takes precedence on 9.3+ while LB_CHUNK_BREAKER serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Props.conf",
+              "deprecated_in": "9.3",
+              "replacement": "EVENT_BREAKER"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "EVENT_BREAKER",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "EVENT_BREAKER_no_fallback",
+            "trigger": {
+              "setting_exists": "EVENT_BREAKER",
+              "without": [
+                "LB_CHUNK_BREAKER"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding LB_CHUNK_BREAKER for backward compatibility",
+              "message": "EVENT_BREAKER is only recognized in Splunk 9.3+. If your app targets older Splunk versions, add LB_CHUNK_BREAKER as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Props.conf",
+              "introduced_in": "9.3"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "LB_CHUNK_BREAKER",
+                  "value": ""
+                }
+              ]
             }
           }
         ]
@@ -179,7 +286,12 @@
             "id": "recursive_no_filter",
             "trigger": {
               "stanza_pattern": "^\\[monitor://",
-              "without": ["whitelist", "blacklist", "allowlist", "denylist"]
+              "without": [
+                "whitelist",
+                "blacklist",
+                "allowlist",
+                "denylist"
+              ]
             },
             "suggestion": {
               "severity": "information",
@@ -192,7 +304,9 @@
             "id": "missing_sourcetype",
             "trigger": {
               "stanza_pattern": "^\\[monitor://",
-              "without": ["sourcetype"]
+              "without": [
+                "sourcetype"
+              ]
             },
             "suggestion": {
               "severity": "information",
@@ -205,7 +319,9 @@
             "id": "missing_index",
             "trigger": {
               "stanza_pattern": "^\\[(monitor|tcp|udp|script)://",
-              "without": ["index"]
+              "without": [
+                "index"
+              ]
             },
             "suggestion": {
               "severity": "hint",
@@ -217,7 +333,10 @@
           {
             "id": "crcsalt_with_initcrclen",
             "trigger": {
-              "with_all": ["crcSalt", "initCrcLength"]
+              "with_all": [
+                "crcSalt",
+                "initCrcLength"
+              ]
             },
             "suggestion": {
               "severity": "warning",
@@ -235,7 +354,9 @@
             "id": "tcp_no_connection_host",
             "trigger": {
               "stanza_pattern": "^\\[tcp://",
-              "without": ["connection_host"]
+              "without": [
+                "connection_host"
+              ]
             },
             "suggestion": {
               "severity": "hint",
@@ -248,13 +369,73 @@
             "id": "udp_no_no_appending_timestamp",
             "trigger": {
               "stanza_pattern": "^\\[udp://",
-              "without": ["no_appending_timestamp"]
+              "without": [
+                "no_appending_timestamp"
+              ]
             },
             "suggestion": {
               "severity": "hint",
               "title": "Consider no_appending_timestamp setting",
               "message": "For UDP inputs, Splunk appends a timestamp to each packet by default. If your data already has timestamps, consider setting no_appending_timestamp = true.",
               "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Data/Monitornetworkports"
+            }
+          }
+        ]
+      },
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "python_version_deprecated",
+            "trigger": {
+              "setting_exists": "python.version",
+              "without": [
+                "python.required"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "python.version deprecated in Splunk 10.2+",
+              "message": "python.version is deprecated starting in Splunk 10.2. Add python.required for forward compatibility. When both are set, python.required takes precedence on 10.2+ while python.version serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Inputs.conf",
+              "deprecated_in": "10.2",
+              "replacement": "python.required"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.required",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "python_required_no_fallback",
+            "trigger": {
+              "setting_exists": "python.required",
+              "without": [
+                "python.version"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding python.version for backward compatibility",
+              "message": "python.required is only recognized in Splunk 10.2+. If your app targets older Splunk versions, add python.version as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Inputs.conf",
+              "introduced_in": "10.2"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.version",
+                  "value": ""
+                }
+              ]
             }
           }
         ]
@@ -268,7 +449,9 @@
             "id": "regex_no_format",
             "trigger": {
               "setting_exists": "REGEX",
-              "without": ["FORMAT"]
+              "without": [
+                "FORMAT"
+              ]
             },
             "suggestion": {
               "severity": "hint",
@@ -282,7 +465,9 @@
             "trigger": {
               "setting_exists": "filename",
               "stanza_pattern": "^\\[(?!default)",
-              "without": ["default_match"]
+              "without": [
+                "default_match"
+              ]
             },
             "suggestion": {
               "severity": "hint",
@@ -295,7 +480,9 @@
             "id": "lookup_case_sensitive",
             "trigger": {
               "setting_exists": "filename",
-              "without": ["case_sensitive_match"]
+              "without": [
+                "case_sensitive_match"
+              ]
             },
             "suggestion": {
               "severity": "hint",
@@ -312,8 +499,12 @@
           {
             "id": "dest_key_queue",
             "trigger": {
-              "settings": { "DEST_KEY": "queue" },
-              "without": ["FORMAT"]
+              "settings": {
+                "DEST_KEY": "queue"
+              },
+              "without": [
+                "FORMAT"
+              ]
             },
             "suggestion": {
               "severity": "warning",
@@ -324,7 +515,69 @@
             "fix": {
               "type": "add",
               "changes": [
-                { "action": "add", "setting": "FORMAT", "value": "nullQueue" }
+                {
+                  "action": "add",
+                  "setting": "FORMAT",
+                  "value": "nullQueue"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "python_version_deprecated",
+            "trigger": {
+              "setting_exists": "python.version",
+              "without": [
+                "python.required"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "python.version deprecated in Splunk 10.2+",
+              "message": "python.version is deprecated starting in Splunk 10.2. Add python.required for forward compatibility. When both are set, python.required takes precedence on 10.2+ while python.version serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Transforms.conf",
+              "deprecated_in": "10.2",
+              "replacement": "python.required"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.required",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "python_required_no_fallback",
+            "trigger": {
+              "setting_exists": "python.required",
+              "without": [
+                "python.version"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding python.version for backward compatibility",
+              "message": "python.required is only recognized in Splunk 10.2+. If your app targets older Splunk versions, add python.version as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Transforms.conf",
+              "introduced_in": "10.2"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.version",
+                  "value": ""
+                }
               ]
             }
           }
@@ -339,7 +592,9 @@
             "id": "tcpout_no_server",
             "trigger": {
               "stanza_pattern": "^\\[tcpout:",
-              "without": ["server"]
+              "without": [
+                "server"
+              ]
             },
             "suggestion": {
               "severity": "error",
@@ -351,8 +606,12 @@
           {
             "id": "ssl_without_cert",
             "trigger": {
-              "settings": { "useSSL": "true" },
-              "without": ["sslCertPath"]
+              "settings": {
+                "useSSL": "true"
+              },
+              "without": [
+                "sslCertPath"
+              ]
             },
             "suggestion": {
               "severity": "warning",
@@ -371,13 +630,73 @@
           {
             "id": "replication_factor_one",
             "trigger": {
-              "settings": { "replication_factor": "1" }
+              "settings": {
+                "replication_factor": "1"
+              }
             },
             "suggestion": {
               "severity": "warning",
               "title": "Replication factor of 1 provides no redundancy",
               "message": "With replication_factor = 1, there is no data redundancy. If a peer fails, data may be lost. Consider increasing this for production environments.",
               "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Indexer/Thereplicationfactor"
+            }
+          }
+        ]
+      },
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "python_version_deprecated",
+            "trigger": {
+              "setting_exists": "python.version",
+              "without": [
+                "python.required"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "python.version deprecated in Splunk 10.2+",
+              "message": "python.version is deprecated starting in Splunk 10.2. Add python.required for forward compatibility. When both are set, python.required takes precedence on 10.2+ while python.version serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Server.conf",
+              "deprecated_in": "10.2",
+              "replacement": "python.required"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.required",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "python_required_no_fallback",
+            "trigger": {
+              "setting_exists": "python.required",
+              "without": [
+                "python.version"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding python.version for backward compatibility",
+              "message": "python.required is only recognized in Splunk 10.2+. If your app targets older Splunk versions, add python.version as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Server.conf",
+              "introduced_in": "10.2"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.version",
+                  "value": ""
+                }
+              ]
             }
           }
         ]
@@ -406,7 +725,9 @@
             "id": "no_maxdatasize",
             "trigger": {
               "stanza_pattern": "^\\[(?!default|volume:)",
-              "without": ["maxDataSize"]
+              "without": [
+                "maxDataSize"
+              ]
             },
             "suggestion": {
               "severity": "hint",
@@ -424,13 +745,540 @@
             "id": "no_retention_policy",
             "trigger": {
               "stanza_pattern": "^\\[(?!default|volume:)",
-              "without": ["frozenTimePeriodInSecs", "maxTotalDataSizeMB"]
+              "without": [
+                "frozenTimePeriodInSecs",
+                "maxTotalDataSizeMB"
+              ]
             },
             "suggestion": {
               "severity": "information",
               "title": "Consider setting retention policy",
               "message": "No explicit retention policy is set. Data will be retained based on default settings. Consider setting frozenTimePeriodInSecs or maxTotalDataSizeMB to manage storage.",
               "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Indexer/Setaretirementandarchivingpolicy"
+            }
+          }
+        ]
+      },
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "remote_s3_tsidx_compression_deprecated",
+            "trigger": {
+              "setting_exists": "remote.s3.tsidx_compression",
+              "without": [
+                "remote.s3.compression"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "remote.s3.tsidx_compression deprecated in Splunk 9.4+",
+              "message": "remote.s3.tsidx_compression is deprecated starting in Splunk 9.4. Add remote.s3.compression for forward compatibility. When both are set, remote.s3.compression takes precedence on 9.4+ while remote.s3.tsidx_compression serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Indexes.conf",
+              "deprecated_in": "9.4",
+              "replacement": "remote.s3.compression"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "remote.s3.compression",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "remote_s3_compression_no_fallback",
+            "trigger": {
+              "setting_exists": "remote.s3.compression",
+              "without": [
+                "remote.s3.tsidx_compression"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding remote.s3.tsidx_compression for backward compatibility",
+              "message": "remote.s3.compression is only recognized in Splunk 9.4+. If your app targets older Splunk versions, add remote.s3.tsidx_compression as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Indexes.conf",
+              "introduced_in": "9.4"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "remote.s3.tsidx_compression",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "remote_azure_tsidx_compression_deprecated",
+            "trigger": {
+              "setting_exists": "remote.azure.tsidx_compression",
+              "without": [
+                "remote.azure.compression"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "remote.azure.tsidx_compression deprecated in Splunk 9.4+",
+              "message": "remote.azure.tsidx_compression is deprecated starting in Splunk 9.4. Add remote.azure.compression for forward compatibility. When both are set, remote.azure.compression takes precedence on 9.4+ while remote.azure.tsidx_compression serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Indexes.conf",
+              "deprecated_in": "9.4",
+              "replacement": "remote.azure.compression"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "remote.azure.compression",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "remote_azure_compression_no_fallback",
+            "trigger": {
+              "setting_exists": "remote.azure.compression",
+              "without": [
+                "remote.azure.tsidx_compression"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding remote.azure.tsidx_compression for backward compatibility",
+              "message": "remote.azure.compression is only recognized in Splunk 9.4+. If your app targets older Splunk versions, add remote.azure.tsidx_compression as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Indexes.conf",
+              "introduced_in": "9.4"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "remote.azure.tsidx_compression",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "python_version_deprecated",
+            "trigger": {
+              "setting_exists": "python.version",
+              "without": [
+                "python.required"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "python.version deprecated in Splunk 10.2+",
+              "message": "python.version is deprecated starting in Splunk 10.2. Add python.required for forward compatibility. When both are set, python.required takes precedence on 10.2+ while python.version serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Indexes.conf",
+              "deprecated_in": "10.2",
+              "replacement": "python.required"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.required",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "python_required_no_fallback",
+            "trigger": {
+              "setting_exists": "python.required",
+              "without": [
+                "python.version"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding python.version for backward compatibility",
+              "message": "python.required is only recognized in Splunk 10.2+. If your app targets older Splunk versions, add python.version as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Indexes.conf",
+              "introduced_in": "10.2"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.version",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "web.conf": {
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "enableSplunkWebClientNetloc_deprecated",
+            "trigger": {
+              "setting_exists": "enableSplunkWebClientNetloc",
+              "without": [
+                "allowedSplunkWebClientNetlocList"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "enableSplunkWebClientNetloc deprecated in Splunk 10.0+",
+              "message": "enableSplunkWebClientNetloc is deprecated starting in Splunk 10.0. Add allowedSplunkWebClientNetlocList for forward compatibility. When both are set, allowedSplunkWebClientNetlocList takes precedence on 10.0+ while enableSplunkWebClientNetloc serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Web.conf",
+              "deprecated_in": "10.0",
+              "replacement": "allowedSplunkWebClientNetlocList"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "allowedSplunkWebClientNetlocList",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "allowedSplunkWebClientNetlocList_no_fallback",
+            "trigger": {
+              "setting_exists": "allowedSplunkWebClientNetlocList",
+              "without": [
+                "enableSplunkWebClientNetloc"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding enableSplunkWebClientNetloc for backward compatibility",
+              "message": "allowedSplunkWebClientNetlocList is only recognized in Splunk 10.0+. If your app targets older Splunk versions, add enableSplunkWebClientNetloc as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Web.conf",
+              "introduced_in": "10.0"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "enableSplunkWebClientNetloc",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "alert_actions.conf": {
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "python_version_deprecated",
+            "trigger": {
+              "setting_exists": "python.version",
+              "without": [
+                "python.required"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "python.version deprecated in Splunk 10.2+",
+              "message": "python.version is deprecated starting in Splunk 10.2. Add python.required for forward compatibility. When both are set, python.required takes precedence on 10.2+ while python.version serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Alert_actions.conf",
+              "deprecated_in": "10.2",
+              "replacement": "python.required"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.required",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "python_required_no_fallback",
+            "trigger": {
+              "setting_exists": "python.required",
+              "without": [
+                "python.version"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding python.version for backward compatibility",
+              "message": "python.required is only recognized in Splunk 10.2+. If your app targets older Splunk versions, add python.version as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Alert_actions.conf",
+              "introduced_in": "10.2"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.version",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "app.conf": {
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "python_version_deprecated",
+            "trigger": {
+              "setting_exists": "python.version",
+              "without": [
+                "python.required"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "python.version deprecated in Splunk 10.2+",
+              "message": "python.version is deprecated starting in Splunk 10.2. Add python.required for forward compatibility. When both are set, python.required takes precedence on 10.2+ while python.version serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/App.conf",
+              "deprecated_in": "10.2",
+              "replacement": "python.required"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.required",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "python_required_no_fallback",
+            "trigger": {
+              "setting_exists": "python.required",
+              "without": [
+                "python.version"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding python.version for backward compatibility",
+              "message": "python.required is only recognized in Splunk 10.2+. If your app targets older Splunk versions, add python.version as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/App.conf",
+              "introduced_in": "10.2"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.version",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "authentication.conf": {
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "python_version_deprecated",
+            "trigger": {
+              "setting_exists": "python.version",
+              "without": [
+                "python.required"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "python.version deprecated in Splunk 10.2+",
+              "message": "python.version is deprecated starting in Splunk 10.2. Add python.required for forward compatibility. When both are set, python.required takes precedence on 10.2+ while python.version serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Authentication.conf",
+              "deprecated_in": "10.2",
+              "replacement": "python.required"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.required",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "python_required_no_fallback",
+            "trigger": {
+              "setting_exists": "python.required",
+              "without": [
+                "python.version"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding python.version for backward compatibility",
+              "message": "python.required is only recognized in Splunk 10.2+. If your app targets older Splunk versions, add python.version as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Authentication.conf",
+              "introduced_in": "10.2"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.version",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "commands.conf": {
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "python_version_deprecated",
+            "trigger": {
+              "setting_exists": "python.version",
+              "without": [
+                "python.required"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "python.version deprecated in Splunk 10.2+",
+              "message": "python.version is deprecated starting in Splunk 10.2. Add python.required for forward compatibility. When both are set, python.required takes precedence on 10.2+ while python.version serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Commands.conf",
+              "deprecated_in": "10.2",
+              "replacement": "python.required"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.required",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "python_required_no_fallback",
+            "trigger": {
+              "setting_exists": "python.required",
+              "without": [
+                "python.version"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding python.version for backward compatibility",
+              "message": "python.required is only recognized in Splunk 10.2+. If your app targets older Splunk versions, add python.version as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Commands.conf",
+              "introduced_in": "10.2"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.version",
+                  "value": ""
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "restmap.conf": {
+      "deprecations": {
+        "description": "Rules for deprecated settings and their replacements",
+        "patterns": [
+          {
+            "id": "python_version_deprecated",
+            "trigger": {
+              "setting_exists": "python.version",
+              "without": [
+                "python.required"
+              ]
+            },
+            "suggestion": {
+              "severity": "warning",
+              "title": "python.version deprecated in Splunk 10.2+",
+              "message": "python.version is deprecated starting in Splunk 10.2. Add python.required for forward compatibility. When both are set, python.required takes precedence on 10.2+ while python.version serves as fallback for older versions.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Restmap.conf",
+              "deprecated_in": "10.2",
+              "replacement": "python.required"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.required",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          {
+            "id": "python_required_no_fallback",
+            "trigger": {
+              "setting_exists": "python.required",
+              "without": [
+                "python.version"
+              ]
+            },
+            "suggestion": {
+              "severity": "information",
+              "title": "Consider adding python.version for backward compatibility",
+              "message": "python.required is only recognized in Splunk 10.2+. If your app targets older Splunk versions, add python.version as a fallback.",
+              "documentation": "https://docs.splunk.com/Documentation/Splunk/latest/Admin/Restmap.conf",
+              "introduced_in": "10.2"
+            },
+            "fix": {
+              "type": "add",
+              "changes": [
+                {
+                  "action": "add",
+                  "setting": "python.version",
+                  "value": ""
+                }
+              ]
             }
           }
         ]
