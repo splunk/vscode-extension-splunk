@@ -96,6 +96,20 @@
                 "url": "https://raw.githubusercontent.com/splunk/addonfactory-ucc-generator/main/splunk_add_on_ucc_framework/schema/schema.json"
             }
         ],
+        "chatSkills": [
+            {
+                "path": "./.github/skills/splunk-debug-code/SKILL.md"
+            },
+            {
+                "path": "./.github/skills/ucc-add-config-tab/SKILL.md"
+            },
+            {
+                "path": "./.github/skills/ucc-add-field/SKILL.md"
+            },
+            {
+                "path": "./.github/skills/ucc-add-input/SKILL.md"
+            }
+        ],
         "configuration": {
             "title": "Splunk",
             "properties": {
