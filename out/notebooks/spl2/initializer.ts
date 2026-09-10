@@ -100,6 +100,8 @@ export class Spl2ClientServer {
     client: LanguageClient;
     serverProcess: child_process.ChildProcess;
     socket: Socket;
+    // Accumulates partial stdout chunks until a full line is available to parse as JSON
+    stdoutBuffer: string;
 
     constructor(progressBar: StatusBarItem, javaPath: string, lspVersion: string, lspPath: string, portToAttempt: number, onClose: (nextPort: number) => void) {
         this.progressBar = progressBar;
@@ -114,6 +116,7 @@ export class Spl2ClientServer {
         this.socket = undefined;
         this.portToAttempt = portToAttempt;
         this.onClose = onClose;
+        this.stdoutBuffer = '';
     }
 
     async initialize(): Promise<void> {
@@ -217,47 +220,68 @@ export class Spl2ClientServer {
                 });
                 this.serverProcess.stdout.on('data', stdout => {
                     console.log(`[SPL2 Server]: ${stdout}`);
-                    const lspLog: LSPLog = JSON.parse(stdout);
-                    if (lspLog.message.includes('started listening on port')) {
-                        console.log(`SPL2 Server v${this.lspVersion} is up, starting client...`);
-                        // Ready for client
-                        this.socket = new Socket();
-    
-                        this.socket.on('connect', () => {
-                            console.log('Client: connection established with server');
-                            const address:AddressInfo = this.socket.address() as AddressInfo;
-                            console.log(`Client is listening on port ${address.port}`);
-                            // Reset retries after a successful connection
-                            this.retries = 0;
-                            this.restarting = false;
-                            resolve({
-                                writer: this.socket,
-                                reader: this.socket,
-                                // detached: true,
+                    // A single 'data' event is not guaranteed to align with a single log line (it
+                    // may contain multiple lines, or only part of one), so buffer and split on
+                    // newlines rather than assuming the whole chunk is exactly one JSON object.
+                    this.stdoutBuffer += stdout.toString();
+                    const lines = this.stdoutBuffer.split('\n');
+                    // The last entry may be an incomplete line; keep it buffered for the next chunk
+                    this.stdoutBuffer = lines.pop() || '';
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed) {
+                            continue;
+                        }
+                        let lspLog: LSPLog;
+                        try {
+                            lspLog = JSON.parse(trimmed);
+                        } catch (err) {
+                            // Not every line written to stdout is guaranteed to be structured JSON
+                            // (e.g. JVM startup warnings); skip those rather than failing the whole stream
+                            console.warn(`Unable to parse SPL2 Server stdout line as JSON, skipping: '${trimmed}', err: ${err}`);
+                            continue;
+                        }
+                        if (lspLog?.message?.includes('started listening on port')) {
+                            console.log(`SPL2 Server v${this.lspVersion} is up, starting client...`);
+                            // Ready for client
+                            this.socket = new Socket();
+
+                            this.socket.on('connect', () => {
+                                console.log('Client: connection established with server');
+                                const address:AddressInfo = this.socket.address() as AddressInfo;
+                                console.log(`Client is listening on port ${address.port}`);
+                                // Reset retries after a successful connection
+                                this.retries = 0;
+                                this.restarting = false;
+                                resolve({
+                                    writer: this.socket,
+                                    reader: this.socket,
+                                    // detached: true,
+                                });
                             });
-                        });
-    
-                        this.socket.on('close', () => {
-                            if (this.restarting) {
-                                return;
-                            }
-                            this.restarting = true;
-                            console.warn('Connection lost, bumping port and retrying ...');
-                            this.onClose(this.lspPort + 1);
-                        });
-    
-                        this.socket.on('error', (err) => {
-                            if (isNodeError(err) && err.code === 'ECONNRESET') {
-                                // expected when server is killed
-                                console.log('Server connection ended.');
-                                return;
-                            }
-                            console.warn(`error between LSP client/server encountered -> ${err}`);
-                        });
-    
-                        this.socket.connect({
-                            port: this.lspPort,
-                        });
+
+                            this.socket.on('close', () => {
+                                if (this.restarting) {
+                                    return;
+                                }
+                                this.restarting = true;
+                                console.warn('Connection lost, bumping port and retrying ...');
+                                this.onClose(this.lspPort + 1);
+                            });
+
+                            this.socket.on('error', (err) => {
+                                if (isNodeError(err) && err.code === 'ECONNRESET') {
+                                    // expected when server is killed
+                                    console.log('Server connection ended.');
+                                    return;
+                                }
+                                console.warn(`error between LSP client/server encountered -> ${err}`);
+                            });
+
+                            this.socket.connect({
+                                port: this.lspPort,
+                            });
+                        }
                     }
                 });
             });

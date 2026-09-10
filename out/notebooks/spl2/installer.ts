@@ -18,7 +18,7 @@ export const configKeyLspVersion = 'splunk.spl2.languageServerVersion';
 export const configKeyDownloadLatestSPL2 = 'splunk.spl2.downloadLatestSPL2';
 
 // Minimum version of Java needed for SPL2 Language Server
-const minimumMajorJavaVersion = 17;
+const minimumMajorJavaVersion = 21;
 
 export enum TermsAcceptanceStatus {
     DeclinedForever = 'declined (forever)',
@@ -46,7 +46,9 @@ export async function installMissingSpl2Requirements(globalStoragePath: string, 
         let javaLoc;
         try {
             let javaLocSetting: string = workspace.getConfiguration().get(configKeyJavaPath);
-            if (javaLocSetting.trim().length != 0) {
+            // Re-validate the configured path in case the minimum required version has since
+            // increased (e.g. a newer LSP jar requiring a newer Java than what's cached)
+            if (javaLocSetting.trim().length != 0 && isJavaVersionCompatible(javaLocSetting)) {
                 javaLoc = javaLocSetting;
             }
         } catch (err) {
