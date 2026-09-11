@@ -12,7 +12,7 @@ import { version } from '../package.json';
 // Example taken from: https://code.visualstudio.com/api/working-with-extensions/testing-extension#custom-setup-with-vscodetestelectron
 async function main() {
   try {
-    const extensionDevelopmentPath = path.resolve(__dirname, '..'); // root of repo
+    const extensionDevelopmentPath = path.resolve(__dirname, '..', '..'); // root of repo (compiled to out/test/)
     const acceptanceTestsPath = path.resolve(__dirname, './acceptance/index');
     const vscodeExecutablePath = await downloadAndUnzipVSCode('stable');
     const [cliPath, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
