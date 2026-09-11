@@ -16,6 +16,7 @@ Complete documentation is available at the [extension wiki](https://github.com/s
 - Detect orphaned transform stanzas
 - Add SPLUNK_HOME configuration for system-level validation
 - Add 70 unit tests for cross-file validators
+- Add AI skills for debugging and working with UCC add-ons
 
 ## [0.3.5]
 ### New features
