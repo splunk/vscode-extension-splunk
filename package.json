@@ -75,6 +75,29 @@
                 ]
             }
         ],
+        "configurationDefaults": {
+            "[splunk]": {
+                "editor.quickSuggestions": {
+                    "other": true,
+                    "comments": false,
+                    "strings": false
+                }
+            },
+            "[splunk_search]": {
+                "editor.quickSuggestions": {
+                    "other": true,
+                    "comments": false,
+                    "strings": false
+                }
+            },
+            "[splunk_spl2]": {
+                "editor.quickSuggestions": {
+                    "other": true,
+                    "comments": false,
+                    "strings": false
+                }
+            }
+        },
         "capabilities": {
             "hoverProvider": "true"
         },

@@ -674,10 +674,7 @@ function provideStanzaCompletionItems(specConfig) {
     { language: "splunk", pattern: `**/${currentDocument}` },
     {
       provideCompletionItems(document, position) {
-        if (
-          position.character != 1 ||
-          !document.lineAt(position.line).text.startsWith("[")
-        ) {
+        if (!document.lineAt(position.line).text.startsWith("[")) {
           // We are not typing a stanza, so return.
           return;
         }
@@ -734,8 +731,11 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
     { language: "splunk", pattern: `**/${currentDocument}` },
     {
       provideCompletionItems(document, position) {
-        if (position.character > 1 || !specConfig) {
-          // No completion for you!
+        if (
+          !specConfig ||
+          document.lineAt(position.line).text.startsWith("[")
+        ) {
+          // We are on a stanza header line, not a setting line.
           return;
         }
 
