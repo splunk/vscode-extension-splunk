@@ -15,6 +15,7 @@ const splunkSpec = require("./spec.js");
 const semanticRules = require("./semanticRules.js");
 const { SplunkCodeActionProvider } = require("./codeActionProvider.js");
 const crossFileValidator = require("./crossFileValidator.js");
+const workspaceScanner = require("./workspaceScanner.js");
 const PLACEHOLDER_REGEX = /\<([^\>]+)\>/g;
 let specConfigs = {};
 let timeout;
@@ -90,11 +91,15 @@ async function activate(context) {
   // Setup globalConfig.json preview
   globalConfigPreview.init(context);
 
-  // Register CodeActionProvider for semantic linting quick fixes
+  // Register CodeActionProvider for semantic linting and cross-file validation quick fixes
   const semanticLintingEnabled = vscode.workspace
     .getConfiguration("splunk")
     .get("semanticLinting.enabled", true);
-  if (semanticLintingEnabled) {
+  const crossFileValidationEnabled = vscode.workspace
+    .getConfiguration("splunk.crossFileValidation")
+    .get("enabled", true);
+
+  if (semanticLintingEnabled || crossFileValidationEnabled) {
     context.subscriptions.push(
       vscode.languages.registerCodeActionsProvider(
         { language: "splunk" },
@@ -307,6 +312,58 @@ async function activate(context) {
     vscode.commands.registerCommand("splunk.fullDebugRefresh", async () => {
       reload.fullDebugRefresh(splunkOutputChannel);
     }),
+  );
+
+  // Register Cross-File Validation Quick Fix Commands
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "splunk.createIndexStanza",
+      async (indexName, sourceUri) => {
+        await createStanzaInConfFile(
+          indexName,
+          sourceUri,
+          "indexes.conf",
+          getIndexStanzaTemplate(indexName),
+        );
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "splunk.createTransformStanza",
+      async (stanzaName, sourceUri) => {
+        await createStanzaInConfFile(
+          stanzaName,
+          sourceUri,
+          "transforms.conf",
+          getTransformStanzaTemplate(stanzaName),
+        );
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "splunk.createSourcetypeStanza",
+      async (sourcetypeName, sourceUri) => {
+        await createStanzaInConfFile(
+          sourcetypeName,
+          sourceUri,
+          "props.conf",
+          getSourcetypeStanzaTemplate(sourcetypeName),
+        );
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      "splunk.removeStanza",
+      async (stanzaName, range, documentUri) => {
+        await removeStanzaFromDocument(stanzaName, range, documentUri);
+      },
+    ),
   );
 
   // Set up stanza folding
@@ -674,7 +731,10 @@ function provideStanzaCompletionItems(specConfig) {
     { language: "splunk", pattern: `**/${currentDocument}` },
     {
       provideCompletionItems(document, position) {
-        if (!document.lineAt(position.line).text.startsWith("[")) {
+        if (
+          position.character != 1 ||
+          !document.lineAt(position.line).text.startsWith("[")
+        ) {
           // We are not typing a stanza, so return.
           return;
         }
@@ -731,11 +791,8 @@ function provideSettingCompletionItems(specConfig, trimWhitespace) {
     { language: "splunk", pattern: `**/${currentDocument}` },
     {
       provideCompletionItems(document, position) {
-        if (
-          !specConfig ||
-          document.lineAt(position.line).text.startsWith("[")
-        ) {
-          // We are on a stanza header line, not a setting line.
+        if (position.character > 1 || !specConfig) {
+          // No completion for you!
           return;
         }
 
@@ -1001,6 +1058,163 @@ function getDiagnostics(specConfig, document, extensionPath) {
   }
 
   return diagnostics;
+}
+
+/**
+ * Creates a new stanza in a target conf file.
+ * Finds or creates the target file in the same layer (default/local) as the source.
+ */
+async function createStanzaInConfFile(
+  stanzaName,
+  sourceUri,
+  targetFileName,
+  stanzaContent,
+) {
+  const sourcePath = sourceUri.fsPath;
+  const appDir = workspaceScanner.getAppDirectory(sourcePath);
+  const layer = workspaceScanner.getConfLayer(sourcePath);
+
+  if (!appDir) {
+    vscode.window.showErrorMessage("Could not determine app directory.");
+    return;
+  }
+
+  // Determine target directory (same layer as source, or default if at root)
+  const targetDir =
+    layer === "root" ? path.join(appDir, "default") : path.join(appDir, layer);
+  const targetPath = path.join(targetDir, targetFileName);
+
+  // Ensure directory exists
+  if (!fs.existsSync(targetDir)) {
+    fs.mkdirSync(targetDir, { recursive: true });
+  }
+
+  // Check if file exists, if not create it with a header
+  let existingContent = "";
+  if (fs.existsSync(targetPath)) {
+    existingContent = fs.readFileSync(targetPath, "utf-8");
+  } else {
+    existingContent = `# ${targetFileName}\n# Auto-generated by Splunk VS Code Extension\n`;
+  }
+
+  // Check if stanza already exists
+  const stanzaPattern = new RegExp(`^\\[${escapeRegex(stanzaName)}\\]`, "mi");
+  if (stanzaPattern.test(existingContent)) {
+    vscode.window.showInformationMessage(
+      `Stanza [${stanzaName}] already exists in ${targetFileName}`,
+    );
+    // Open the file and navigate to the stanza
+    const doc = await vscode.workspace.openTextDocument(targetPath);
+    const editor = await vscode.window.showTextDocument(doc);
+    const text = doc.getText();
+    const match = text.match(stanzaPattern);
+    if (match) {
+      const pos = doc.positionAt(match.index);
+      editor.selection = new vscode.Selection(pos, pos);
+      editor.revealRange(new vscode.Range(pos, pos));
+    }
+    return;
+  }
+
+  // Append the new stanza
+  const newContent = existingContent.trimEnd() + "\n\n" + stanzaContent;
+  fs.writeFileSync(targetPath, newContent);
+
+  // Open the file and navigate to the new stanza
+  const doc = await vscode.workspace.openTextDocument(targetPath);
+  const editor = await vscode.window.showTextDocument(doc);
+
+  // Find the new stanza position
+  const text = doc.getText();
+  const match = text.match(stanzaPattern);
+  if (match) {
+    const pos = doc.positionAt(match.index);
+    editor.selection = new vscode.Selection(pos, pos);
+    editor.revealRange(new vscode.Range(pos, pos));
+  }
+
+  vscode.window.showInformationMessage(
+    `Created [${stanzaName}] in ${targetFileName}`,
+  );
+}
+
+/**
+ * Removes a stanza and its settings from a document.
+ */
+async function removeStanzaFromDocument(stanzaName, range, documentUri) {
+  const doc = await vscode.workspace.openTextDocument(documentUri);
+  const editor = await vscode.window.showTextDocument(doc);
+
+  // Find the full range of the stanza (header + all settings until next stanza or EOF)
+  const startLine = range.start.line;
+  let endLine = startLine;
+
+  for (let i = startLine + 1; i < doc.lineCount; i++) {
+    const lineText = doc.lineAt(i).text;
+    // Stop at next stanza or end of file
+    if (lineText.trim().startsWith("[")) {
+      break;
+    }
+    endLine = i;
+  }
+
+  // Include any trailing blank lines
+  while (
+    endLine + 1 < doc.lineCount &&
+    doc.lineAt(endLine + 1).text.trim() === ""
+  ) {
+    endLine++;
+  }
+
+  const deleteRange = new vscode.Range(
+    new vscode.Position(startLine, 0),
+    new vscode.Position(endLine + 1, 0),
+  );
+
+  await editor.edit((editBuilder) => {
+    editBuilder.delete(deleteRange);
+  });
+
+  vscode.window.showInformationMessage(`Removed [${stanzaName}] stanza`);
+}
+
+/**
+ * Template for a new index stanza
+ */
+function getIndexStanzaTemplate(indexName) {
+  return `[${indexName}]
+homePath = $SPLUNK_DB/${indexName}/db
+coldPath = $SPLUNK_DB/${indexName}/colddb
+thawedPath = $SPLUNK_DB/${indexName}/thaweddb
+`;
+}
+
+/**
+ * Template for a new transform stanza
+ */
+function getTransformStanzaTemplate(stanzaName) {
+  return `[${stanzaName}]
+REGEX = 
+FORMAT = 
+`;
+}
+
+/**
+ * Template for a new sourcetype stanza in props.conf
+ */
+function getSourcetypeStanzaTemplate(sourcetypeName) {
+  return `[${sourcetypeName}]
+TIME_FORMAT = %Y-%m-%d %H:%M:%S
+SHOULD_LINEMERGE = false
+LINE_BREAKER = ([\\r\\n]+)
+`;
+}
+
+/**
+ * Escapes special regex characters in a string
+ */
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 async function deactivate() {
