@@ -547,7 +547,7 @@
         "@splunk/react-ui": "^5.12.0",
         "@splunk/visualizations": "^28.8.0",
         "@types/vscode-notebook-renderer": "^1.72.0",
-        "axios": "^1.18.1",
+        "axios": "^1.20.0",
         "extract-zip": "^2.0.1",
         "fast-xml-parser": "^5.10.1",
         "konva": "^3.4.1",
