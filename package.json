@@ -566,7 +566,8 @@
         "@types/react": "^16.9.38",
         "babel-preset-current-node-syntax": {
             "@babel/core": "^7.0.0"
-        }
+        },
+        "brace-expansion": "^2.1.4"
     },
     "devDependencies": {
         "@babel/core": "^8.0.1",
