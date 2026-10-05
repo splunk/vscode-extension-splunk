@@ -48,22 +48,36 @@ class SplunkCodeActionProvider {
 
   createCrossFileActions(document, diagnostic) {
     const actions = [];
-    const code = diagnostic.code;
+    // Handle both string codes and object codes (with value property)
+    const code =
+      typeof diagnostic.code === "object"
+        ? diagnostic.code?.value
+        : diagnostic.code;
 
     switch (code) {
       case "missing-transform-stanza": {
         // Offer to create the missing stanza in transforms.conf
-        const data = diagnostic.data;
-        if (data && data.missingStanza) {
+        // Try to get stanza name from data, or extract from document text
+        let stanzaToCreate = null;
+
+        if (diagnostic.data && diagnostic.data.stanzaName) {
+          stanzaToCreate =
+            diagnostic.data.fullStanzaName || diagnostic.data.stanzaName;
+        } else {
+          // Fallback: extract from the highlighted text in the document
+          stanzaToCreate = document.getText(diagnostic.range).trim();
+        }
+
+        if (stanzaToCreate) {
           const action = new vscode.CodeAction(
-            `Create [${data.missingStanza}] stanza in transforms.conf`,
+            `Create [${stanzaToCreate}] stanza in transforms.conf`,
             vscode.CodeActionKind.QuickFix,
           );
           action.diagnostics = [diagnostic];
           action.command = {
             command: "splunk.createTransformStanza",
             title: "Create Transform Stanza",
-            arguments: [data.missingStanza, document.uri],
+            arguments: [stanzaToCreate, document.uri],
           };
           actions.push(action);
         }
@@ -86,17 +100,25 @@ class SplunkCodeActionProvider {
 
       case "missing-index": {
         // Offer to create the index in indexes.conf
-        const data = diagnostic.data;
-        if (data && data.indexName) {
+        let indexName = null;
+
+        if (diagnostic.data && diagnostic.data.indexName) {
+          indexName = diagnostic.data.indexName;
+        } else {
+          // Fallback: extract from the highlighted text in the document
+          indexName = document.getText(diagnostic.range).trim();
+        }
+
+        if (indexName) {
           const action = new vscode.CodeAction(
-            `Create [${data.indexName}] stanza in indexes.conf`,
+            `Create [${indexName}] stanza in indexes.conf`,
             vscode.CodeActionKind.QuickFix,
           );
           action.diagnostics = [diagnostic];
           action.command = {
             command: "splunk.createIndexStanza",
             title: "Create Index Stanza",
-            arguments: [data.indexName, document.uri],
+            arguments: [indexName, document.uri],
           };
           actions.push(action);
         }
@@ -105,17 +127,25 @@ class SplunkCodeActionProvider {
 
       case "missing-sourcetype-definition": {
         // Offer to create the sourcetype stanza in props.conf
-        const data = diagnostic.data;
-        if (data && data.sourcetypeName) {
+        let sourcetypeName = null;
+
+        if (diagnostic.data && diagnostic.data.sourcetypeName) {
+          sourcetypeName = diagnostic.data.sourcetypeName;
+        } else {
+          // Fallback: extract from the highlighted text in the document
+          sourcetypeName = document.getText(diagnostic.range).trim();
+        }
+
+        if (sourcetypeName) {
           const action = new vscode.CodeAction(
-            `Create [${data.sourcetypeName}] stanza in props.conf`,
+            `Create [${sourcetypeName}] stanza in props.conf`,
             vscode.CodeActionKind.QuickFix,
           );
           action.diagnostics = [diagnostic];
           action.command = {
             command: "splunk.createSourcetypeStanza",
             title: "Create Sourcetype Stanza",
-            arguments: [data.sourcetypeName, document.uri],
+            arguments: [sourcetypeName, document.uri],
           };
           actions.push(action);
         }
@@ -124,17 +154,27 @@ class SplunkCodeActionProvider {
 
       case "orphaned-transform": {
         // Offer to remove the orphaned stanza
-        const data = diagnostic.data;
-        if (data && data.stanzaName) {
+        let stanzaName = null;
+
+        if (diagnostic.data && diagnostic.data.stanzaName) {
+          stanzaName = diagnostic.data.stanzaName;
+        } else {
+          // Fallback: extract stanza name from the highlighted text (e.g., "[stanza_name]")
+          const text = document.getText(diagnostic.range).trim();
+          const match = text.match(/^\[([^\]]+)\]/);
+          stanzaName = match ? match[1] : text;
+        }
+
+        if (stanzaName) {
           const action = new vscode.CodeAction(
-            `Remove unused [${data.stanzaName}] stanza`,
+            `Remove unused [${stanzaName}] stanza`,
             vscode.CodeActionKind.QuickFix,
           );
           action.diagnostics = [diagnostic];
           action.command = {
             command: "splunk.removeStanza",
             title: "Remove Stanza",
-            arguments: [data.stanzaName, diagnostic.range, document.uri],
+            arguments: [stanzaName, diagnostic.range, document.uri],
           };
           actions.push(action);
         }
