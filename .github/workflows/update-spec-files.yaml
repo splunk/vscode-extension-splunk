@@ -1,19 +1,22 @@
 name: Update Spec Files
 
 on:
-  # Run bi-weekly on Monday at 9am UTC
+  # Run on the 1st and 15th of each month at 9am UTC
   schedule:
-    - cron: "0 9 * * 1/2"
+    - cron: "0 9 1,15 * *"
 
   # Allow manual trigger
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   issues: write
 
+env:
+  SPEC_BRANCH: automated/spec-file-update
+
 jobs:
-  check-specs:
+  update-specs:
     runs-on: ubuntu-latest
 
     steps:
@@ -31,16 +34,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Open reminder issue
+      # While a reminder for these versions is open, leave the issue and the
+      # spec branch alone so review changes pushed to the branch are kept.
+      - name: Look for an open reminder
+        id: reminder
         if: steps.check.outputs.has_updates == 'true'
         uses: actions/github-script@v7
         env:
           VERSIONS: ${{ steps.check.outputs.versions }}
         with:
           script: |
-            const versions = process.env.VERSIONS;
-            const title = `New Splunk spec files available: ${versions}`;
-
+            const title = `New Splunk spec files available: ${process.env.VERSIONS}`;
             const openIssues = await github.paginate(github.rest.issues.listForRepo, {
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -50,39 +54,101 @@ jobs:
             const existing = openIssues.find((issue) => !issue.pull_request && issue.title === title);
             if (existing) {
               core.info(`Reminder already open: #${existing.number}`);
-              return;
             }
+            core.setOutput('title', title);
+            core.setOutput('exists', existing ? 'true' : 'false');
+
+      - name: Download spec files and generate rules
+        if: steps.reminder.outputs.exists == 'false'
+        run: |
+          node scripts/update-spec-files.js --verbose --output-report
+          node scripts/update-spec-files.js --generate-rules --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push spec branch
+        id: push
+        if: steps.reminder.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$SPEC_BRANCH"
+          git add spec_files package.json resources/semantic_rules.json
+          if git diff --cached --quiet; then
+            echo "Nothing downloaded; not pushing"
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "chore: Update spec files for Splunk ${{ steps.check.outputs.versions }}"
+          git push --force origin "$SPEC_BRANCH"
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open reminder issue
+        if: steps.push.outputs.pushed == 'true'
+        uses: actions/github-script@v7
+        env:
+          TITLE: ${{ steps.reminder.outputs.title }}
+          VERSIONS: ${{ steps.check.outputs.versions }}
+          ASSIGNEES: ${{ vars.SPEC_REMINDER_ASSIGNEES }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const branch = process.env.SPEC_BRANCH;
+            const { data: repoInfo } = await github.rest.repos.get({ owner, repo });
+            const compare = `https://github.com/${owner}/${repo}/compare/${repoInfo.default_branch}...${branch}`;
+            const report = fs.existsSync('spec-update-report.md')
+              ? fs.readFileSync('spec-update-report.md', 'utf8')
+              : '';
 
             const body = [
-              `Splunk ${versions} spec files are available in [jewnix/splunk-spec-files](https://github.com/jewnix/splunk-spec-files/tags) but are not in \`spec_files/\`.`,
+              `Splunk ${process.env.VERSIONS} spec files are available. The workflow downloaded them, updated \`splunk.spec.FileVersion\` in \`package.json\`, ran \`--generate-rules\`, and pushed the result to [\`${branch}\`](${compare}).`,
               '',
-              '### To add them',
-              '1. Create a branch from `master`.',
-              '2. For each version: `node scripts/update-spec-files.js --version <X.Y>`',
-              '   - downloads `spec_files/<X.Y>/` and adds it to `splunk.spec.FileVersion` in `package.json` (as the new default)',
-              '3. `node scripts/update-spec-files.js --generate-rules` to add rules for newly deprecated settings to `resources/semantic_rules.json`',
-              '4. Review new and deprecated settings in the new spec files and adjust `resources/semantic_rules.json` as needed (see `.github/copilot-instructions.md`)',
-              '5. Run `npm test`, then open a pull request.',
+              '### Remaining steps',
+              `1. Review the changes: ${compare}`,
+              '2. Review the generated rules in `resources/semantic_rules.json`, and check the new spec files for uncovered or deprecated settings that need rules (see `.github/copilot-instructions.md`, Tasks A and B).',
+              `3. Push any rule changes to \`${branch}\`. The workflow will not overwrite the branch while this issue is open.`,
+              `4. Run \`npm test\`, open a pull request from \`${branch}\`, and close this issue once it is merged.`,
+              '',
+              '<details><summary>Download report</summary>',
+              '',
+              report,
+              '</details>',
               '',
               '---',
-              '*Opened by the Update Spec Files workflow. While this issue is open, the workflow will not open another one for the same versions. Close it once the spec files are merged.*',
+              '*Opened by the Update Spec Files workflow.*',
             ].join('\n');
 
             const issue = await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title,
+              owner,
+              repo,
+              title: process.env.TITLE,
               body,
               labels: ['spec-files', 'automated'],
             });
             core.info(`Opened reminder #${issue.data.number}`);
 
+            // Assign separately so an invalid username can't block the issue.
+            const assignees = (process.env.ASSIGNEES || '').split(/[\s,]+/).filter(Boolean);
+            if (assignees.length) {
+              try {
+                await github.rest.issues.addAssignees({ owner, repo, issue_number: issue.data.number, assignees });
+                core.info(`Assigned: ${assignees.join(', ')}`);
+              } catch (error) {
+                core.warning(`Could not assign ${assignees.join(', ')}: ${error.message}`);
+              }
+            }
+
       - name: Summary
         if: always()
         run: |
-          echo "## Spec File Check" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.check.outputs.has_updates }}" == "true" ]; then
-            echo "- New versions available: ${{ steps.check.outputs.versions }}" >> $GITHUB_STEP_SUMMARY
-          else
+          echo "## Spec File Update" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check.outputs.has_updates }}" != "true" ]; then
             echo "- No new versions available" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.reminder.outputs.exists }}" == "true" ]; then
+            echo "- ${{ steps.check.outputs.versions }} already has an open reminder; branch left unchanged" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.push.outputs.pushed }}" == "true" ]; then
+            echo "- Pushed ${{ steps.check.outputs.versions }} to \`$SPEC_BRANCH\` and opened a reminder issue" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ${{ steps.check.outputs.versions }} found but nothing downloaded; will retry next run" >> $GITHUB_STEP_SUMMARY
           fi
