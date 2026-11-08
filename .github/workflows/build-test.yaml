@@ -44,13 +44,6 @@ jobs:
           node-version: 22
       - run: npm install
       - run: npm run compile-tests
-      - name: Fix VS Code permissions (macOS ARM)
-        if: runner.os == 'macOS'
-        run: |
-          VSCODE_PATH=$(find .vscode-test -name "Electron" -type f 2>/dev/null | head -1)
-          if [ -n "$VSCODE_PATH" ]; then
-            chmod +x "$VSCODE_PATH"
-          fi
       - run: echo "Run acceptance tests" && node ./out/test/runFunctionalTests.js
         if: runner.os == 'macOS'
       - run: echo "Run acceptance tests" && xvfb-run -a node ./out/test/runFunctionalTests.js
