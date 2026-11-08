@@ -34,7 +34,8 @@ const CONFIG = {
   githubApiBase: "https://api.github.com",
   githubRawBase: "https://raw.githubusercontent.com",
   versionPattern: /^\d+\.\d+$/,
-  tagPattern: /^(\d+)\.(\d+)\.(\d+)$/,
+  // Major.Minor.Maintenance with optional Patch (four-segment format introduced in Splunk 10.6, e.g. 10.6.0.5)
+  tagPattern: /^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$/,
   retryAttempts: 3,
   retryDelayMs: 1000,
   // Minimum version to consider - older versions are EOL
@@ -79,12 +80,15 @@ const log = {
  */
 function httpsGet(url, headers = {}) {
   return new Promise((resolve, reject) => {
+    const urlObj = new URL(url);
     const defaultHeaders = {
       "User-Agent": "vscode-extension-splunk-spec-updater",
+      ...(process.env.GITHUB_TOKEN && urlObj.hostname === "api.github.com"
+        ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+        : {}),
       ...headers,
     };
 
-    const urlObj = new URL(url);
     const requestOptions = {
       hostname: urlObj.hostname,
       path: urlObj.pathname + urlObj.search,
@@ -240,10 +244,11 @@ function groupTagsByVersion(tags) {
       continue;
     }
 
-    const [, major, minor, patch] = match;
+    const [, major, minor, maintenance, patch = "0"] = match;
     const majorNum = parseInt(major, 10);
     const minorNum = parseInt(minor, 10);
-    const patchNum = parseInt(patch, 10);
+    // Combine Maintenance and Patch into one sortable build number
+    const patchNum = parseInt(maintenance, 10) * 100000 + parseInt(patch, 10);
 
     // Skip EOL versions
     if (!meetsMinVersion(majorNum, minorNum)) {
@@ -837,10 +842,15 @@ function applySimpleRenames(rules, renames) {
 function generateSemanticRule(deprecation) {
   const { setting, replacement, confFile, toVersion } = deprecation;
   const confName = confFile.replace(".spec", "");
+  // Rule ids follow {conffile}_{setting_name}_{type} (snake_case, globally unique)
+  const ruleId = (name, type) =>
+    `${confName.replace(/\.conf$/, "")}_${name}_${type}`
+      .replace(/[^A-Za-z0-9]+/g, "_")
+      .toLowerCase();
 
   // Generate rule for: old setting without new
   const deprecatedRule = {
-    id: `${setting.replace(/[.<>]/g, "_")}_deprecated`,
+    id: ruleId(setting, "deprecated"),
     trigger: {
       setting_exists: setting,
       without: [replacement],
@@ -861,7 +871,7 @@ function generateSemanticRule(deprecation) {
 
   // Generate rule for: new setting without old (backward compat warning)
   const backwardCompatRule = {
-    id: `${replacement.replace(/[.<>]/g, "_")}_no_fallback`,
+    id: ruleId(replacement, "no_fallback"),
     trigger: {
       setting_exists: replacement,
       without: [setting],
@@ -924,43 +934,39 @@ function insertSemanticRules(rules, deprecations) {
     }
 
     const patterns = rules.rules[confName].deprecations.patterns;
-    const existingIds = new Set(patterns.map((p) => p.id));
+    // Match existing rules by id OR by trigger, across every category in this conf file,
+    // so hand-written rules with different ids are not duplicated
+    const confPatterns = Object.values(rules.rules[confName]).flatMap(
+      (category) => (category && category.patterns) || [],
+    );
+    const existingIds = new Set(confPatterns.map((p) => p.id.toLowerCase()));
+    const existingTriggers = new Set(
+      confPatterns.map((p) => JSON.stringify(p.trigger)),
+    );
 
     for (const dep of depsMap.values()) {
       const { deprecatedRule, backwardCompatRule } = generateSemanticRule(dep);
 
-      // Add deprecated rule if not exists
-      if (!existingIds.has(deprecatedRule.id)) {
-        patterns.push(deprecatedRule);
-        results.added.push({
-          confFile: confName,
-          ruleId: deprecatedRule.id,
-          type: "deprecated",
-        });
-        log.info(`  Added rule: ${deprecatedRule.id}`);
-      } else {
-        results.skipped.push({
-          confFile: confName,
-          ruleId: deprecatedRule.id,
-          reason: "Rule already exists",
-        });
-      }
-
-      // Add backward compat rule if not exists
-      if (!existingIds.has(backwardCompatRule.id)) {
-        patterns.push(backwardCompatRule);
-        results.added.push({
-          confFile: confName,
-          ruleId: backwardCompatRule.id,
-          type: "backward_compat",
-        });
-        log.info(`  Added rule: ${backwardCompatRule.id}`);
-      } else {
-        results.skipped.push({
-          confFile: confName,
-          ruleId: backwardCompatRule.id,
-          reason: "Rule already exists",
-        });
+      for (const [rule, type] of [
+        [deprecatedRule, "deprecated"],
+        [backwardCompatRule, "backward_compat"],
+      ]) {
+        if (
+          existingIds.has(rule.id.toLowerCase()) ||
+          existingTriggers.has(JSON.stringify(rule.trigger))
+        ) {
+          results.skipped.push({
+            confFile: confName,
+            ruleId: rule.id,
+            reason: "Rule already exists",
+          });
+          continue;
+        }
+        patterns.push(rule);
+        existingIds.add(rule.id.toLowerCase());
+        existingTriggers.add(JSON.stringify(rule.trigger));
+        results.added.push({ confFile: confName, ruleId: rule.id, type });
+        log.info(`  Added rule: ${rule.id}`);
       }
     }
   }
@@ -1399,15 +1405,28 @@ async function main() {
     };
 
     for (const { version, tag } of missingVersions) {
+      let errors;
       try {
         const { downloaded, failed } = await downloadVersionSpecs(tag, version);
-        results.downloaded.push({ version, tag, fileCount: downloaded });
-        if (failed.length > 0) {
-          results.failed.push({ version, errors: failed });
+        if (downloaded > 0 && failed.length === 0) {
+          results.downloaded.push({ version, tag, fileCount: downloaded });
+          continue;
         }
+        errors = failed.length > 0 ? failed : ["No spec files found"];
       } catch (error) {
-        log.error(`Failed to download version ${version}: ${error.message}`);
-        results.failed.push({ version, errors: [error.message] });
+        errors = [error.message];
+      }
+
+      // Never keep a partial new version: it would be committed, published in the
+      // FileVersion enum, and treated as present so it is never retried.
+      // A failed --version refresh of an existing version keeps its files.
+      log.error(`Incomplete download for version ${version}: ${errors.join(", ")}`);
+      results.failed.push({ version, errors });
+      if (!options.dryRun && !currentVersions.includes(version)) {
+        fs.rmSync(path.join(CONFIG.specFilesDir, version), {
+          recursive: true,
+          force: true,
+        });
       }
     }
 
