@@ -549,7 +549,7 @@
         "@types/vscode-notebook-renderer": "^1.72.0",
         "axios": "^1.20.0",
         "extract-zip": "^2.0.1",
-        "fast-xml-parser": "^5.10.1",
+        "fast-xml-parser": "^5.12.0",
         "konva": "^3.4.1",
         "querystring-es3": "^0.2.1",
         "react": "^16.14.0",
