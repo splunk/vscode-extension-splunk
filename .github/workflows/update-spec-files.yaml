@@ -21,10 +21,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: "22"
 
@@ -39,7 +39,7 @@ jobs:
       - name: Look for an open reminder
         id: reminder
         if: steps.check.outputs.has_updates == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v7.1.0
         env:
           VERSIONS: ${{ steps.check.outputs.versions }}
         with:
@@ -85,7 +85,7 @@ jobs:
 
       - name: Open reminder issue
         if: steps.push.outputs.pushed == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v7.1.0
         env:
           TITLE: ${{ steps.reminder.outputs.title }}
           VERSIONS: ${{ steps.check.outputs.versions }}
