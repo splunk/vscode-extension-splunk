@@ -150,11 +150,12 @@
                         "9.4",
                         "10.0",
                         "10.2",
-                        "10.4"
+                        "10.4",
+                        "10.6"
                     ],
                     "order": 0,
                     "scope": "resource",
-                    "default": "10.4",
+                    "default": "10.6",
                     "description": "Specifies the version of spec files to use.\nNote: this setting is ignored if you specify a Spec File Path."
                 },
                 "splunk.spec.FilePath": {
